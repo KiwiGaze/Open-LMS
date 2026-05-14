@@ -78,8 +78,43 @@ export default function AiUsagePage() {
   });
 
   const providerConfig = useProviderConfigQuery(tenantId);
+  const quotaPeriod = providerConfig.data?.quota.period ?? null;
+  const quotaWindow = useMemo(() => {
+    if (!quotaPeriod) return null;
+    const now = new Date();
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    if (quotaPeriod === 'week') {
+      const day = start.getDay();
+      const diff = (day + 6) % 7;
+      start.setDate(start.getDate() - diff);
+    } else if (quotaPeriod === 'month') {
+      start.setDate(1);
+    }
+    return { from: start, to: now };
+  }, [quotaPeriod]);
+
+  const quotaUsage = useQuery({
+    queryKey:
+      tenantId && quotaWindow
+        ? [...queryKeys.aiUsageSummary(tenantId), 'quota', quotaPeriod]
+        : ['usage-quota', 'inactive'],
+    queryFn: () => {
+      if (!tenantId || !quotaWindow) {
+        return Promise.reject(new Error('Cannot fetch quota usage without an active tenant.'));
+      }
+      return apiFetch<AiUsageSummary>(`/tenants/${tenantId}/ai/usage-summary`, {
+        query: {
+          from: quotaWindow.from.toISOString(),
+          to: quotaWindow.to.toISOString(),
+        },
+      });
+    },
+    enabled: Boolean(tenantId && quotaWindow),
+  });
+
   const quotaTokens =
-    (summary.data?.totalInputTokens ?? 0) + (summary.data?.totalOutputTokens ?? 0);
+    (quotaUsage.data?.totalInputTokens ?? 0) + (quotaUsage.data?.totalOutputTokens ?? 0);
   const hardCap = providerConfig.data?.quota.hardCapTokensPerPeriod ?? null;
   const softWarn = providerConfig.data?.quota.softWarnTokensPerPeriod ?? null;
   const hardCapPct = hardCap ? Math.min(1, quotaTokens / hardCap) : null;
@@ -134,7 +169,7 @@ export default function AiUsagePage() {
         </section>
       ) : null}
 
-      {summary.data && hardCap !== null ? (
+      {quotaUsage.data && hardCap !== null ? (
         <Card>
           <CardHeader className="flex-row items-center justify-between gap-3">
             <CardTitle>Token quota</CardTitle>
@@ -197,6 +232,8 @@ export default function AiUsagePage() {
             Configure a provider in Admin → AI providers to see quota usage and warnings.
           </CardContent>
         </Card>
+      ) : providerConfig.error ? (
+        <ErrorState error={providerConfig.error} onRetry={() => providerConfig.refetch()} />
       ) : null}
 
       <Card>
