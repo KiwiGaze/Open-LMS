@@ -62,6 +62,10 @@ export function InstructorGradebookGrid({
   );
 
   const hasAnonymousAssignment = items.some((a) => a.anonymousGradingEnabled);
+  const anonymousAssignmentIds = useMemo(
+    () => new Set(items.filter((a) => a.anonymousGradingEnabled).map((a) => a.id)),
+    [items],
+  );
 
   const entriesByCell = useMemo(() => {
     const map = new Map<CellKey, GradebookEntry>();
@@ -74,13 +78,14 @@ export function InstructorGradebookGrid({
   const studentTotals = useMemo(() => {
     const totals = new Map<string, { earned: number; possible: number }>();
     for (const entry of entries.data ?? []) {
+      if (anonymousAssignmentIds.has(entry.assignmentId)) continue;
       const t = totals.get(entry.studentId) ?? { earned: 0, possible: 0 };
       t.earned += entry.score;
       t.possible += entry.maxScore;
       totals.set(entry.studentId, t);
     }
     return totals;
-  }, [entries.data]);
+  }, [entries.data, anonymousAssignmentIds]);
 
   const isLoading = entries.isLoading || assignments.isLoading;
   const loadError = entries.error || assignments.error;
@@ -121,9 +126,9 @@ export function InstructorGradebookGrid({
             <p className="font-medium">Anonymous grading is enabled for some assignments.</p>
             <p className="mt-0.5 text-(--color-text-muted)">
               Columns marked with{' '}
-              <EyeOff className="inline size-3 text-(--color-text-muted)" aria-hidden /> are
-              read-only here so anonymity isn&apos;t broken. Grade those assignments from the
-              assignment&apos;s submissions screen.
+              <EyeOff className="inline size-3 text-(--color-text-muted)" aria-hidden /> hide
+              individual scores and are excluded from row totals to keep grading anonymous. Grade
+              those assignments from the assignment&apos;s submissions screen.
             </p>
           </div>
         </div>
@@ -289,26 +294,11 @@ function GradeCell({
   const [draft, setDraft] = useState<string>('');
 
   if (anonymousGradingEnabled) {
-    return entry ? (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="flex w-full flex-col items-end gap-0.5 rounded-[var(--radius-sm)] px-2 py-1 text-right">
-            <span className="inline-flex items-center gap-1 text-sm font-medium tabular-nums text-(--color-text-default)">
-              <EyeOff className="size-3 text-(--color-text-muted)" aria-label="Anonymous grading" />
-              {formatNumber(entry.score, 1)}
-              <span className="ml-0.5 text-xs text-(--color-text-muted)">
-                /{formatNumber(entry.maxScore, 1)}
-              </span>
-            </span>
-            <Badge tone="outline" className="text-2xs">
-              anonymous
-            </Badge>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>Grade from the assignment&apos;s submissions screen</TooltipContent>
-      </Tooltip>
-    ) : (
-      <span className="text-xs text-(--color-text-muted)">Not submitted</span>
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-(--color-text-muted)">
+        <EyeOff className="size-3" aria-hidden />
+        Grade from submissions
+      </span>
     );
   }
 
