@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card.tsx';
 import { Input } from '@/components/ui/input.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useToast } from '@/components/ui/toast.tsx';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { ApiHttpError } from '@/lib/api/errors.ts';
 import { useAssignmentsQuery } from '@/lib/api/queries/assignments.ts';
 import { useGradebookEntriesQuery, useUpsertSubmissionGrade } from '@/lib/api/queries/gradebook.ts';
@@ -252,21 +253,23 @@ function GradeCell({ tenantId, courseId, assignmentId, entry, gradingLocked }: G
 
   if (gradingLocked) {
     return (
-      <div
-        className="flex w-full flex-col items-end gap-0.5 px-2 py-1 text-right"
-        title="Grading is locked for this assignment"
-      >
-        <span className="inline-flex items-center gap-1 text-sm font-medium tabular-nums text-(--color-text-default)">
-          <Lock className="size-3 text-(--color-text-muted)" aria-label="Grading locked" />
-          {formatNumber(entry.score, 1)}
-          <span className="ml-0.5 text-xs text-(--color-text-muted)">
-            /{formatNumber(entry.maxScore, 1)}
-          </span>
-        </span>
-        <Badge tone="outline" className="text-2xs">
-          locked
-        </Badge>
-      </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex w-full flex-col items-end gap-0.5 rounded-[var(--radius-sm)] px-2 py-1 text-right">
+            <span className="inline-flex items-center gap-1 text-sm font-medium tabular-nums text-(--color-text-default)">
+              <Lock className="size-3 text-(--color-text-muted)" aria-label="Grading locked" />
+              {formatNumber(entry.score, 1)}
+              <span className="ml-0.5 text-xs text-(--color-text-muted)">
+                /{formatNumber(entry.maxScore, 1)}
+              </span>
+            </span>
+            <Badge tone="outline" className="text-2xs">
+              locked
+            </Badge>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>Grading is locked for this assignment</TooltipContent>
+      </Tooltip>
     );
   }
 
