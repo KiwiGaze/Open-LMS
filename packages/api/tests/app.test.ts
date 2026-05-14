@@ -107,12 +107,16 @@ import { ApiError } from '../src/http-error.ts';
 import { generateOpenApiDocument } from '../src/openapi.ts';
 
 const dependencies = {
+  authHandler: null,
   getSessionByToken: async () =>
     CoreSession.parse({
       userId: actorId,
       activeTenantId: tenantId,
       expiresAt: new Date('2999-05-10T00:00:00.000Z'),
     }),
+  createInitialTenant: async () => {
+    throw new Error('Not used in dependency tests');
+  },
   listTenants: async (_actorUserId: string) => [],
   updateTenantFileStorageQuotas: async (
     _actorUserId: string,

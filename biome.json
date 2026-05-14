@@ -12,7 +12,8 @@
       "**/drizzle/**",
       "**/node_modules/**",
       "**/coverage/**",
-      "**/playwright-report/**"
+      "**/playwright-report/**",
+      "packages/web/src/lib/api/schema.d.ts"
     ]
   },
   "formatter": {

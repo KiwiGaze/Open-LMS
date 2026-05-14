@@ -364,6 +364,7 @@ import {
   submitSurveyResponseRoute,
   updateSurveyRoute,
 } from './routes/surveys.ts';
+import { createInitialTenantRoute } from './routes/onboarding.ts';
 import {
   listTenantMembersRoute,
   listTenantsRoute,
@@ -490,6 +491,27 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
 
   app.use('*', createHttpRateLimitMiddleware(options.rateLimit));
 
+  // Mount Better Auth at /api/auth/* when configured. The frontend talks to
+  // /api/auth/sign-in/email, /api/auth/sign-up/email, /api/auth/sign-out, and
+  // /api/auth/get-session. When auth is not configured (e.g. OpenAPI generation
+  // or unit-test composition), the mount is a no-op. OPTIONS is included so
+  // CORS preflights succeed when the frontend talks to the API on a different
+  // origin (the Next.js dev proxy avoids preflights, but production might not).
+  app.on(['GET', 'POST', 'OPTIONS'], '/api/auth/*', (context) => {
+    if (!options.dependencies.authHandler) {
+      return context.json(
+        errorResponseBody(
+          new ApiError(
+            'internal_error',
+            'Authentication is not configured on this server. Set BETTER_AUTH_SECRET and BETTER_AUTH_URL.',
+          ),
+        ),
+        500,
+      );
+    }
+    return options.dependencies.authHandler(context.req.raw);
+  });
+
   app.openapi(healthRoute, (context) =>
     context.json(
       {
@@ -507,6 +529,16 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     );
     const tenants = await options.dependencies.listTenants(actorUserId);
     return context.json(tenants, 200);
+  });
+
+  app.openapi(createInitialTenantRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const body = context.req.valid('json');
+    const tenant = await options.dependencies.createInitialTenant(actorUserId, body);
+    return context.json(tenant, 201);
   });
 
   app.openapi(listTenantMembersRoute, async (context) => {

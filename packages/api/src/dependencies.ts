@@ -617,11 +617,18 @@ import {
   type ModuleReleaseStatusDependencies,
   assertCorePermission,
 } from '@openlms/core';
+import { type Auth, createAuth } from '@openlms/core/auth';
+import { TenantSlugTakenError, signUpWithTenant } from '@openlms/core/auth/onboarding';
 import { type CoreSession, getCoreSessionByToken } from '@openlms/core/auth/session';
 import { ApiError } from './http-error.ts';
 
 export type ApiDependencies = {
+  authHandler: ((request: Request) => Promise<Response>) | null;
   getSessionByToken: (sessionToken: string) => Promise<CoreSession | null>;
+  createInitialTenant: (
+    actorUserId: string,
+    input: { slug: string; displayName: string },
+  ) => Promise<Tenant>;
   getCurrentUser: (actorUserId: string) => Promise<User>;
   updateCurrentUser: (actorUserId: string, input: UpdateCurrentUserApiInput) => Promise<User>;
   deleteCurrentUser: (actorUserId: string) => Promise<void>;
@@ -2313,6 +2320,9 @@ export type ApiEnvironment = {
   FILE_STORAGE_ROOT?: string;
   LTI_PRIVATE_KEY_ENCRYPTION_KEY?: string;
   WEBHOOK_SIGNING_SECRET_ENCRYPTION_KEY?: string;
+  BETTER_AUTH_SECRET?: string;
+  BETTER_AUTH_URL?: string;
+  BETTER_AUTH_TRUSTED_ORIGINS?: string;
 };
 
 type CourseContentItem = Pick<
@@ -5826,8 +5836,51 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
     };
   };
 
+  let auth: Auth | null = null;
+  if (environment.BETTER_AUTH_SECRET && environment.BETTER_AUTH_URL) {
+    auth = createAuth({
+      db: dbHandle.db,
+      secret: environment.BETTER_AUTH_SECRET,
+      baseUrl: environment.BETTER_AUTH_URL,
+      trustedOrigins: environment.BETTER_AUTH_TRUSTED_ORIGINS?.split(',').map((s) => s.trim()).filter(Boolean),
+      sendPasswordResetEmail: async (input) => {
+        // Dev no-op: print the reset URL so the link can be opened locally.
+        console.info('[better-auth] password reset', {
+          to: input.user.email,
+          url: input.url,
+        });
+      },
+      sendVerificationEmail: async (input) => {
+        // Dev no-op: print the verification URL so the link can be opened locally.
+        console.info('[better-auth] email verification', {
+          to: input.user.email,
+          url: input.url,
+        });
+      },
+    });
+  }
+
   return {
+    authHandler: auth ? (request) => auth.handler(request) : null,
     getSessionByToken: (sessionToken) => getCoreSessionByToken(dbHandle.db, sessionToken),
+    createInitialTenant: async (actorUserId, input) => {
+      try {
+        const result = await signUpWithTenant(dbHandle.db, {
+          userId: actorUserId,
+          tenantSlug: input.slug,
+          tenantDisplayName: input.displayName,
+        });
+        return result.tenant;
+      } catch (error) {
+        if (error instanceof TenantSlugTakenError) {
+          throw new ApiError(
+            'conflict',
+            'That institution slug is already taken. Pick a different one.',
+          );
+        }
+        throw error;
+      }
+    },
     listTenants: async (actorUserId) => {
       const memberships = await listUserTenantMemberships(dbHandle.db, actorUserId);
       const tenants = await Promise.all(

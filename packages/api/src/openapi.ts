@@ -8,7 +8,11 @@ import {
 } from './openapi-document.ts';
 
 const emptyDependencies: ApiDependencies = {
+  authHandler: null,
   getSessionByToken: async () => null,
+  createInitialTenant: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
   getCurrentUser: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
