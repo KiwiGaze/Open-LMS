@@ -61,6 +61,12 @@ const emptyDependencies: ApiDependencies = {
   getProviderConfig: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
+  upsertProviderConfig: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
+  deleteProviderConfig: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
   getLti1p3JsonWebKeySet: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },

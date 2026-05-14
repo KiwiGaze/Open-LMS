@@ -19,6 +19,7 @@ import {
   Lti1p3DeepLinkingReturnResult,
   Lti1p3DeepLinkingSessionId,
   type Lti1p3NamesRolesRole,
+  ProviderConfigSummary as ProviderConfigSummarySchema,
   QtiQuizItemExport,
   QtiQuizItemImportResult,
   QuizId,
@@ -33,6 +34,7 @@ import {
 } from '@openlms/contracts';
 import type {
   AiAction,
+  AiProviderType,
   AiUsageByAction,
   AiUsageSummary,
   Assignment,
@@ -154,6 +156,7 @@ import type {
   Lti1p3ServiceAccessToken,
   Lti1p3ServiceTokenRequest,
   MessageableUser,
+  ModelPreferences,
   ModuleReleaseCombinator,
   ModuleReleaseDecision,
   ModuleReleaseOverride,
@@ -169,7 +172,9 @@ import type {
   NotificationFrequency,
   NotificationPreference,
   NotificationRecord,
+  ProviderCapabilities,
   ProviderConfigSummary,
+  ProviderQuota,
   QtiQuizItemImportRequest,
   QuestionBank,
   QuestionBankQuestion,
@@ -351,6 +356,7 @@ import {
   deleteGradebookCategory as deleteGradebookCategoryRecord,
   deleteGradebookManualItem as deleteGradebookManualItemRecord,
   deleteLearningObjective as deleteLearningObjectiveRecord,
+  deleteProviderConfigByTenantId,
   deleteQuestionBank as deleteQuestionBankRecord,
   deleteQuizOverride as deleteQuizOverrideRecord,
   deleteQuiz as deleteQuizRecord,
@@ -613,6 +619,7 @@ import {
   upsertDiscussionPostGrade,
   upsertNotificationPreference as upsertNotificationPreferenceRecord,
   upsertPeerReviewResponse as upsertPeerReviewResponseRecord,
+  upsertProviderConfig as upsertProviderConfigRecord,
   upsertReleaseOverride,
   upsertReleasePolicy as upsertReleasePolicyRecord,
   upsertRetentionPolicy as upsertRetentionPolicyRecord,
@@ -705,6 +712,12 @@ export type ApiDependencies = {
   deleteTenantFeatureFlag: (actorUserId: string, tenantId: string, key: string) => Promise<void>;
   listAiActions: (actorUserId: string, tenantId: string) => Promise<AiAction[]>;
   getProviderConfig: (actorUserId: string, tenantId: string) => Promise<ProviderConfigSummary>;
+  upsertProviderConfig: (
+    actorUserId: string,
+    tenantId: string,
+    input: UpsertProviderConfigApiInput,
+  ) => Promise<ProviderConfigSummary>;
+  deleteProviderConfig: (actorUserId: string, tenantId: string) => Promise<void>;
   getAiUsageSummary: (
     actorUserId: string,
     tenantId: string,
@@ -2404,6 +2417,7 @@ export type AuditLogQueryInput = {
 export type ApiEnvironment = {
   DATABASE_CONNECTION_STRING?: string;
   FILE_STORAGE_ROOT?: string;
+  ENCRYPTION_KEY_BASE64?: string;
   LTI_PRIVATE_KEY_ENCRYPTION_KEY?: string;
   WEBHOOK_SIGNING_SECRET_ENCRYPTION_KEY?: string;
   BETTER_AUTH_SECRET?: string;
@@ -3013,6 +3027,15 @@ export type UpdateWebhookSubscriptionApiInput = {
 export type UpsertTenantFeatureFlagApiInput = {
   enabled: boolean;
   description: string | null;
+};
+
+export type UpsertProviderConfigApiInput = {
+  providerType: AiProviderType;
+  baseUrl: string | null;
+  apiKey?: string;
+  modelPreferences: ModelPreferences;
+  capabilities: ProviderCapabilities;
+  quota: ProviderQuota;
 };
 
 export type ListUserLegalHoldsApiInput = {
@@ -6322,20 +6345,70 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         );
       }
 
-      return {
-        id: config.id,
-        tenantId: config.tenantId,
-        providerType: config.providerType,
-        baseUrl: config.baseUrl,
-        modelPreferences: config.modelPreferences,
-        capabilities: config.capabilities,
-        quota: config.quota,
-        validationStatus: config.validationStatus,
-        validationError: config.validationError,
-        validatedAt: config.validatedAt,
-        createdAt: config.createdAt,
-        updatedAt: config.updatedAt,
-      };
+      return toProviderConfigSummary(config);
+    },
+    upsertProviderConfig: async (actorUserId, tenantId, input) => {
+      await assertInstitutionAdmin(
+        actorUserId,
+        tenantId,
+        'Only institution admins can change AI provider config. Ask an administrator for access.',
+      );
+
+      if (
+        environment.ENCRYPTION_KEY_BASE64 === undefined ||
+        environment.ENCRYPTION_KEY_BASE64.trim() === ''
+      ) {
+        throw new ApiError(
+          'internal_error',
+          'AI provider credential encryption is not configured. Set ENCRYPTION_KEY_BASE64 and retry.',
+        );
+      }
+
+      const encryptedApiKey =
+        input.apiKey !== undefined && input.apiKey.trim() !== ''
+          ? serializeEncryptedSecret(encryptSecret(input.apiKey, environment.ENCRYPTION_KEY_BASE64))
+          : null;
+
+      try {
+        const saved = await upsertProviderConfigRecord(dbHandle.db, {
+          tenantId,
+          providerType: input.providerType,
+          baseUrl: input.baseUrl,
+          encryptedApiKey,
+          modelPreferences: input.modelPreferences,
+          capabilities: input.capabilities,
+          quota: input.quota,
+        });
+
+        return toProviderConfigSummary(saved);
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message ===
+            'Provider config cannot be created without an encrypted API key — none was supplied.'
+        ) {
+          throw new ApiError(
+            'bad_request',
+            'An API key is required when creating a new provider config.',
+          );
+        }
+        throw error;
+      }
+    },
+    deleteProviderConfig: async (actorUserId, tenantId) => {
+      await assertInstitutionAdmin(
+        actorUserId,
+        tenantId,
+        'Only institution admins can delete AI provider config. Ask an administrator for access.',
+      );
+
+      const deleted = await deleteProviderConfigByTenantId(dbHandle.db, tenantId);
+      if (!deleted) {
+        throw new ApiError(
+          'not_found',
+          'No AI provider config exists for this tenant. Nothing to delete.',
+        );
+      }
     },
     getAiUsageSummary: async (actorUserId, tenantId, from, to) => {
       const memberships = await listUserTenantMemberships(dbHandle.db, actorUserId);
@@ -13946,6 +14019,35 @@ const applyAnonymousLabels = <T extends { studentId: string; anonymousLabel: str
     anonymousLabel: labelByStudentId.get(submission.studentId) ?? null,
   }));
 };
+
+const toProviderConfigSummary = (config: {
+  id: string;
+  tenantId: string;
+  providerType: AiProviderType;
+  baseUrl: string | null;
+  modelPreferences: ModelPreferences;
+  capabilities: ProviderCapabilities;
+  quota: ProviderQuota;
+  validationStatus: ProviderConfigSummary['validationStatus'];
+  validationError: string | null;
+  validatedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}): ProviderConfigSummary =>
+  ProviderConfigSummarySchema.parse({
+    id: config.id,
+    tenantId: config.tenantId,
+    providerType: config.providerType,
+    baseUrl: config.baseUrl,
+    modelPreferences: config.modelPreferences,
+    capabilities: config.capabilities,
+    quota: config.quota,
+    validationStatus: config.validationStatus,
+    validationError: config.validationError,
+    validatedAt: config.validatedAt,
+    createdAt: config.createdAt,
+    updatedAt: config.updatedAt,
+  });
 
 const assertModuleBelongsToCourse = async (
   db: Database,

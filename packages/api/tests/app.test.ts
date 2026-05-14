@@ -318,6 +318,35 @@ const dependencies = {
       createdAt: now,
       updatedAt: now,
     }),
+  upsertProviderConfig: async (_actorUserId: string, _tenantId: string) =>
+    ProviderConfigSummary.parse({
+      id: '01J9QW7B6N5W2YH3D3A1V0KEH9',
+      tenantId,
+      providerType: 'openai',
+      baseUrl: null,
+      modelPreferences: { feedbackDraftModel: 'gpt-4.1' },
+      capabilities: {
+        supportsStructuredOutput: true,
+        supportsTools: true,
+        supportsVision: false,
+        supportsPromptCaching: false,
+        maxContextTokens: 128000,
+        supportsDeterministic: true,
+      },
+      quota: {
+        softWarnTokensPerPeriod: 100000,
+        hardCapTokensPerPeriod: 500000,
+        period: 'month',
+      },
+      validationStatus: 'pending',
+      validationError: null,
+      validatedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    }),
+  deleteProviderConfig: async (_actorUserId: string, _tenantId: string) => {
+    return;
+  },
   updateTenantMembership: async (
     _actorUserId: string,
     _tenantId: string,

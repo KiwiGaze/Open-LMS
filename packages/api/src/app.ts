@@ -293,7 +293,11 @@ import {
   listSubmissionPlagiarismReportsRoute,
   recordSubmissionPlagiarismReportRoute,
 } from './routes/plagiarism.ts';
-import { getProviderConfigRoute } from './routes/provider-configs.ts';
+import {
+  deleteProviderConfigRoute,
+  getProviderConfigRoute,
+  upsertProviderConfigRoute,
+} from './routes/provider-configs.ts';
 import {
   listMyPushTokensRoute,
   registerMyPushTokenRoute,
@@ -713,6 +717,27 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     const { tenantId } = context.req.valid('param');
     const config = await options.dependencies.getProviderConfig(actorUserId, tenantId);
     return context.json(config, 200);
+  });
+
+  app.openapi(upsertProviderConfigRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId } = context.req.valid('param');
+    const body = context.req.valid('json');
+    const saved = await options.dependencies.upsertProviderConfig(actorUserId, tenantId, body);
+    return context.json(saved, 200);
+  });
+
+  app.openapi(deleteProviderConfigRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId } = context.req.valid('param');
+    await options.dependencies.deleteProviderConfig(actorUserId, tenantId);
+    return context.body(null, 204);
   });
 
   app.openapi(getLti1p3JsonWebKeySetRoute, async (context) => {
