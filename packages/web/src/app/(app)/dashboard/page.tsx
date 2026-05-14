@@ -31,7 +31,7 @@ export default function DashboardPage() {
   const next30 = new Date();
   next30.setDate(next30.getDate() + 30);
   const calendar = useCalendarItemsQuery(tenantId, { from: new Date(), to: next30 });
-  const notifications = useNotificationsQuery();
+  const notifications = useNotificationsQuery(tenantId);
 
   const activeCourses = courses.data?.filter((c) => c.status === 'active') ?? [];
 

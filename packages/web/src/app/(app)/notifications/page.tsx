@@ -13,11 +13,13 @@ import {
 } from '@/components/ui/card.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useNotificationsQuery } from '@/lib/api/queries/notifications.ts';
+import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatRelative } from '@/lib/format.ts';
 import { Bell } from 'lucide-react';
 
 export default function NotificationsPage() {
-  const notifications = useNotificationsQuery();
+  const tenantId = useSessionStore((s) => s.activeTenantId);
+  const notifications = useNotificationsQuery(tenantId);
 
   return (
     <div className="flex flex-col gap-6">

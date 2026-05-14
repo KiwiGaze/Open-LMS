@@ -5,9 +5,10 @@ import { queryKeys } from '@/lib/api/keys.ts';
 import type { NotificationRecord } from '@openlms/contracts';
 import { useQuery } from '@tanstack/react-query';
 
-export function useNotificationsQuery() {
+export function useNotificationsQuery(tenantId: string | null) {
   return useQuery({
-    queryKey: queryKeys.notifications(),
-    queryFn: () => apiFetch<NotificationRecord[]>('/notifications'),
+    queryKey: tenantId ? queryKeys.notifications(tenantId) : ['notifications', 'inactive'],
+    queryFn: () => apiFetch<NotificationRecord[]>(`/tenants/${tenantId}/notifications`),
+    enabled: Boolean(tenantId),
   });
 }
