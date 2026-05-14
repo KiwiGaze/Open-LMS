@@ -108,10 +108,17 @@ const emptyDependencies: ApiDependencies = {
   createCourse: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
+  updateCourse: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
   deleteCourse: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
   restoreDeletedCourse: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
+  listRubrics: async () => [],
+  getRubric: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
   createRubric: async () => {
@@ -285,10 +292,18 @@ const emptyDependencies: ApiDependencies = {
   createCourseGroupSet: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
+  updateCourseGroupSet: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
+  deleteCourseGroupSet: async () => {},
   listCourseGroups: async () => [],
   createCourseGroup: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
+  updateCourseGroup: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
+  deleteCourseGroup: async () => {},
   listCourseGroupMembers: async () => [],
   createCourseGroupMember: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
@@ -310,6 +325,9 @@ const emptyDependencies: ApiDependencies = {
   listAssignmentPeerReviews: async () => [],
   listSubmissionAttachments: async () => [],
   createSubmissionAttachment: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
+  downloadSubmissionAttachment: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
   listSubmissionComments: async () => [],
@@ -615,6 +633,13 @@ const emptyDependencies: ApiDependencies = {
   listDiscussionGradebookEntries: async () => [],
   exportDiscussionGradebookCsv: async () => '',
   listInboxThreads: async () => [],
+  createInboxThread: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
+  listInboxThreadMessages: async () => [],
+  createInboxThreadMessage: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
   recordResourceView: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },

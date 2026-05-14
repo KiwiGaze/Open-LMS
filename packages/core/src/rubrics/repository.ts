@@ -9,7 +9,7 @@ import {
   RubricTemplateId,
   TenantId,
 } from '@openlms/contracts';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { ulid } from 'ulid';
 import type { Database } from '../db/client.ts';
 import { rubric, rubricTemplate } from '../db/schema/rubric.ts';
@@ -91,6 +91,19 @@ export const getRubricById = async (
   }
 
   return Rubric.parse(row);
+};
+
+export const listRubricsForTenant = async (
+  db: Database,
+  tenantId: string,
+): Promise<RubricContract[]> => {
+  const rows = await db
+    .select()
+    .from(rubric)
+    .where(eq(rubric.tenantId, tenantId))
+    .orderBy(desc(rubric.updatedAt));
+
+  return rows.map((row) => Rubric.parse(row));
 };
 
 export type UpdateRubricInput = {

@@ -69,6 +69,20 @@ export const getConversationThreadForCourse = async (
   return row ? ConversationThread.parse(row) : null;
 };
 
+export const getConversationThreadInTenant = async (
+  db: Database,
+  tenantId: string,
+  threadId: string,
+): Promise<ConversationThreadContract | null> => {
+  const [row] = await db
+    .select()
+    .from(conversationThread)
+    .where(and(eq(conversationThread.tenantId, tenantId), eq(conversationThread.id, threadId)))
+    .limit(1);
+
+  return row ? ConversationThread.parse(row) : null;
+};
+
 export type ListConversationMessagesForThreadInput = {
   tenantId: string;
   threadId: string;
@@ -94,7 +108,7 @@ export const listConversationMessagesForThread = async (
 
 export type CreateConversationThreadInput = {
   tenantId: string;
-  courseId: string;
+  courseId: string | null;
   subject: string;
   participantIds: string[];
   initialMessageSenderId: string;
@@ -117,7 +131,7 @@ export const createConversationThread = async (
       .values({
         id: threadId,
         tenantId,
-        courseId: CourseId.parse(input.courseId),
+        courseId: input.courseId === null ? null : CourseId.parse(input.courseId),
         subject: input.subject,
         status: 'open' satisfies ConversationThreadStatus,
         participantIds: input.participantIds.map((id) => UserId.parse(id)),

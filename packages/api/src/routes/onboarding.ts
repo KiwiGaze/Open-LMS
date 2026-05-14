@@ -1,10 +1,6 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import { Tenant, TenantSlug } from '@openlms/contracts';
-import {
-  badRequestResponse,
-  conflictResponse,
-  unauthorizedResponse,
-} from './responses.ts';
+import { badRequestResponse, conflictResponse, unauthorizedResponse } from './responses.ts';
 
 export const TenantResponse = Tenant.openapi('Tenant');
 

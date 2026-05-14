@@ -11,6 +11,27 @@ import {
 export const RubricResponse = Rubric.openapi('Rubric');
 const RubricCriterionInput = RubricCriterion.openapi('RubricCriterion');
 
+export const listRubricsRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/rubrics',
+  tags: ['Rubrics'],
+  operationId: 'listRubrics',
+  security: [{ bearerAuth: [] }],
+  request: { params: TenantPathParams },
+  responses: {
+    200: {
+      description: 'Rubrics visible to the authenticated user in this tenant.',
+      content: {
+        'application/json': {
+          schema: RubricResponse.array(),
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+  },
+});
+
 export const CreateRubricBody = z
   .object({
     title: z.string().min(1).max(160).openapi({
@@ -68,6 +89,28 @@ export const RubricPathParams = TenantPathParams.extend({
     },
     example: '01J9QW7B6N5W2YH3D3A1V0KE3C',
   }),
+});
+
+export const getRubricRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/rubrics/{rubricId}',
+  tags: ['Rubrics'],
+  operationId: 'getRubric',
+  security: [{ bearerAuth: [] }],
+  request: { params: RubricPathParams },
+  responses: {
+    200: {
+      description: 'Rubric metadata and criteria.',
+      content: {
+        'application/json': {
+          schema: RubricResponse,
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
 });
 
 export const UpdateRubricBody = CreateRubricBody;

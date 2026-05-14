@@ -54,6 +54,66 @@ export const createCourseGroupSet = async (
   return CourseGroupSet.parse(row);
 };
 
+export type UpdateCourseGroupSetInput = {
+  tenantId: string;
+  courseId: string;
+  groupSetId: string;
+  name: string;
+  selfSignupEnabled: boolean;
+  status: CourseGroupSetStatus;
+  position: number;
+};
+
+export const updateCourseGroupSet = async (
+  db: Database,
+  input: UpdateCourseGroupSetInput,
+  now = new Date(),
+): Promise<CourseGroupSetContract | null> => {
+  const [row] = await db
+    .update(courseGroupSet)
+    .set({
+      name: input.name,
+      selfSignupEnabled: input.selfSignupEnabled,
+      status: input.status,
+      position: input.position,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(courseGroupSet.tenantId, input.tenantId),
+        eq(courseGroupSet.courseId, input.courseId),
+        eq(courseGroupSet.id, input.groupSetId),
+      ),
+    )
+    .returning();
+
+  return row ? CourseGroupSet.parse(row) : null;
+};
+
+export type DeleteCourseGroupSetInput = {
+  tenantId: string;
+  courseId: string;
+  groupSetId: string;
+};
+
+export const deleteCourseGroupSet = async (
+  db: Database,
+  input: DeleteCourseGroupSetInput,
+): Promise<boolean> => {
+  const result = await db
+    .delete(courseGroupSet)
+    .where(
+      and(
+        eq(courseGroupSet.tenantId, input.tenantId),
+        eq(courseGroupSet.courseId, input.courseId),
+        eq(courseGroupSet.id, input.groupSetId),
+      ),
+    )
+    .returning({ id: courseGroupSet.id });
+
+  return result.length > 0;
+};
+
 export type CreateCourseGroupInput = {
   tenantId: string;
   courseId: string;
@@ -88,6 +148,66 @@ export const createCourseGroup = async (
   }
 
   return CourseGroup.parse(row);
+};
+
+export type UpdateCourseGroupInput = {
+  tenantId: string;
+  courseId: string;
+  groupId: string;
+  name: string;
+  description: string | null;
+  status: CourseGroupStatus;
+  position: number;
+};
+
+export const updateCourseGroup = async (
+  db: Database,
+  input: UpdateCourseGroupInput,
+  now = new Date(),
+): Promise<CourseGroupContract | null> => {
+  const [row] = await db
+    .update(courseGroup)
+    .set({
+      name: input.name,
+      description: input.description,
+      status: input.status,
+      position: input.position,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(courseGroup.tenantId, input.tenantId),
+        eq(courseGroup.courseId, input.courseId),
+        eq(courseGroup.id, input.groupId),
+      ),
+    )
+    .returning();
+
+  return row ? CourseGroup.parse(row) : null;
+};
+
+export type DeleteCourseGroupInput = {
+  tenantId: string;
+  courseId: string;
+  groupId: string;
+};
+
+export const deleteCourseGroup = async (
+  db: Database,
+  input: DeleteCourseGroupInput,
+): Promise<boolean> => {
+  const result = await db
+    .delete(courseGroup)
+    .where(
+      and(
+        eq(courseGroup.tenantId, input.tenantId),
+        eq(courseGroup.courseId, input.courseId),
+        eq(courseGroup.id, input.groupId),
+      ),
+    )
+    .returning({ id: courseGroup.id });
+
+  return result.length > 0;
 };
 
 export type CreateCourseGroupMemberInput = {

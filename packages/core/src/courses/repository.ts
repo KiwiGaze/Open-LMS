@@ -168,6 +168,43 @@ export const getCourseEnrollmentInfo = async (
   };
 };
 
+export type UpdateCourseInput = {
+  tenantId: string;
+  courseId: string;
+  code: string;
+  title: string;
+  status: CourseContract['status'];
+  startsAt: Date | null;
+  endsAt: Date | null;
+  catalogCategory: string | null;
+  academicTerm: string | null;
+  isBlueprint: boolean;
+};
+
+export const updateCourse = async (
+  db: Database,
+  input: UpdateCourseInput,
+  now = new Date(),
+): Promise<CourseContract | null> => {
+  const [row] = await db
+    .update(course)
+    .set({
+      code: input.code,
+      title: input.title,
+      status: input.status,
+      startsAt: input.startsAt,
+      endsAt: input.endsAt,
+      catalogCategory: input.catalogCategory,
+      academicTerm: input.academicTerm,
+      isBlueprint: input.isBlueprint,
+      updatedAt: now,
+    })
+    .where(and(eq(course.tenantId, input.tenantId), eq(course.id, input.courseId)))
+    .returning();
+
+  return row ? Course.parse(row) : null;
+};
+
 export type UpdateCourseCatalogSettingsInput = {
   tenantId: string;
   courseId: string;

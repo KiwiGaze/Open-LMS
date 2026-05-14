@@ -142,6 +142,42 @@ export const CoursePathParams = TenantPathParams.extend({
   }),
 });
 
+export const UpdateCourseBody = CreateCourseBody;
+
+export const updateCourseRoute = createRoute({
+  method: 'put',
+  path: '/api/v1/tenants/{tenantId}/courses/{courseId}',
+  tags: ['Courses'],
+  operationId: 'updateCourse',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: CoursePathParams,
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: UpdateCourseBody,
+        },
+      },
+    },
+  },
+  responses: {
+    400: badRequestResponse,
+    200: {
+      description: 'Updated course.',
+      content: {
+        'application/json': {
+          schema: CourseResponse,
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+    409: conflictResponse,
+  },
+});
+
 export const deleteCourseRoute = createRoute({
   method: 'delete',
   path: '/api/v1/tenants/{tenantId}/courses/{courseId}',
