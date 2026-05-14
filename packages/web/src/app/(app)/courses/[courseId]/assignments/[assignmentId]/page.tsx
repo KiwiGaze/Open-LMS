@@ -23,6 +23,7 @@ import { formatDateTime } from '@/lib/format.ts';
 import { CalendarClock, FileText, ListChecks, Pencil, Settings2 } from 'lucide-react';
 import Link from 'next/link';
 import { use } from 'react';
+import { MySubmissionPanel } from './my-submission-panel.tsx';
 import { SubmitAssignmentPanel } from './submit-panel.tsx';
 
 type Params = { courseId: string; assignmentId: string };
@@ -138,6 +139,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<Param
           <TabsTrigger value="instructions">Instructions</TabsTrigger>
           <TabsTrigger value="rubric">Rubric</TabsTrigger>
           <TabsTrigger value="submit">Submit</TabsTrigger>
+          <TabsTrigger value="my-submission">My submission</TabsTrigger>
         </TabsList>
         <TabsContent value="instructions">
           <Card>
@@ -200,6 +202,9 @@ export default function AssignmentDetailPage({ params }: { params: Promise<Param
             allowedExtensions={a.allowedFileExtensions}
             maxFileSizeBytes={a.maxFileSizeBytes}
           />
+        </TabsContent>
+        <TabsContent value="my-submission">
+          <MySubmissionPanel tenantId={tenantId} courseId={courseId} assignmentId={assignmentId} />
         </TabsContent>
       </Tabs>
     </div>
