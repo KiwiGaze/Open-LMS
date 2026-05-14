@@ -156,7 +156,15 @@ export function NewMessageDialog({
               }}
             >
               <SelectTrigger id="scope" disabled={courses.isLoading}>
-                <SelectValue placeholder={courses.isLoading ? 'Loading…' : 'Pick a course'} />
+                <SelectValue
+                  placeholder={
+                    courses.isLoading
+                      ? 'Loading…'
+                      : isStaff
+                        ? 'Pick a course or tenant-wide'
+                        : 'Pick a course'
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {isStaff ? (
