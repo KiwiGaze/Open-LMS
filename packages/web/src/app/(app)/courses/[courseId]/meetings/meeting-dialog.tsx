@@ -97,6 +97,7 @@ export function MeetingDialog({
     endsAt?: string;
   }>({});
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-seed only when the dialog transitions to open so in-progress edits aren't clobbered if the parent's existing reference updates while the dialog stays open.
   useEffect(() => {
     if (!open) return;
     setTitle(existing?.title ?? '');
@@ -109,7 +110,7 @@ export function MeetingDialog({
     setPlaybackUrl(existing?.playbackUrl ?? '');
     setStatus(existing?.status ?? 'scheduled');
     setErrors({});
-  }, [open, existing]);
+  }, [open]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -261,7 +262,9 @@ export function MeetingDialog({
                 value={startsAt}
                 onChange={(e) => {
                   setStartsAt(e.target.value);
-                  if (errors.startsAt) setErrors((prev) => ({ ...prev, startsAt: undefined }));
+                  if (errors.startsAt || errors.endsAt) {
+                    setErrors((prev) => ({ ...prev, startsAt: undefined, endsAt: undefined }));
+                  }
                 }}
                 required
               />
