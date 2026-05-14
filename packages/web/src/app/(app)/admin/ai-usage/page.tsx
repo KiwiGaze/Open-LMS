@@ -234,6 +234,8 @@ export default function AiUsagePage() {
         </Card>
       ) : providerConfig.error ? (
         <ErrorState error={providerConfig.error} onRetry={() => providerConfig.refetch()} />
+      ) : quotaUsage.error && hardCap !== null ? (
+        <ErrorState error={quotaUsage.error} onRetry={() => quotaUsage.refetch()} />
       ) : null}
 
       <Card>
