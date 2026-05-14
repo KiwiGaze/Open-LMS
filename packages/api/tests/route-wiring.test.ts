@@ -14,7 +14,8 @@ const collectDeclaredRoutes = (): Set<string> => {
     if (!entry.isFile() || !entry.name.endsWith('.ts')) continue;
     const contents = readFileSync(join(ROUTES_DIR, entry.name), 'utf8');
     for (const match of contents.matchAll(ROUTE_EXPORT_PATTERN)) {
-      declared.add(match[1]);
+      const name = match[1];
+      if (name) declared.add(name);
     }
   }
   return declared;
@@ -24,7 +25,8 @@ const collectWiredRoutes = (): Set<string> => {
   const wired = new Set<string>();
   const contents = readFileSync(APP_TS, 'utf8');
   for (const match of contents.matchAll(OPENAPI_REGISTRATION_PATTERN)) {
-    wired.add(match[1]);
+    const name = match[1];
+    if (name) wired.add(name);
   }
   return wired;
 };
