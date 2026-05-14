@@ -78,6 +78,7 @@ export default function AssignmentOverridesPage({ params }: { params: Promise<Pa
   };
 
   const handleDelete = async (override: AssignmentOverride) => {
+    if (deleteOverride.isPending) return;
     const name = resolveTargetName(override.targetType, override.targetId);
     if (!window.confirm(`Delete override for ${name}?`)) return;
     try {
@@ -176,6 +177,7 @@ export default function AssignmentOverridesPage({ params }: { params: Promise<Pa
                       size="icon-sm"
                       aria-label="Delete override"
                       onClick={() => handleDelete(override)}
+                      disabled={deleteOverride.isPending}
                     >
                       <Trash2 className="size-4" aria-hidden />
                     </Button>
