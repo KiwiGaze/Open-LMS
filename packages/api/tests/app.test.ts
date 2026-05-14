@@ -2149,6 +2149,11 @@ const dependencies = {
     _tenantId: string,
     _submissionId: string,
   ) => [],
+  listCoursePlagiarismReports: async (
+    _actorUserId: string,
+    _tenantId: string,
+    _courseId: string,
+  ) => [],
   listMyPushTokens: async (_actorUserId: string, _tenantId: string) => [],
   registerMyPushToken: async (_actorUserId: string, _tenantId: string, _input: unknown) =>
     UserPushToken.parse({

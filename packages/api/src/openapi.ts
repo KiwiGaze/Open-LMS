@@ -435,6 +435,7 @@ const emptyDependencies: ApiDependencies = {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
   listSubmissionPlagiarismReports: async () => [],
+  listCoursePlagiarismReports: async () => [],
   listMyPushTokens: async () => [],
   registerMyPushToken: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');

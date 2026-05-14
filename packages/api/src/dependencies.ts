@@ -524,6 +524,7 @@ import {
   listSectionMembershipsForStudent,
   listSubmissionAttachmentsForSubmission,
   listSubmissionCommentsForSubmission,
+  listLatestPlagiarismReportsForCourse,
   listSubmissionPlagiarismReports,
   listSubmissionsForAssignment,
   listSubmissionsForStudentAssignment,
@@ -1683,6 +1684,11 @@ export type ApiDependencies = {
     actorUserId: string,
     tenantId: string,
     submissionId: string,
+  ) => Promise<SubmissionPlagiarismReport[]>;
+  listCoursePlagiarismReports: (
+    actorUserId: string,
+    tenantId: string,
+    courseId: string,
   ) => Promise<SubmissionPlagiarismReport[]>;
   listGradebookEntries: (
     actorUserId: string,
@@ -10508,6 +10514,18 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
       }
 
       return listSubmissionPlagiarismReports(dbHandle.db, { tenantId, submissionId });
+    },
+    listCoursePlagiarismReports: async (actorUserId, tenantId, courseId) => {
+      const access = await readCourseAccessContext(actorUserId, tenantId, courseId);
+
+      if (!canViewCourseRoster(access)) {
+        throw new ApiError(
+          'forbidden',
+          'Only course staff can view plagiarism reports. Ask an instructor for access.',
+        );
+      }
+
+      return listLatestPlagiarismReportsForCourse(dbHandle.db, tenantId, courseId);
     },
     listSubmissionGradeHistory: async (
       actorUserId,

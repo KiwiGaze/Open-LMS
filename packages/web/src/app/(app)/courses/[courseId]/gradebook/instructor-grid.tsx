@@ -12,10 +12,16 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ApiHttpError } from '@/lib/api/errors.ts';
 import { useAssignmentsQuery } from '@/lib/api/queries/assignments.ts';
 import { useGradebookEntriesQuery, useUpsertSubmissionGrade } from '@/lib/api/queries/gradebook.ts';
+import { useCoursePlagiarismReportsQuery } from '@/lib/api/queries/plagiarism.ts';
 import { cn } from '@/lib/cn';
 import { formatNumber, formatPercent } from '@/lib/format.ts';
-import type { Assignment, CourseMembership, GradebookEntry } from '@openlms/contracts';
-import { ClipboardList, Download, EyeOff, Lock, Search } from 'lucide-react';
+import type {
+  Assignment,
+  CourseMembership,
+  GradebookEntry,
+  SubmissionPlagiarismReport,
+} from '@openlms/contracts';
+import { ClipboardList, Download, EyeOff, Lock, Search, ShieldAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { CsvImportDialog } from './csv-import-dialog.tsx';
 
@@ -37,7 +43,16 @@ export function InstructorGradebookGrid({
 }: InstructorGradebookGridProps) {
   const entries = useGradebookEntriesQuery(tenantId, courseId);
   const assignments = useAssignmentsQuery(tenantId, courseId);
+  const plagiarismReports = useCoursePlagiarismReportsQuery(tenantId, courseId);
   const [search, setSearch] = useState('');
+
+  const plagiarismBySubmissionId = useMemo(() => {
+    const map = new Map<string, SubmissionPlagiarismReport>();
+    for (const report of plagiarismReports.data ?? []) {
+      map.set(report.submissionId, report);
+    }
+    return map;
+  }, [plagiarismReports.data]);
 
   const students = useMemo(
     () =>
@@ -245,6 +260,11 @@ export function InstructorGradebookGrid({
                                 entry={entry}
                                 gradingLocked={item.gradingLocked}
                                 anonymousGradingEnabled={item.anonymousGradingEnabled}
+                                plagiarismReport={
+                                  entry
+                                    ? (plagiarismBySubmissionId.get(entry.submissionId) ?? null)
+                                    : null
+                                }
                               />
                             </td>
                           );
@@ -278,6 +298,7 @@ type GradeCellProps = {
   entry: GradebookEntry | undefined;
   gradingLocked: boolean;
   anonymousGradingEnabled: boolean;
+  plagiarismReport: SubmissionPlagiarismReport | null;
 };
 
 function GradeCell({
@@ -287,6 +308,7 @@ function GradeCell({
   entry,
   gradingLocked,
   anonymousGradingEnabled,
+  plagiarismReport,
 }: GradeCellProps) {
   const upsert = useUpsertSubmissionGrade(tenantId, courseId);
   const { publish } = useToast();
@@ -398,20 +420,42 @@ function GradeCell({
           /{formatNumber(entry.maxScore, 1)}
         </span>
       </span>
-      <Badge
-        tone={
-          entry.gradeStatus === 'published'
-            ? 'success'
-            : entry.gradeStatus === 'appealed'
-              ? 'warning'
-              : entry.gradeStatus === 'locked'
-                ? 'outline'
-                : 'neutral'
-        }
-        className="text-2xs"
-      >
-        {entry.gradeStatus}
-      </Badge>
+      <div className="flex items-center gap-1">
+        <Badge
+          tone={
+            entry.gradeStatus === 'published'
+              ? 'success'
+              : entry.gradeStatus === 'appealed'
+                ? 'warning'
+                : entry.gradeStatus === 'locked'
+                  ? 'outline'
+                  : 'neutral'
+          }
+          className="text-2xs"
+        >
+          {entry.gradeStatus}
+        </Badge>
+        {plagiarismReport && plagiarismReport.status === 'complete' ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge
+                tone={
+                  plagiarismReport.similarityPercent >= 40
+                    ? 'danger'
+                    : plagiarismReport.similarityPercent >= 20
+                      ? 'warning'
+                      : 'success'
+                }
+                className="text-2xs"
+              >
+                <ShieldAlert className="mr-0.5 size-2.5" aria-hidden />
+                {plagiarismReport.similarityPercent.toFixed(0)}%
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>Originality score from plagiarism integration</TooltipContent>
+          </Tooltip>
+        ) : null}
+      </div>
     </button>
   );
 }
