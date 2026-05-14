@@ -6,6 +6,7 @@ import type {
   CatalogCourse,
   CatalogVisibility,
   Course,
+  CourseAnalyticsSummary,
   CourseCatalogSettings,
 } from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -26,6 +27,24 @@ export function useCoursesQuery(tenantId: string | null) {
     queryKey: tenantId ? queryKeys.courses(tenantId) : ['courses', 'inactive'],
     queryFn: () => apiFetch<Course[]>(`/tenants/${tenantId}/courses`),
     enabled: Boolean(tenantId),
+  });
+}
+
+export function useCourseAnalyticsQuery(
+  tenantId: string | null,
+  courseId: string | null,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey:
+      tenantId && courseId
+        ? queryKeys.courseAnalytics(tenantId, courseId)
+        : ['course-analytics', 'inactive'],
+    queryFn: () =>
+      apiFetch<CourseAnalyticsSummary>(
+        `/tenants/${tenantId}/courses/${courseId}/analytics/summary`,
+      ),
+    enabled: Boolean(tenantId && courseId) && enabled,
   });
 }
 
