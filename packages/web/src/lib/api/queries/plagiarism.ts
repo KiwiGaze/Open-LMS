@@ -23,8 +23,13 @@ export function useSubmissionPlagiarismReportsQuery(
 }
 
 // Returns the most recent plagiarism report for a submission, preferring
-// reports with `complete` status. The API returns `checkedAt` as an ISO 8601
-// string, which sorts lexicographically. Returns `null` when no reports exist.
+// reports with `complete` status. The schema types `checkedAt` as `Date`; the
+// JSON response carries an ISO string. Coerce both to numeric timestamps
+// before comparing — `Date.toString()` is locale-formatted and does not sort
+// chronologically. Returns `null` when no reports exist.
+const toTimestamp = (value: Date | string): number =>
+  value instanceof Date ? value.getTime() : Date.parse(value);
+
 export function pickLatestPlagiarismReport(
   reports: SubmissionPlagiarismReport[] | undefined,
 ): SubmissionPlagiarismReport | null {
@@ -32,7 +37,7 @@ export function pickLatestPlagiarismReport(
   const complete = reports.filter((report) => report.status === 'complete');
   const candidates = complete.length > 0 ? complete : reports;
   return (
-    candidates.slice().sort((a, b) => String(b.checkedAt).localeCompare(String(a.checkedAt)))[0] ??
+    candidates.slice().sort((a, b) => toTimestamp(b.checkedAt) - toTimestamp(a.checkedAt))[0] ??
     null
   );
 }
