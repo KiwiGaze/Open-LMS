@@ -29,6 +29,7 @@ describe('OpenAPI generation', () => {
       '/api/v1/tenants',
       '/api/v1/onboarding/create-tenant',
       '/api/v1/tenants/{tenantId}/members',
+      '/api/v1/tenants/{tenantId}/messageable-users',
       '/api/v1/tenants/{tenantId}/file-storage-quotas',
       '/api/v1/tenants/{tenantId}/webhook-subscriptions',
       '/api/v1/tenants/{tenantId}/webhook-subscriptions/{webhookSubscriptionId}',

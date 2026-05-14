@@ -27,6 +27,7 @@ const emptyDependencies: ApiDependencies = {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
   listTenantMembers: async () => [],
+  listTenantMessageableUsers: async () => [],
   listTenantFeatureFlags: async () => [],
   listWebhookSubscriptions: async () => [],
   createWebhookSubscription: async () => {

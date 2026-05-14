@@ -215,6 +215,7 @@ import type {
   Tenant,
   TenantFeatureFlag,
   TenantMembership,
+  TenantMessageableUser,
   TenantRole,
   User,
   UserLegalHold,
@@ -481,6 +482,7 @@ import {
   listLearningObjectiveMasteryForCourse,
   listLearningObjectivesForCourse,
   listMessageableUsersInCourse,
+  listMessageableUsersInTenant,
   listNotificationPreferencesForUser,
   listNotificationsForRecipient,
   listPeerReviewResponsesForReview,
@@ -898,6 +900,10 @@ export type ApiDependencies = {
     tenantId: string,
     courseId: string,
   ) => Promise<MessageableUser[]>;
+  listTenantMessageableUsers: (
+    actorUserId: string,
+    tenantId: string,
+  ) => Promise<TenantMessageableUser[]>;
   createCourseMembership: (
     actorUserId: string,
     tenantId: string,
@@ -7196,6 +7202,23 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         if (isStaff) return true;
         return sectionInstructorRoles.includes(member.role);
       });
+    },
+    listTenantMessageableUsers: async (actorUserId, tenantId) => {
+      const memberships = await listUserTenantMemberships(dbHandle.db, actorUserId);
+      const isStaff = memberships.some(
+        (membership) =>
+          membership.tenantId === tenantId && tenantStaffRoles.includes(membership.role),
+      );
+
+      if (!isStaff) {
+        throw new ApiError(
+          'forbidden',
+          'Only tenant staff can list tenant-wide message recipients. Ask an administrator for access.',
+        );
+      }
+
+      const users = await listMessageableUsersInTenant(dbHandle.db, { tenantId });
+      return users.filter((member) => member.userId !== actorUserId);
     },
     createCourseMembership: async (actorUserId, tenantId, courseId, input) => {
       const access = await readCourseAccessContext(actorUserId, tenantId, courseId);

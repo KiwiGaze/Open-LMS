@@ -13,6 +13,8 @@ import {
   TenantId,
   TenantMembership,
   type TenantMembership as TenantMembershipContract,
+  TenantMessageableUser,
+  type TenantMessageableUser as TenantMessageableUserContract,
   TenantRole,
   type TenantRole as TenantRoleContract,
   UserId,
@@ -278,6 +280,23 @@ export const listMessageableUsersInCourse = async (
     );
 
   return rows.map((row) => MessageableUser.parse(row));
+};
+
+export const listMessageableUsersInTenant = async (
+  db: Database,
+  input: { tenantId: string },
+): Promise<TenantMessageableUserContract[]> => {
+  const rows = await db
+    .select({
+      userId: tenantMembership.userId,
+      displayName: user.name,
+      role: tenantMembership.role,
+    })
+    .from(tenantMembership)
+    .innerJoin(user, eq(tenantMembership.userId, user.id))
+    .where(eq(tenantMembership.tenantId, TenantId.parse(input.tenantId)));
+
+  return rows.map((row) => TenantMessageableUser.parse(row));
 };
 
 export type UpdateCourseMembershipInput = {

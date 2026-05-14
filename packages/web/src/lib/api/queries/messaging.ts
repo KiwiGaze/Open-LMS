@@ -7,6 +7,7 @@ import type {
   ConversationThread,
   CourseMembership,
   MessageableUser,
+  TenantMessageableUser,
 } from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -96,5 +97,15 @@ export function useMessageableUsersQuery(tenantId: string | null, courseId: stri
     queryFn: () =>
       apiFetch<MessageableUser[]>(`/tenants/${tenantId}/courses/${courseId}/messageable-users`),
     enabled: Boolean(tenantId && courseId),
+  });
+}
+
+export function useTenantMessageableUsersQuery(tenantId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: tenantId
+      ? queryKeys.tenantMessageableUsers(tenantId)
+      : ['tenant-messageable-users', 'inactive'],
+    queryFn: () => apiFetch<TenantMessageableUser[]>(`/tenants/${tenantId}/messageable-users`),
+    enabled: Boolean(tenantId) && enabled,
   });
 }
