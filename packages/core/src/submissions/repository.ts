@@ -446,7 +446,10 @@ export const listLatestPlagiarismReportsForCourse = async (
         eq(submissionPlagiarismReport.courseId, courseId),
       ),
     )
-    .orderBy(asc(submissionPlagiarismReport.submissionId), asc(submissionPlagiarismReport.checkedAt));
+    .orderBy(
+      asc(submissionPlagiarismReport.submissionId),
+      asc(submissionPlagiarismReport.checkedAt),
+    );
 
   // Pick the latest report per submissionId, preferring `complete` status.
   const bySubmission = new Map<string, SubmissionPlagiarismReportContract>();
