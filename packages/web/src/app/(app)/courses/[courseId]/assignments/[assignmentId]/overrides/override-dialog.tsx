@@ -26,18 +26,16 @@ import {
   useCreateAssignmentOverrideMutation,
   useUpdateAssignmentOverrideMutation,
 } from '@/lib/api/queries/assignment-overrides.ts';
+import { useCourseGroupsQuery } from '@/lib/api/queries/groups.ts';
+import { useMessageableUsersQuery } from '@/lib/api/queries/messaging.ts';
+import { useCourseSectionsQuery } from '@/lib/api/queries/sections.ts';
 import type {
   AssignmentOverride,
   AssignmentOverrideStatus,
   AssignmentOverrideTargetType,
 } from '@openlms/contracts';
 import { Save } from 'lucide-react';
-import { useEffect, useState } from 'react';
-
-const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/;
-
-// react-hook-form would help here but we already have manual patterns elsewhere;
-// keep this stateful + manual for consistency with announcement-dialog.
+import { useEffect, useMemo, useState } from 'react';
 
 function toLocalInput(value: Date | string | null): string {
   if (!value) return '';
@@ -71,6 +69,9 @@ export function OverrideDialog({
   const { publish } = useToast();
   const create = useCreateAssignmentOverrideMutation(tenantId, courseId, assignmentId);
   const update = useUpdateAssignmentOverrideMutation(tenantId, courseId, assignmentId);
+  const messageable = useMessageableUsersQuery(tenantId, courseId);
+  const sections = useCourseSectionsQuery(tenantId, courseId);
+  const groups = useCourseGroupsQuery(tenantId, courseId);
   const isEdit = Boolean(existing);
 
   const [targetType, setTargetType] = useState<AssignmentOverrideTargetType>('user');
@@ -95,19 +96,39 @@ export function OverrideDialog({
 
   const submitting = create.isPending || update.isPending;
 
+  const candidates = useMemo(() => {
+    switch (targetType) {
+      case 'user':
+        return (
+          messageable.data?.map((m) => ({
+            id: m.userId,
+            label: `${m.displayName} · ${m.role.replace(/_/g, ' ')}`,
+          })) ?? []
+        );
+      case 'section':
+        return sections.data?.map((s) => ({ id: s.id, label: s.name })) ?? [];
+      case 'group':
+        return groups.data?.map((g) => ({ id: g.id, label: g.name })) ?? [];
+    }
+  }, [targetType, messageable.data, sections.data, groups.data]);
+
+  const candidatesLoading =
+    (targetType === 'user' && messageable.isLoading) ||
+    (targetType === 'section' && sections.isLoading) ||
+    (targetType === 'group' && groups.isLoading);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setTargetIdError(null);
 
-    const trimmedId = targetId.trim();
-    if (!ULID_RE.test(trimmedId)) {
-      setTargetIdError('Target ID must be a 26-character ULID.');
+    if (!targetId) {
+      setTargetIdError('Pick a target.');
       return;
     }
 
     const input: AssignmentOverrideInput = {
       targetType,
-      targetId: trimmedId,
+      targetId,
       opensAt: toIso(opensAt),
       dueAt: toIso(dueAt),
       closesAt: toIso(closesAt),
@@ -150,7 +171,11 @@ export function OverrideDialog({
           <FormField label="Target type" id="target-type">
             <Select
               value={targetType}
-              onValueChange={(v) => setTargetType(v as AssignmentOverrideTargetType)}
+              onValueChange={(v) => {
+                setTargetType(v as AssignmentOverrideTargetType);
+                setTargetId('');
+                setTargetIdError(null);
+              }}
               disabled={isEdit}
             >
               <SelectTrigger id="target-type">
@@ -165,20 +190,42 @@ export function OverrideDialog({
           </FormField>
 
           <FormField
-            label="Target ID"
+            label="Target"
             id="target-id"
             required
             error={targetIdError}
-            description="26-character ULID. Get this from the people, groups, or sections page."
+            description={
+              targetType === 'user'
+                ? 'Choose a course member.'
+                : targetType === 'section'
+                  ? 'Choose a course section.'
+                  : 'Choose a course group.'
+            }
           >
-            <Input
-              id="target-id"
-              type="text"
+            <Select
               value={targetId}
-              onChange={(e) => setTargetId(e.target.value)}
-              disabled={isEdit}
-              placeholder="01J9QW7B6N5W2YH3D3A1V0KE3F"
-            />
+              onValueChange={(v) => setTargetId(v)}
+              disabled={isEdit || candidatesLoading}
+            >
+              <SelectTrigger id="target-id">
+                <SelectValue
+                  placeholder={
+                    candidatesLoading
+                      ? 'Loading…'
+                      : candidates.length === 0
+                        ? `No ${targetType}s available`
+                        : `Pick a ${targetType}`
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {candidates.map((candidate) => (
+                  <SelectItem key={candidate.id} value={candidate.id}>
+                    {candidate.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </FormField>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

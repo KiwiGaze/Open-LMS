@@ -21,12 +21,15 @@ import {
   useDeleteAssignmentOverrideMutation,
 } from '@/lib/api/queries/assignment-overrides.ts';
 import { useAssignmentQuery } from '@/lib/api/queries/assignments.ts';
+import { useCourseGroupsQuery } from '@/lib/api/queries/groups.ts';
+import { useMessageableUsersQuery } from '@/lib/api/queries/messaging.ts';
+import { useCourseSectionsQuery } from '@/lib/api/queries/sections.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatDateTime } from '@/lib/format.ts';
-import type { AssignmentOverride } from '@openlms/contracts';
+import type { AssignmentOverride, AssignmentOverrideTargetType } from '@openlms/contracts';
 import { ArrowLeft, CalendarClock, Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { use, useState } from 'react';
+import { use, useMemo, useState } from 'react';
 import { OverrideDialog } from './override-dialog.tsx';
 
 type Params = { courseId: string; assignmentId: string };
@@ -39,9 +42,30 @@ export default function AssignmentOverridesPage({ params }: { params: Promise<Pa
   const assignment = useAssignmentQuery(tenantId, courseId, assignmentId);
   const overrides = useAssignmentOverridesQuery(tenantId, courseId, assignmentId);
   const deleteOverride = useDeleteAssignmentOverrideMutation(tenantId, courseId, assignmentId);
+  const messageable = useMessageableUsersQuery(tenantId, courseId);
+  const sections = useCourseSectionsQuery(tenantId, courseId);
+  const groups = useCourseGroupsQuery(tenantId, courseId);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AssignmentOverride | null>(null);
+
+  const resolveTargetName = useMemo(() => {
+    const userLookup = new Map<string, string>(
+      messageable.data?.map((m) => [m.userId, m.displayName]) ?? [],
+    );
+    const sectionLookup = new Map<string, string>(sections.data?.map((s) => [s.id, s.name]) ?? []);
+    const groupLookup = new Map<string, string>(groups.data?.map((g) => [g.id, g.name]) ?? []);
+    return (targetType: AssignmentOverrideTargetType, targetId: string): string => {
+      switch (targetType) {
+        case 'user':
+          return userLookup.get(targetId) ?? targetId.slice(-12);
+        case 'section':
+          return sectionLookup.get(targetId) ?? targetId.slice(-12);
+        case 'group':
+          return groupLookup.get(targetId) ?? targetId.slice(-12);
+      }
+    };
+  }, [messageable.data, sections.data, groups.data]);
 
   const openNew = () => {
     setEditing(null);
@@ -54,7 +78,9 @@ export default function AssignmentOverridesPage({ params }: { params: Promise<Pa
   };
 
   const handleDelete = async (override: AssignmentOverride) => {
-    if (!window.confirm(`Delete override for ${override.targetId.slice(-12)}?`)) return;
+    if (deleteOverride.isPending) return;
+    const name = resolveTargetName(override.targetType, override.targetId);
+    if (!window.confirm(`Delete override for ${name}?`)) return;
     try {
       await deleteOverride.mutateAsync(override.id);
       publish({ tone: 'success', title: 'Override deleted' });
@@ -119,8 +145,8 @@ export default function AssignmentOverridesPage({ params }: { params: Promise<Pa
                 <TableCell>
                   <Badge tone="info">{override.targetType}</Badge>
                 </TableCell>
-                <TableCell className="font-mono text-xs text-(--color-text-default)">
-                  {override.targetId.slice(-12)}
+                <TableCell className="text-sm text-(--color-text-default)">
+                  {resolveTargetName(override.targetType, override.targetId)}
                 </TableCell>
                 <TableCell className="text-(--color-text-muted)">
                   {override.opensAt ? formatDateTime(override.opensAt) : '—'}
@@ -168,10 +194,7 @@ export default function AssignmentOverridesPage({ params }: { params: Promise<Pa
         courseId={courseId}
         assignmentId={assignmentId}
         open={dialogOpen}
-        onOpenChange={(next) => {
-          setDialogOpen(next);
-          if (!next) setEditing(null);
-        }}
+        onOpenChange={setDialogOpen}
         existing={editing}
       />
     </div>
