@@ -122,8 +122,8 @@ export const queryKeys = {
 
   notifications: () => ['notifications'] as const,
   inboxThreads: (tenantId: string) => ['tenants', tenantId, 'inbox'] as const,
-  conversationMessages: (tenantId: string, courseId: string, threadId: string) =>
-    ['courses', tenantId, courseId, 'conversations', threadId, 'messages'] as const,
+  conversationMessages: (tenantId: string, threadId: string) =>
+    ['tenants', tenantId, 'inbox', threadId, 'messages'] as const,
   calendarItems: (tenantId: string) => ['tenants', tenantId, 'calendar-items'] as const,
 
   aiUsageSummary: (tenantId: string) => ['tenants', tenantId, 'ai-usage', 'summary'] as const,

@@ -3,6 +3,7 @@ import {
   ConversationMessage,
   ConversationThread,
   ConversationThreadId,
+  CourseId,
   TenantId,
   UserId,
 } from '@openlms/contracts';
@@ -216,7 +217,7 @@ export const CreateInboxThreadBody = z
     body: z.string().min(1).max(4000).openapi({
       description: 'Initial message body for the new thread.',
     }),
-    courseId: z.string().nullable().default(null).openapi({
+    courseId: CourseId.nullable().default(null).openapi({
       description: 'Optional course scope. Null creates a tenant-wide thread.',
     }),
   })

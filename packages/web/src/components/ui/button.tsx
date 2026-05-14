@@ -1,10 +1,10 @@
 'use client';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/cn.ts';
 import { Slot } from '@radix-ui/react-slot';
 import { type VariantProps, cva } from 'class-variance-authority';
 import { Loader2 } from 'lucide-react';
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, MouseEvent } from 'react';
 import { forwardRef } from 'react';
 
 const buttonStyles = cva(
@@ -63,16 +63,34 @@ export interface ButtonProps
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { className, intent, size, block, asChild, loading, disabled, children, ...rest },
+  { className, intent, size, block, asChild, loading, disabled, children, onClick, ...rest },
   ref,
 ) {
+  const isDisabled = disabled || loading;
   const Comp = asChild ? Slot : 'button';
+  const handleClick = isDisabled
+    ? (event: MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    : onClick;
+  const inertProps = asChild
+    ? {
+        'aria-disabled': isDisabled || undefined,
+        tabIndex: isDisabled ? -1 : undefined,
+      }
+    : { disabled: isDisabled };
   return (
     <Comp
       ref={ref}
-      className={cn(buttonStyles({ intent, size, block }), className)}
-      disabled={disabled || loading}
+      className={cn(
+        buttonStyles({ intent, size, block }),
+        asChild && isDisabled && 'pointer-events-none opacity-50',
+        className,
+      )}
       data-loading={loading || undefined}
+      onClick={handleClick}
+      {...inertProps}
       {...rest}
     >
       {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}

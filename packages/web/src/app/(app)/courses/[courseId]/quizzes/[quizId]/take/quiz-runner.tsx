@@ -95,9 +95,7 @@ export function QuizRunner({
     const minutes = settings?.timeLimitMinutes;
     if (!minutes) return null;
     const startedAt =
-      typeof attempt.startedAt === 'string'
-        ? new Date(attempt.startedAt as unknown as string)
-        : attempt.startedAt;
+      attempt.startedAt instanceof Date ? attempt.startedAt : new Date(attempt.startedAt);
     return new Date(startedAt.getTime() + minutes * 60 * 1000);
   }, [attempt.startedAt, settings?.timeLimitMinutes]);
 
@@ -181,6 +179,7 @@ export function QuizRunner({
         description:
           mode === 'auto' ? 'Your answers have been submitted automatically.' : undefined,
       });
+      // ref stays true: parent re-renders into ResultsView once the attempt query invalidates and this component unmounts
     } catch (error) {
       submittingRef.current = false;
       const message =

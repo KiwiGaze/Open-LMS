@@ -16,7 +16,7 @@ import { useToast } from '@/components/ui/toast.tsx';
 import { ApiHttpError } from '@/lib/api/errors.ts';
 import { useImportCourseRosterCsvMutation } from '@/lib/api/queries/memberships.ts';
 import { Upload } from 'lucide-react';
-import { useState } from 'react';
+import { type FormEvent, useState } from 'react';
 
 export function BulkCsvDialog({
   tenantId,
@@ -33,7 +33,7 @@ export function BulkCsvDialog({
   const importCsv = useImportCourseRosterCsvMutation(tenantId, courseId);
   const [file, setFile] = useState<File | null>(null);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!file) return;
     try {

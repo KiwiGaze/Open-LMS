@@ -24,7 +24,7 @@ import { ApiHttpError } from '@/lib/api/errors.ts';
 import { useCreateCourseMembershipMutation } from '@/lib/api/queries/memberships.ts';
 import type { CourseRole } from '@openlms/contracts';
 import { UserPlus } from 'lucide-react';
-import { useState } from 'react';
+import { type FormEvent, useState } from 'react';
 
 const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
@@ -51,7 +51,7 @@ export function InviteMemberDialog({
     setUserIdError(null);
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setUserIdError(null);
     const trimmed = userId.trim();

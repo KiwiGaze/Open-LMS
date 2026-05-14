@@ -206,13 +206,18 @@ export type CreateSubmissionAttachmentInput = {
 export const getSubmissionAttachmentById = async (
   db: Database,
   tenantId: string,
+  submissionId: string,
   attachmentId: string,
 ): Promise<SubmissionAttachmentContract | null> => {
   const [row] = await db
     .select()
     .from(submissionAttachment)
     .where(
-      and(eq(submissionAttachment.tenantId, tenantId), eq(submissionAttachment.id, attachmentId)),
+      and(
+        eq(submissionAttachment.tenantId, tenantId),
+        eq(submissionAttachment.submissionId, submissionId),
+        eq(submissionAttachment.id, attachmentId),
+      ),
     )
     .limit(1);
 

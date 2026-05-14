@@ -1,6 +1,7 @@
 'use client';
 
 import { EmptyState } from '@/components/patterns/empty-state.tsx';
+import { ErrorState } from '@/components/patterns/error-state.tsx';
 import { PageHeader } from '@/components/patterns/page-header.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import {
@@ -50,6 +51,7 @@ export default function TenantAnnouncementsPage() {
   }, [courses.data, announcements]);
 
   const isLoading = courses.isLoading || announcements.some((q) => q.isLoading);
+  const firstError = courses.error ?? announcements.find((q) => q.error)?.error;
 
   return (
     <div className="flex flex-col gap-6">
@@ -61,6 +63,16 @@ export default function TenantAnnouncementsPage() {
             <Skeleton key={`ann-feed-${i}`} className="h-24 w-full rounded-[var(--radius-lg)]" />
           ))}
         </div>
+      ) : firstError ? (
+        <ErrorState
+          error={firstError}
+          onRetry={() => {
+            if (courses.error) void courses.refetch();
+            for (const q of announcements) {
+              if (q.error) void q.refetch();
+            }
+          }}
+        />
       ) : all.length === 0 ? (
         <EmptyState
           icon={Bell}

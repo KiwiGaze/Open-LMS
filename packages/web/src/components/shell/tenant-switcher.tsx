@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { apiFetch } from '@/lib/api/client.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/cn.ts';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, Check, ChevronsUpDown } from 'lucide-react';
 

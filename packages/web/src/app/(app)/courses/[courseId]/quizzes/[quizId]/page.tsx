@@ -128,9 +128,12 @@ export default function QuizDetailPage({ params }: { params: Promise<Params> }) 
         <CardContent>
           <ul className="list-disc space-y-2 pl-5 text-sm text-(--color-text-default)">
             <li>Submit each question; your work is auto-saved.</li>
-            {q.timeLimitMinutes ? (
-              <li>You have {q.timeLimitMinutes} minutes once you start.</li>
-            ) : null}
+            {(() => {
+              const effectiveTimeLimit = settings.data?.timeLimitMinutes ?? q.timeLimitMinutes;
+              return effectiveTimeLimit ? (
+                <li>You have {effectiveTimeLimit} minutes once you start.</li>
+              ) : null;
+            })()}
             {q.shuffleQuestions ? <li>Questions are randomized.</li> : null}
             {q.accessPasswordRequired ? (
               <li>You'll be asked for an access code when starting.</li>

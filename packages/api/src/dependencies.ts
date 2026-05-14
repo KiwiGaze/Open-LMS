@@ -5930,18 +5930,22 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         .map((s) => s.trim())
         .filter(Boolean),
       sendPasswordResetEmail: async (input) => {
-        // Dev no-op: print the reset URL so the link can be opened locally.
-        console.info('[better-auth] password reset', {
-          to: input.user.email,
-          url: input.url,
-        });
+        if (process.env.NODE_ENV !== 'production') {
+          // Dev no-op: print the reset URL so the link can be opened locally.
+          console.info('[better-auth] password reset', {
+            to: input.user.email,
+            url: input.url,
+          });
+        }
       },
       sendVerificationEmail: async (input) => {
-        // Dev no-op: print the verification URL so the link can be opened locally.
-        console.info('[better-auth] email verification', {
-          to: input.user.email,
-          url: input.url,
-        });
+        if (process.env.NODE_ENV !== 'production') {
+          // Dev no-op: print the verification URL so the link can be opened locally.
+          console.info('[better-auth] email verification', {
+            to: input.user.email,
+            url: input.url,
+          });
+        }
       },
     });
   }
@@ -10112,8 +10116,13 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         throw new ApiError('not_found', submissionNotFoundMessage);
       }
 
-      const attachment = await getSubmissionAttachmentById(dbHandle.db, tenantId, attachmentId);
-      if (!attachment || attachment.submissionId !== submissionId) {
+      const attachment = await getSubmissionAttachmentById(
+        dbHandle.db,
+        tenantId,
+        submissionId,
+        attachmentId,
+      );
+      if (!attachment) {
         throw new ApiError('not_found', submissionNotFoundMessage);
       }
 
@@ -10578,9 +10587,10 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
     createInboxThread: async (actorUserId, tenantId, input) => {
       await assertTenantMembership(actorUserId, tenantId);
 
-      // Course-scoped threads: validate participants are course members.
+      // Course-scoped threads: ensure actor can access the course, then validate participants are course members.
       // Tenant-wide threads: validate participants are tenant members.
       if (input.courseId !== null) {
+        await readCourseAccessContext(actorUserId, tenantId, input.courseId);
         const courseMemberships = await listCourseMembershipRecords(dbHandle.db, {
           tenantId,
           courseId: input.courseId,

@@ -199,7 +199,13 @@ export const updateCourse = async (
       isBlueprint: input.isBlueprint,
       updatedAt: now,
     })
-    .where(and(eq(course.tenantId, input.tenantId), eq(course.id, input.courseId)))
+    .where(
+      and(
+        eq(course.tenantId, input.tenantId),
+        eq(course.id, input.courseId),
+        sql`${course.deletedAt} IS NULL`,
+      ),
+    )
     .returning();
 
   return row ? Course.parse(row) : null;

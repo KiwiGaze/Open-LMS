@@ -16,9 +16,9 @@ import {
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatDateTime, formatPercent } from '@/lib/format.ts';
 import type { ScormAttempt, ScormPackage } from '@openlms/contracts';
-import { CheckCircle2, Flag } from 'lucide-react';
+import { CheckCircle2, Flag, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
-import { use, useEffect, useRef, useState } from 'react';
+import { use, useCallback, useEffect, useRef, useState } from 'react';
 
 type Params = { courseId: string; scormPackageId: string };
 
@@ -32,26 +32,44 @@ export default function ScormPlayerPage({ params }: { params: Promise<Params> })
   const finish = useFinishScormAttempt(tenantId, courseId, scormPackageId);
 
   const [attempt, setAttempt] = useState<ScormAttempt | null>(null);
-  const initialisedRef = useRef(false);
+  const [initFailed, setInitFailed] = useState(false);
+  const initialisedKeyRef = useRef<string | null>(null);
 
   const pkg = packages.data?.find((p) => p.id === scormPackageId);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot init gated by ref; only re-run when tenant or package identity changes
+  const startRuntime = useCallback(
+    (key: string) => {
+      initialisedKeyRef.current = key;
+      setInitFailed(false);
+      setAttempt(null);
+      initialize.mutate(undefined, {
+        onSuccess: (state) => {
+          setAttempt(state.attempt);
+        },
+        onError: (error) => {
+          initialisedKeyRef.current = null;
+          setInitFailed(true);
+          const message =
+            error instanceof ApiHttpError ? error.message : 'Could not start the SCORM runtime.';
+          publish({ tone: 'danger', title: 'Launch failed', description: message });
+        },
+      });
+    },
+    [initialize, publish],
+  );
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only re-run when tenant or package identity changes
   useEffect(() => {
-    if (!tenantId || !pkg || initialisedRef.current) return;
-    initialisedRef.current = true;
-    initialize.mutate(undefined, {
-      onSuccess: (state) => {
-        setAttempt(state.attempt);
-      },
-      onError: (error) => {
-        initialisedRef.current = false;
-        const message =
-          error instanceof ApiHttpError ? error.message : 'Could not start the SCORM runtime.';
-        publish({ tone: 'danger', title: 'Launch failed', description: message });
-      },
-    });
-  }, [tenantId, pkg]);
+    if (!tenantId || !pkg) return;
+    const key = `${tenantId}:${pkg.id}`;
+    if (initialisedKeyRef.current === key) return;
+    startRuntime(key);
+  }, [tenantId, pkg?.id]);
+
+  const handleRetryLaunch = () => {
+    if (!tenantId || !pkg) return;
+    startRuntime(`${tenantId}:${pkg.id}`);
+  };
 
   const handleFinish = () => {
     finish.mutate(undefined, {
@@ -112,6 +130,11 @@ export default function ScormPlayerPage({ params }: { params: Promise<Params> })
           ) : null}
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            {initFailed ? (
+              <Button onClick={handleRetryLaunch} loading={initialize.isPending} intent="secondary">
+                <RotateCcw className="size-4" aria-hidden /> Retry launch
+              </Button>
+            ) : null}
             <Button onClick={handleFinish} loading={finish.isPending} intent="secondary">
               <Flag className="size-4" aria-hidden /> Finish attempt
             </Button>

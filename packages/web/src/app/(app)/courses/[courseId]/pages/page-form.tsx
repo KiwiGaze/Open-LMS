@@ -24,7 +24,7 @@ import type { CoursePageInput } from '@/lib/api/queries/pages.ts';
 import type { CoursePageVisibility } from '@openlms/contracts';
 import { Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { type FormEvent, useState } from 'react';
 
 type Props = {
   courseId: string;
@@ -45,7 +45,7 @@ export function CoursePageForm({ courseId, initial, submitting, onSubmit, submit
   const [titleError, setTitleError] = useState<string | null>(null);
   const [bodyError, setBodyError] = useState<string | null>(null);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setTitleError(null);
     setBodyError(null);

@@ -34459,6 +34459,7 @@
                   "courseId": {
                     "type": "string",
                     "nullable": true,
+                    "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
                     "default": null,
                     "description": "Optional course scope. Null creates a tenant-wide thread."
                   }

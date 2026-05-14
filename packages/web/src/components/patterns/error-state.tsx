@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button.tsx';
-import { type ApiErrorShape, asApiError } from '@/lib/api/errors';
-import { cn } from '@/lib/cn';
+import { type ApiErrorShape, asApiError } from '@/lib/api/errors.ts';
+import { cn } from '@/lib/cn.ts';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import type { ReactNode } from 'react';
 

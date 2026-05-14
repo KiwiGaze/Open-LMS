@@ -78,8 +78,18 @@ async function authFetch<T>(
   }
   if (!response.ok) {
     const payload =
-      parsed && typeof parsed === 'object' && 'message' in (parsed as Record<string, unknown>)
-        ? { code: 'unauthorized', message: String((parsed as { message: unknown }).message) }
+      parsed && typeof parsed === 'object'
+        ? {
+            ...(parsed as Record<string, unknown>),
+            code:
+              typeof (parsed as { code?: unknown }).code === 'string'
+                ? (parsed as { code: string }).code
+                : `http_${response.status}`,
+            message:
+              typeof (parsed as { message?: unknown }).message === 'string'
+                ? (parsed as { message: string }).message
+                : response.statusText,
+          }
         : parsed;
     throw new ApiHttpError(response.status, payload);
   }

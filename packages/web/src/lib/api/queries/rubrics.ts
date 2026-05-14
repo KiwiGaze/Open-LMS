@@ -10,32 +10,43 @@ export type RubricInput = {
   criteria: RubricCriterion[];
 };
 
+function requireTenantId(tenantId: string | null): string {
+  if (!tenantId) throw new Error('Active tenant is required.');
+  return tenantId;
+}
+
 export function useCreateRubricMutation(tenantId: string | null) {
   return useMutation({
-    mutationFn: (input: RubricInput) =>
-      apiFetch<Rubric>(`/tenants/${tenantId}/rubrics`, {
+    mutationFn: (input: RubricInput) => {
+      const tenant = requireTenantId(tenantId);
+      return apiFetch<Rubric>(`/tenants/${tenant}/rubrics`, {
         method: 'POST',
         body: input,
-      }),
+      });
+    },
   });
 }
 
 export function useUpdateRubricMutation(tenantId: string | null) {
   return useMutation({
-    mutationFn: ({ rubricId, input }: { rubricId: string; input: RubricInput }) =>
-      apiFetch<Rubric>(`/tenants/${tenantId}/rubrics/${rubricId}`, {
+    mutationFn: ({ rubricId, input }: { rubricId: string; input: RubricInput }) => {
+      const tenant = requireTenantId(tenantId);
+      return apiFetch<Rubric>(`/tenants/${tenant}/rubrics/${rubricId}`, {
         method: 'PUT',
         body: input,
-      }),
+      });
+    },
   });
 }
 
 export function useDeleteRubricMutation(tenantId: string | null) {
   return useMutation({
-    mutationFn: (rubricId: string) =>
-      apiFetch<void>(`/tenants/${tenantId}/rubrics/${rubricId}`, {
+    mutationFn: (rubricId: string) => {
+      const tenant = requireTenantId(tenantId);
+      return apiFetch<void>(`/tenants/${tenant}/rubrics/${rubricId}`, {
         method: 'DELETE',
         responseType: 'void',
-      }),
+      });
+    },
   });
 }

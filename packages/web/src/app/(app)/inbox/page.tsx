@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useInboxThreadsQuery } from '@/lib/api/queries/messaging.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
-import { formatRelative, initialsOf } from '@/lib/format.ts';
+import { formatRelative } from '@/lib/format.ts';
 import { Inbox as InboxIcon, MessagesSquare, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -78,7 +78,7 @@ export default function InboxPage() {
                       </span>
                     </div>
                     <p className="mt-0.5 truncate text-xs text-(--color-text-muted)">
-                      {initialsOf(thread.id.slice(-6))} · {thread.status}
+                      {thread.id.slice(-6)} · {thread.status}
                       {thread.courseId === null ? ' · tenant-wide' : ''}
                     </p>
                   </div>

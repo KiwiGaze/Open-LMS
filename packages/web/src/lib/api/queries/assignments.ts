@@ -95,11 +95,15 @@ export function useAssignmentScheduleQuery(
 export function useCreateAssignment(tenantId: string | null, courseId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: AssignmentInput) =>
-      apiFetch<Assignment>(`/tenants/${tenantId}/courses/${courseId}/assignments`, {
+    mutationFn: (input: AssignmentInput) => {
+      if (!tenantId || !courseId) {
+        throw new Error('Missing tenant or course context.');
+      }
+      return apiFetch<Assignment>(`/tenants/${tenantId}/courses/${courseId}/assignments`, {
         method: 'POST',
         body: input,
-      }),
+      });
+    },
     onSuccess: () => {
       if (tenantId && courseId) {
         queryClient.invalidateQueries({
@@ -119,11 +123,18 @@ export function useUpdateAssignment(tenantId: string | null, courseId: string | 
     }: {
       assignmentId: string;
       input: AssignmentInput;
-    }) =>
-      apiFetch<Assignment>(`/tenants/${tenantId}/courses/${courseId}/assignments/${assignmentId}`, {
-        method: 'PUT',
-        body: input,
-      }),
+    }) => {
+      if (!tenantId || !courseId) {
+        throw new Error('Missing tenant or course context.');
+      }
+      return apiFetch<Assignment>(
+        `/tenants/${tenantId}/courses/${courseId}/assignments/${assignmentId}`,
+        {
+          method: 'PUT',
+          body: input,
+        },
+      );
+    },
     onSuccess: (_data, vars) => {
       if (tenantId && courseId) {
         queryClient.invalidateQueries({

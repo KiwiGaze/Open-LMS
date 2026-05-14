@@ -13,40 +13,33 @@ export function useInboxThreadsQuery(tenantId: string | null) {
   });
 }
 
-export function useConversationMessagesQuery(
-  tenantId: string | null,
-  courseId: string | null,
-  threadId: string | null,
-) {
+export function useConversationMessagesQuery(tenantId: string | null, threadId: string | null) {
   return useQuery({
     queryKey:
-      tenantId && courseId && threadId
-        ? queryKeys.conversationMessages(tenantId, courseId, threadId)
+      tenantId && threadId
+        ? queryKeys.conversationMessages(tenantId, threadId)
         : ['conversation-messages', 'inactive'],
     queryFn: () =>
-      apiFetch<ConversationMessage[]>(
-        `/tenants/${tenantId}/courses/${courseId}/conversations/${threadId}/messages`,
-      ),
-    enabled: Boolean(tenantId && courseId && threadId),
+      apiFetch<ConversationMessage[]>(`/tenants/${tenantId}/inbox/threads/${threadId}/messages`),
+    enabled: Boolean(tenantId && threadId),
   });
 }
 
 export function useCreateConversationMessageMutation(
   tenantId: string | null,
-  courseId: string | null,
   threadId: string | null,
 ) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: string) =>
-      apiFetch<ConversationMessage>(
-        `/tenants/${tenantId}/courses/${courseId}/conversations/${threadId}/messages`,
-        { method: 'POST', body: { body } },
-      ),
+      apiFetch<ConversationMessage>(`/tenants/${tenantId}/inbox/threads/${threadId}/messages`, {
+        method: 'POST',
+        body: { body },
+      }),
     onSuccess: () => {
-      if (tenantId && courseId && threadId) {
+      if (tenantId && threadId) {
         queryClient.invalidateQueries({
-          queryKey: queryKeys.conversationMessages(tenantId, courseId, threadId),
+          queryKey: queryKeys.conversationMessages(tenantId, threadId),
         });
         queryClient.invalidateQueries({ queryKey: queryKeys.inboxThreads(tenantId) });
       }
@@ -58,16 +51,14 @@ export type CreateConversationThreadInput = {
   subject: string;
   body: string;
   participantIds: string[];
+  courseId: string | null;
 };
 
-export function useCreateConversationThreadMutation(
-  tenantId: string | null,
-  courseId: string | null,
-) {
+export function useCreateConversationThreadMutation(tenantId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateConversationThreadInput) =>
-      apiFetch<ConversationThread>(`/tenants/${tenantId}/courses/${courseId}/conversations`, {
+      apiFetch<ConversationThread>(`/tenants/${tenantId}/inbox/threads`, {
         method: 'POST',
         body: input,
       }),

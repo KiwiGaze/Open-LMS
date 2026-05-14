@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/cn.ts';
 import * as LabelPrimitive from '@radix-ui/react-label';
 import type { ComponentPropsWithoutRef } from 'react';
 import { forwardRef } from 'react';

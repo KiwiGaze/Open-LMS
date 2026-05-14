@@ -18,7 +18,7 @@ import {
 } from '@/lib/api/queries/messaging.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatDateTime, initialsOf } from '@/lib/format.ts';
-import { ArrowLeft, Inbox, Lock, Send } from 'lucide-react';
+import { ArrowLeft, Inbox, Send } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { use, useState } from 'react';
@@ -33,14 +33,14 @@ export default function InboxThreadPage({ params }: { params: Promise<Params> })
   const { publish } = useToast();
   const me = useMeQuery();
 
-  // Resolve courseId. Prefer URL param; otherwise look up in the inbox cache.
+  // The inbox-thread routes are course-agnostic; the courseId hint is only used
+  // for navigation breadcrumbs/back links.
   const inbox = useInboxThreadsQuery(tenantId);
   const thread = inbox.data?.find((t) => t.id === threadId);
-  const resolvedCourseId = queryCourseId ?? thread?.courseId ?? null;
   const inboxSettled = inbox.isSuccess || inbox.isError;
 
-  const messages = useConversationMessagesQuery(tenantId, resolvedCourseId, threadId);
-  const sendMessage = useCreateConversationMessageMutation(tenantId, resolvedCourseId, threadId);
+  const messages = useConversationMessagesQuery(tenantId, threadId);
+  const sendMessage = useCreateConversationMessageMutation(tenantId, threadId);
   const [replyBody, setReplyBody] = useState('');
 
   const handleSend = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -81,31 +81,6 @@ export default function InboxThreadPage({ params }: { params: Promise<Params> })
     );
   }
 
-  // Tenant-wide thread (courseId null) — messages endpoint requires a courseId,
-  // so we can't read or reply via the current API.
-  if (thread && thread.courseId === null && queryCourseId === null) {
-    return (
-      <div className="flex flex-col gap-4">
-        <PageHeader
-          eyebrow="Inbox"
-          title={thread.subject ?? 'Conversation'}
-          actions={
-            <Button asChild intent="ghost">
-              <Link href="/inbox">
-                <ArrowLeft className="size-4" aria-hidden /> Back to inbox
-              </Link>
-            </Button>
-          }
-        />
-        <EmptyState
-          icon={Lock}
-          title="Tenant-wide messages aren't readable yet"
-          description="This conversation isn't scoped to a course. Reading and replying are not supported in this version."
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
@@ -125,9 +100,7 @@ export default function InboxThreadPage({ params }: { params: Promise<Params> })
         }
       />
 
-      {!resolvedCourseId ? (
-        <Skeleton className="h-32 w-full" />
-      ) : messages.isLoading ? (
+      {messages.isLoading ? (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={`msg-skel-${i}`} className="h-16 w-full rounded-[var(--radius-md)]" />
@@ -177,7 +150,7 @@ export default function InboxThreadPage({ params }: { params: Promise<Params> })
         </ul>
       )}
 
-      {resolvedCourseId ? (
+      {thread ? (
         <form onSubmit={handleSend} className="mt-2 flex flex-col gap-2">
           <Textarea
             rows={3}

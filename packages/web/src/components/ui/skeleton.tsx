@@ -1,4 +1,4 @@
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/cn.ts';
 import type { HTMLAttributes } from 'react';
 
 export function Skeleton({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {

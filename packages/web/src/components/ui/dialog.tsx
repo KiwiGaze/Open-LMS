@@ -1,9 +1,9 @@
 'use client';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/cn.ts';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
-import type { ComponentPropsWithoutRef } from 'react';
+import type { ComponentPropsWithoutRef, HTMLAttributes } from 'react';
 import { forwardRef } from 'react';
 
 export const Dialog = DialogPrimitive.Root;
@@ -65,11 +65,11 @@ export const DialogContent = forwardRef<
   );
 });
 
-export function DialogHeader({ className, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
+export function DialogHeader({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn('mb-4 flex flex-col gap-1.5', className)} {...rest} />;
 }
 
-export function DialogFooter({ className, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
+export function DialogFooter({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn('mt-6 flex flex-row justify-end gap-2', className)} {...rest} />;
 }
 

@@ -54,7 +54,7 @@ export function NewMessageDialog({
   const [recipientIds, setRecipientIds] = useState<string[]>([]);
 
   const memberships = useCourseMembershipsQuery(tenantId, courseId);
-  const create = useCreateConversationThreadMutation(tenantId, courseId);
+  const create = useCreateConversationThreadMutation(tenantId);
 
   const candidates = useMemo(() => {
     const all = memberships.data ?? [];
@@ -92,6 +92,7 @@ export function NewMessageDialog({
         subject: subject.trim(),
         body: body.trim(),
         participantIds: recipientIds,
+        courseId,
       });
       publish({ tone: 'success', title: 'Message sent' });
       reset();
