@@ -140,6 +140,8 @@ export const queryKeys = {
     ['courses', tenantId, courseId, 'calendar'] as const,
   courseAnalytics: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'analytics'] as const,
+  glossaryEntries: (tenantId: string, courseId: string) =>
+    ['courses', tenantId, courseId, 'glossary'] as const,
 
   notifications: (tenantId: string) => ['tenants', tenantId, 'notifications'] as const,
   notificationPreferences: (tenantId: string) =>
