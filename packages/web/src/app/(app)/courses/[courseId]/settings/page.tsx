@@ -34,6 +34,7 @@ import type { CatalogVisibility } from '@openlms/contracts';
 import { Save, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
+import { CourseToolsCard } from './tools-card.tsx';
 
 type Params = { courseId: string };
 
@@ -272,6 +273,8 @@ export default function CourseSettingsPage({ params }: { params: Promise<Params>
           </Button>
         </div>
       </form>
+
+      <CourseToolsCard tenantId={tenantId} courseId={courseId} />
 
       <Card>
         <CardHeader>
