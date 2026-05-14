@@ -167,16 +167,18 @@ function CopyCourseDialog({
                 setSourceCourseId(v);
                 if (error) setError(null);
               }}
-              disabled={courses.isLoading || candidates.length === 0}
+              disabled={courses.isLoading || courses.isError || candidates.length === 0}
             >
               <SelectTrigger id="copy-source">
                 <SelectValue
                   placeholder={
                     courses.isLoading
                       ? 'Loading…'
-                      : candidates.length === 0
-                        ? 'No other courses available'
-                        : 'Pick a course'
+                      : courses.isError
+                        ? 'Could not load courses — try again'
+                        : candidates.length === 0
+                          ? 'No other courses available'
+                          : 'Pick a course'
                   }
                 />
               </SelectTrigger>
