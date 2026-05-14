@@ -39,11 +39,15 @@ export type UpsertNotificationPreferenceInput = {
 export function useUpsertNotificationPreferenceMutation(tenantId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: UpsertNotificationPreferenceInput) =>
-      apiFetch<NotificationPreference>(`/tenants/${tenantId}/notifications/preferences`, {
+    mutationFn: (input: UpsertNotificationPreferenceInput) => {
+      if (!tenantId) {
+        return Promise.reject(new Error('No active tenant — cannot save notification preference.'));
+      }
+      return apiFetch<NotificationPreference>(`/tenants/${tenantId}/notifications/preferences`, {
         method: 'PUT',
         body: input,
-      }),
+      });
+    },
     onSuccess: () => {
       if (tenantId) {
         queryClient.invalidateQueries({ queryKey: queryKeys.notificationPreferences(tenantId) });

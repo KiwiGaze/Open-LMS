@@ -86,7 +86,8 @@ export default function NotificationPreferencesPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">{CATEGORY_LABEL[category]}</CardTitle>
                 <CardDescription>
-                  Set delivery frequency per channel. Leave a channel unset to use tenant defaults.
+                  Set delivery frequency per channel. Selecting a value overrides the tenant default
+                  for that channel.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-3">
@@ -105,7 +106,7 @@ export default function NotificationPreferencesPage() {
                             frequency: value as NotificationFrequency,
                           })
                         }
-                        disabled={upsert.isPending}
+                        disabled={upsert.isPending || !tenantId}
                       >
                         <SelectTrigger
                           id={fieldId}
