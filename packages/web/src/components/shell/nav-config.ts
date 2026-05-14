@@ -29,6 +29,7 @@ export type AppNavItem = {
 export const PRIMARY_NAV: AppNavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/courses', label: 'Courses', icon: BookOpen },
+  { href: '/catalog', label: 'Catalog', icon: Library },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/inbox', label: 'Inbox', icon: Inbox },
   { href: '/announcements', label: 'Announcements', icon: Bell },

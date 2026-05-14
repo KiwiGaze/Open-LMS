@@ -11,6 +11,7 @@ import type {
   CourseAnalyticsSummary,
   CourseBackup,
   CourseCatalogSettings,
+  CourseMembership,
 } from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -131,6 +132,34 @@ export function useImportCommonCartridgeMutation(tenantId: string | null, course
     onSuccess: () => {
       if (tenantId && courseId) {
         queryClient.invalidateQueries({ queryKey: queryKeys.course(tenantId, courseId) });
+      }
+    },
+  });
+}
+
+export function useSelfEnrollMutation(tenantId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      courseId,
+      enrollmentCode,
+    }: {
+      courseId: string;
+      enrollmentCode: string;
+    }) => {
+      if (!tenantId) {
+        return Promise.reject(new Error('No active tenant — cannot enroll.'));
+      }
+      return apiFetch<CourseMembership>(`/tenants/${tenantId}/courses/${courseId}/self-enroll`, {
+        method: 'POST',
+        body: { enrollmentCode },
+      });
+    },
+    onSuccess: () => {
+      if (tenantId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.courses(tenantId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.catalogCourses(tenantId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.myCourseMemberships });
       }
     },
   });
