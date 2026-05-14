@@ -64,7 +64,7 @@ export default function AttendanceRollPage({ params }: { params: Promise<Params>
   const messageable = useMessageableUsersQuery(tenantId, courseId);
   const upsert = useUpsertAttendanceRecordMutation(tenantId, courseId, sessionId);
 
-  const [pendingStudentId, setPendingStudentId] = useState<string | null>(null);
+  const [pendingStudentIds, setPendingStudentIds] = useState<Set<string>>(() => new Set());
 
   const session = sessions.data?.find((s) => s.id === sessionId);
 
@@ -90,14 +90,23 @@ export default function AttendanceRollPage({ params }: { params: Promise<Params>
   }, [records.data]);
 
   const handleChange = async (studentId: string, status: AttendanceRecordStatus) => {
-    setPendingStudentId(studentId);
+    setPendingStudentIds((prev) => {
+      const next = new Set(prev);
+      next.add(studentId);
+      return next;
+    });
     try {
       await upsert.mutateAsync({ studentId, input: { status } });
     } catch (error) {
       const message = error instanceof ApiHttpError ? error.message : 'Could not save. Try again.';
       publish({ tone: 'danger', title: 'Save failed', description: message });
     } finally {
-      setPendingStudentId(null);
+      setPendingStudentIds((prev) => {
+        if (!prev.has(studentId)) return prev;
+        const next = new Set(prev);
+        next.delete(studentId);
+        return next;
+      });
     }
   };
 
@@ -152,7 +161,7 @@ export default function AttendanceRollPage({ params }: { params: Promise<Params>
           <TableBody>
             {students.map((student) => {
               const current = recordsByStudent.get(student.userId);
-              const isPending = pendingStudentId === student.userId && upsert.isPending;
+              const isPending = pendingStudentIds.has(student.userId);
               return (
                 <TableRow key={student.userId}>
                   <TableCell>{student.displayName}</TableCell>
