@@ -254,6 +254,8 @@ import {
 import {
   deleteCurrentUserRoute,
   getCurrentUserRoute,
+  listMyCourseMembershipsRoute,
+  listMyTenantMembershipsRoute,
   updateCurrentUserRoute,
 } from './routes/me.ts';
 import {
@@ -957,6 +959,24 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     );
     await options.dependencies.deleteCurrentUser(actorUserId);
     return context.body(null, 204);
+  });
+
+  app.openapi(listMyTenantMembershipsRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const memberships = await options.dependencies.listMyTenantMemberships(actorUserId);
+    return context.json(memberships, 200);
+  });
+
+  app.openapi(listMyCourseMembershipsRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const memberships = await options.dependencies.listMyCourseMemberships(actorUserId);
+    return context.json(memberships, 200);
   });
 
   app.openapi(listCoursesRoute, async (context) => {

@@ -43,6 +43,8 @@ export type CourseNavItem = {
   segment: string;
   label: string;
   icon: LucideIcon;
+  /** Show only to course staff (instructor / teaching_assistant / course_admin). */
+  staffOnly?: boolean;
 };
 
 export const COURSE_NAV: CourseNavItem[] = [
@@ -57,5 +59,5 @@ export const COURSE_NAV: CourseNavItem[] = [
   { segment: 'files', label: 'Files', icon: BookOpen },
   { segment: 'calendar', label: 'Calendar', icon: CalendarClock },
   { segment: 'announcements', label: 'Announcements', icon: Bell },
-  { segment: 'settings', label: 'Settings', icon: Settings },
+  { segment: 'settings', label: 'Settings', icon: Settings, staffOnly: true },
 ];

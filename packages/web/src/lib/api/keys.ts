@@ -7,6 +7,8 @@ export const queryKeys = {
   session: ['session'] as const,
 
   me: ['me'] as const,
+  myTenantMemberships: ['me', 'tenant-memberships'] as const,
+  myCourseMemberships: ['me', 'course-memberships'] as const,
 
   tenants: () => ['tenants'] as const,
   tenantMembers: (tenantId: string) => ['tenants', tenantId, 'members'] as const,

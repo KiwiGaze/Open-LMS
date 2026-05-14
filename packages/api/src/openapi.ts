@@ -20,6 +20,8 @@ const emptyDependencies: ApiDependencies = {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
   deleteCurrentUser: async () => {},
+  listMyTenantMemberships: async () => [],
+  listMyCourseMemberships: async () => [],
   listTenants: async () => [],
   updateTenantFileStorageQuotas: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');

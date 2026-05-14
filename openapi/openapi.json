@@ -1449,6 +1449,134 @@
           "updatedAt"
         ]
       },
+      "MyTenantMembership": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+          },
+          "tenantId": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "student",
+              "instructor",
+              "teaching_assistant",
+              "course_admin",
+              "institution_admin",
+              "ai_service_account",
+              "integration_service_account"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "userId",
+          "role",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "MyCourseMembership": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+          },
+          "tenantId": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+          },
+          "courseId": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "student",
+              "instructor",
+              "teaching_assistant",
+              "course_admin"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "pending_approval",
+              "waitlisted",
+              "invited",
+              "dropped",
+              "withdrawn"
+            ],
+            "default": "active"
+          },
+          "invitedAt": {
+            "type": "string",
+            "nullable": true,
+            "default": null,
+            "format": "date-time"
+          },
+          "acceptedAt": {
+            "type": "string",
+            "nullable": true,
+            "default": null,
+            "format": "date-time"
+          },
+          "droppedAt": {
+            "type": "string",
+            "nullable": true,
+            "default": null,
+            "format": "date-time"
+          },
+          "withdrawnAt": {
+            "type": "string",
+            "nullable": true,
+            "default": null,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "courseId",
+          "userId",
+          "role",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "Course": {
         "type": "object",
         "properties": {
@@ -15420,6 +15548,128 @@
         "responses": {
           "204": {
             "description": "The authenticated account was deleted. Academic records keep a preserved anonymized user reference."
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/tenant-memberships": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "operationId": "listMyTenantMemberships",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant memberships for the authenticated user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyTenantMembership"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/course-memberships": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "operationId": "listMyCourseMemberships",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course memberships for the authenticated user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyCourseMembership"
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Authentication is required.",

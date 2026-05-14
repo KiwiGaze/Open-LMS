@@ -132,6 +132,8 @@ const dependencies = {
       createdAt: now,
       updatedAt: now,
     }),
+  listMyTenantMemberships: async (_actorUserId: string) => [],
+  listMyCourseMemberships: async (_actorUserId: string) => [],
   listTenantMembers: async (_actorUserId: string, _tenantId: string) => [],
   listTenantFeatureFlags: async (_actorUserId: string, _tenantId: string) => [],
   listWebhookSubscriptions: async (_actorUserId: string, _tenantId: string) => [],
