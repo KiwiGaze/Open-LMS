@@ -148,7 +148,13 @@ export function NewMessageDialog({
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="scope">Scope</Label>
-            <Select value={scope ?? ''} onValueChange={(v) => setScope(v as ScopeValue)}>
+            <Select
+              value={scope ?? ''}
+              onValueChange={(v) => {
+                setScope(v as ScopeValue);
+                setRecipientIds([]);
+              }}
+            >
               <SelectTrigger id="scope" disabled={courses.isLoading}>
                 <SelectValue placeholder={courses.isLoading ? 'Loading…' : 'Pick a course'} />
               </SelectTrigger>
