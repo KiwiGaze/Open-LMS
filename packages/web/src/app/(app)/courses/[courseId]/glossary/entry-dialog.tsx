@@ -53,12 +53,16 @@ export function GlossaryEntryDialog({
   const [term, setTerm] = useState('');
   const [definition, setDefinition] = useState('');
   const [status, setStatus] = useState<GlossaryEntryStatus>('published');
+  const [termError, setTermError] = useState<string | null>(null);
+  const [definitionError, setDefinitionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       setTerm(existing?.term ?? '');
       setDefinition(existing?.definition ?? '');
       setStatus(existing?.status ?? 'published');
+      setTermError(null);
+      setDefinitionError(null);
     }
   }, [open, existing]);
 
@@ -66,7 +70,11 @@ export function GlossaryEntryDialog({
     event.preventDefault();
     const trimmedTerm = term.trim();
     const trimmedDefinition = definition.trim();
-    if (!trimmedTerm || !trimmedDefinition) return;
+    const nextTermError = trimmedTerm ? null : 'Enter a term.';
+    const nextDefinitionError = trimmedDefinition ? null : 'Enter a definition.';
+    setTermError(nextTermError);
+    setDefinitionError(nextDefinitionError);
+    if (nextTermError || nextDefinitionError) return;
 
     const input: GlossaryEntryInput = {
       term: trimmedTerm,
@@ -100,25 +108,31 @@ export function GlossaryEntryDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FormField label="Term" id="glossary-term" required>
+          <FormField label="Term" id="glossary-term" required error={termError}>
             <Input
               id="glossary-term"
               type="text"
               maxLength={160}
               value={term}
-              onChange={(e) => setTerm(e.target.value)}
+              onChange={(e) => {
+                setTerm(e.target.value);
+                if (termError) setTermError(null);
+              }}
               placeholder="thesis"
               required
             />
           </FormField>
 
-          <FormField label="Definition" id="glossary-definition" required>
+          <FormField label="Definition" id="glossary-definition" required error={definitionError}>
             <Textarea
               id="glossary-definition"
               rows={6}
               maxLength={4000}
               value={definition}
-              onChange={(e) => setDefinition(e.target.value)}
+              onChange={(e) => {
+                setDefinition(e.target.value);
+                if (definitionError) setDefinitionError(null);
+              }}
               placeholder="A central claim supported by evidence and reasoning."
               required
             />
