@@ -8,13 +8,14 @@ import { Card, CardContent } from '@/components/ui/card.tsx';
 import { Input } from '@/components/ui/input.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useToast } from '@/components/ui/toast.tsx';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { ApiHttpError } from '@/lib/api/errors.ts';
 import { useAssignmentsQuery } from '@/lib/api/queries/assignments.ts';
 import { useGradebookEntriesQuery, useUpsertSubmissionGrade } from '@/lib/api/queries/gradebook.ts';
 import { cn } from '@/lib/cn';
 import { formatNumber, formatPercent } from '@/lib/format.ts';
 import type { Assignment, CourseMembership, GradebookEntry } from '@openlms/contracts';
-import { ClipboardList, Download, Search } from 'lucide-react';
+import { ClipboardList, Download, Lock, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { CsvImportDialog } from './csv-import-dialog.tsx';
 
@@ -205,6 +206,7 @@ export function InstructorGradebookGrid({
                                 courseId={courseId}
                                 assignmentId={item.id}
                                 entry={entry}
+                                gradingLocked={item.gradingLocked}
                               />
                             </td>
                           );
@@ -236,9 +238,10 @@ type GradeCellProps = {
   courseId: string;
   assignmentId: string;
   entry: GradebookEntry | undefined;
+  gradingLocked: boolean;
 };
 
-function GradeCell({ tenantId, courseId, assignmentId, entry }: GradeCellProps) {
+function GradeCell({ tenantId, courseId, assignmentId, entry, gradingLocked }: GradeCellProps) {
   const upsert = useUpsertSubmissionGrade(tenantId, courseId);
   const { publish } = useToast();
   const [editing, setEditing] = useState(false);
@@ -246,6 +249,28 @@ function GradeCell({ tenantId, courseId, assignmentId, entry }: GradeCellProps) 
 
   if (!entry) {
     return <span className="text-xs text-(--color-text-muted)">Not submitted</span>;
+  }
+
+  if (gradingLocked) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex w-full flex-col items-end gap-0.5 rounded-[var(--radius-sm)] px-2 py-1 text-right">
+            <span className="inline-flex items-center gap-1 text-sm font-medium tabular-nums text-(--color-text-default)">
+              <Lock className="size-3 text-(--color-text-muted)" aria-label="Grading locked" />
+              {formatNumber(entry.score, 1)}
+              <span className="ml-0.5 text-xs text-(--color-text-muted)">
+                /{formatNumber(entry.maxScore, 1)}
+              </span>
+            </span>
+            <Badge tone="outline" className="text-2xs">
+              locked
+            </Badge>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>Grading is locked for this assignment</TooltipContent>
+      </Tooltip>
+    );
   }
 
   const startEdit = () => {
