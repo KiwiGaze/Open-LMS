@@ -1,0 +1,2 @@
+ALTER TABLE "course" ADD COLUMN "catalog_visibility" text DEFAULT 'private' NOT NULL;--> statement-breakpoint
+ALTER TABLE "course" ADD CONSTRAINT "course_catalog_visibility_check" CHECK ("course"."catalog_visibility" IN ('private', 'listed'));

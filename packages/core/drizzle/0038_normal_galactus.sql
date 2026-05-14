@@ -1,0 +1,1 @@
+ALTER TABLE "submission_attachment" ADD CONSTRAINT "submission_attachment_display_name_length_check" CHECK (length("submission_attachment"."display_name") BETWEEN 1 AND 255);

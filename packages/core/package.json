@@ -1,0 +1,87 @@
+{
+  "name": "@openlms/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./db": {
+      "types": "./src/db/client.ts",
+      "default": "./src/db/client.ts"
+    },
+    "./db/schema": {
+      "types": "./src/db/schema/index.ts",
+      "default": "./src/db/schema/index.ts"
+    },
+    "./auth/session": {
+      "types": "./src/auth/session.ts",
+      "default": "./src/auth/session.ts"
+    },
+    "./auth/admin": {
+      "types": "./src/auth/admin.ts",
+      "default": "./src/auth/admin.ts"
+    },
+    "./auth": {
+      "types": "./src/auth/better-auth.ts",
+      "default": "./src/auth/better-auth.ts"
+    },
+    "./auth/onboarding": {
+      "types": "./src/auth/onboarding.ts",
+      "default": "./src/auth/onboarding.ts"
+    },
+    "./tenants": {
+      "types": "./src/tenants/repository.ts",
+      "default": "./src/tenants/repository.ts"
+    },
+    "./memberships": {
+      "types": "./src/memberships/repository.ts",
+      "default": "./src/memberships/repository.ts"
+    },
+    "./provider-configs": {
+      "types": "./src/provider-configs/repository.ts",
+      "default": "./src/provider-configs/repository.ts"
+    },
+    "./crypto": {
+      "types": "./src/crypto/encryption.ts",
+      "default": "./src/crypto/encryption.ts"
+    },
+    "./logger": {
+      "types": "./src/logger.ts",
+      "default": "./src/logger.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src tests",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.6.10",
+    "@openlms/ai": "workspace:*",
+    "@openlms/contracts": "workspace:*",
+    "better-auth": "^1.6.10",
+    "drizzle-orm": "^0.44.7",
+    "pino": "^9.14.0",
+    "postgres": "^3.4.7",
+    "ulid": "^3.0.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "@types/sql.js": "^1.4.11",
+    "dotenv": "^16.6.1",
+    "drizzle-kit": "^0.31.7",
+    "sql.js": "^1.14.1",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
+  }
+}

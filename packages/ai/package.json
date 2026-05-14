@@ -1,0 +1,69 @@
+{
+  "name": "@openlms/ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./evaluation": {
+      "types": "./src/evaluation.ts",
+      "default": "./src/evaluation.ts"
+    },
+    "./gateway": {
+      "types": "./src/gateway.ts",
+      "default": "./src/gateway.ts"
+    },
+    "./actions": {
+      "types": "./src/actions.ts",
+      "default": "./src/actions.ts"
+    },
+    "./health": {
+      "types": "./src/health.ts",
+      "default": "./src/health.ts"
+    },
+    "./jobs": {
+      "types": "./src/jobs.ts",
+      "default": "./src/jobs.ts"
+    },
+    "./model-registry": {
+      "types": "./src/model-registry.ts",
+      "default": "./src/model-registry.ts"
+    },
+    "./prompt-registry": {
+      "types": "./src/prompt-registry.ts",
+      "default": "./src/prompt-registry.ts"
+    },
+    "./providers": {
+      "types": "./src/providers.ts",
+      "default": "./src/providers.ts"
+    },
+    "./rag": {
+      "types": "./src/rag.ts",
+      "default": "./src/rag.ts"
+    },
+    "./worker": {
+      "types": "./src/worker.ts",
+      "default": "./src/worker.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src tests",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@openlms/contracts": "workspace:*",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.18",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
+  }
+}

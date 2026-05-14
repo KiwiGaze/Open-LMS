@@ -1,0 +1,1 @@
+ALTER TABLE "course_calendar_event" ADD COLUMN "recurrence_rule" text;

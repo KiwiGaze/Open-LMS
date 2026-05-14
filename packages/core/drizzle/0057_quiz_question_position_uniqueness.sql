@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "quiz_question_tenant_quiz_position_uq" ON "quiz_question" USING btree ("tenant_id","quiz_id","position");
