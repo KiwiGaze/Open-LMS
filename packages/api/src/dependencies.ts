@@ -333,6 +333,8 @@ import {
   deleteCourseCredential as deleteCourseCredentialRecord,
   deleteCourseExternalTool as deleteCourseExternalToolRecord,
   deleteCourseGroupMembershipForUser,
+  deleteCourseGroup as deleteCourseGroupRecord,
+  deleteCourseGroupSet as deleteCourseGroupSetRecord,
   deleteCourseMeeting as deleteCourseMeetingRecord,
   deleteCourseMembership as deleteCourseMembershipRecord,
   deleteCourseModule as deleteCourseModuleRecord,
@@ -376,6 +378,7 @@ import {
   getAttendanceSessionForCourse,
   getCompletionRequirementForCourse,
   getConversationThreadForCourse,
+  getConversationThreadInTenant,
   getCourseAnalyticsSummary,
   getCourseAnnouncementForCourse,
   getCourseById,
@@ -411,6 +414,7 @@ import {
   getRubricById,
   getScormAttemptForStudent,
   getScormPackageForCourse,
+  getSubmissionAttachmentById,
   getSubmissionById,
   getSurveyForCourse,
   getSurveyQuestionForSurvey,
@@ -494,6 +498,7 @@ import {
   listReleaseRulesForModule,
   listResourceViewsForResource,
   listRetentionPolicies as listRetentionPolicyRecords,
+  listRubricsForTenant,
   listScormPackagesForCourse,
   listSectionInstructorsForSection,
   listSectionMembersForSection,
@@ -571,10 +576,13 @@ import {
   updateCourseCatalogSettings as updateCourseCatalogSettingsRecord,
   updateCourseCredential as updateCourseCredentialRecord,
   updateCourseExternalTool as updateCourseExternalToolRecord,
+  updateCourseGroup as updateCourseGroupRecord,
+  updateCourseGroupSet as updateCourseGroupSetRecord,
   updateCourseMeeting as updateCourseMeetingRecord,
   updateCourseMembership as updateCourseMembershipRecord,
   updateCourseModule as updateCourseModuleRecord,
   updateCoursePage as updateCoursePageRecord,
+  updateCourse as updateCourseRecord,
   updateCourseResource as updateCourseResourceRecord,
   updateCourseSection as updateCourseSectionRecord,
   updateCourseUnit as updateCourseUnitRecord,
@@ -617,11 +625,18 @@ import {
   type ModuleReleaseStatusDependencies,
   assertCorePermission,
 } from '@openlms/core';
+import { type Auth, createAuth } from '@openlms/core/auth';
+import { TenantSlugTakenError, signUpWithTenant } from '@openlms/core/auth/onboarding';
 import { type CoreSession, getCoreSessionByToken } from '@openlms/core/auth/session';
 import { ApiError } from './http-error.ts';
 
 export type ApiDependencies = {
+  authHandler: ((request: Request) => Promise<Response>) | null;
   getSessionByToken: (sessionToken: string) => Promise<CoreSession | null>;
+  createInitialTenant: (
+    actorUserId: string,
+    input: { slug: string; displayName: string },
+  ) => Promise<Tenant>;
   getCurrentUser: (actorUserId: string) => Promise<User>;
   updateCurrentUser: (actorUserId: string, input: UpdateCurrentUserApiInput) => Promise<User>;
   deleteCurrentUser: (actorUserId: string) => Promise<void>;
@@ -746,6 +761,12 @@ export type ApiDependencies = {
     tenantId: string,
     input: CreateCourseInput,
   ) => Promise<Course>;
+  updateCourse: (
+    actorUserId: string,
+    tenantId: string,
+    courseId: string,
+    input: UpdateCourseDependencyInput,
+  ) => Promise<Course>;
   deleteCourse: (actorUserId: string, tenantId: string, courseId: string) => Promise<void>;
   restoreDeletedCourse: (
     actorUserId: string,
@@ -799,6 +820,8 @@ export type ApiDependencies = {
     pagesRestored: number;
     resourcesRestored: number;
   }>;
+  listRubrics: (actorUserId: string, tenantId: string) => Promise<Rubric[]>;
+  getRubric: (actorUserId: string, tenantId: string, rubricId: string) => Promise<Rubric>;
   createRubric: (
     actorUserId: string,
     tenantId: string,
@@ -1266,6 +1289,19 @@ export type ApiDependencies = {
     courseId: string,
     input: CreateCourseGroupSetInput,
   ) => Promise<CourseGroupSet>;
+  updateCourseGroupSet: (
+    actorUserId: string,
+    tenantId: string,
+    courseId: string,
+    groupSetId: string,
+    input: CreateCourseGroupSetInput,
+  ) => Promise<CourseGroupSet>;
+  deleteCourseGroupSet: (
+    actorUserId: string,
+    tenantId: string,
+    courseId: string,
+    groupSetId: string,
+  ) => Promise<void>;
   listCourseGroups: (
     actorUserId: string,
     tenantId: string,
@@ -1277,6 +1313,19 @@ export type ApiDependencies = {
     courseId: string,
     input: CreateCourseGroupInput,
   ) => Promise<CourseGroup>;
+  updateCourseGroup: (
+    actorUserId: string,
+    tenantId: string,
+    courseId: string,
+    groupId: string,
+    input: Omit<CreateCourseGroupInput, 'groupSetId'>,
+  ) => Promise<CourseGroup>;
+  deleteCourseGroup: (
+    actorUserId: string,
+    tenantId: string,
+    courseId: string,
+    groupId: string,
+  ) => Promise<void>;
   listCourseGroupMembers: (
     actorUserId: string,
     tenantId: string,
@@ -1375,6 +1424,27 @@ export type ApiDependencies = {
     courseId: string,
   ) => Promise<DiscussionGradebookEntry[]>;
   listInboxThreads: (actorUserId: string, tenantId: string) => Promise<ConversationThread[]>;
+  createInboxThread: (
+    actorUserId: string,
+    tenantId: string,
+    input: {
+      subject: string;
+      body: string;
+      participantIds: string[];
+      courseId: string | null;
+    },
+  ) => Promise<ConversationThread>;
+  listInboxThreadMessages: (
+    actorUserId: string,
+    tenantId: string,
+    threadId: string,
+  ) => Promise<ConversationMessage[]>;
+  createInboxThreadMessage: (
+    actorUserId: string,
+    tenantId: string,
+    threadId: string,
+    input: { body: string },
+  ) => Promise<ConversationMessage>;
   recordResourceView: (
     actorUserId: string,
     tenantId: string,
@@ -1523,6 +1593,14 @@ export type ApiDependencies = {
     submissionId: string,
     input: CreateSubmissionAttachmentInput,
   ) => Promise<SubmissionAttachment>;
+  downloadSubmissionAttachment: (
+    actorUserId: string,
+    tenantId: string,
+    courseId: string,
+    assignmentId: string,
+    submissionId: string,
+    attachmentId: string,
+  ) => Promise<{ file: FileResource; bytes: Uint8Array }>;
   listSubmissionComments: (
     actorUserId: string,
     tenantId: string,
@@ -2313,6 +2391,9 @@ export type ApiEnvironment = {
   FILE_STORAGE_ROOT?: string;
   LTI_PRIVATE_KEY_ENCRYPTION_KEY?: string;
   WEBHOOK_SIGNING_SECRET_ENCRYPTION_KEY?: string;
+  BETTER_AUTH_SECRET?: string;
+  BETTER_AUTH_URL?: string;
+  BETTER_AUTH_TRUSTED_ORIGINS?: string;
 };
 
 type CourseContentItem = Pick<
@@ -2519,6 +2600,17 @@ export type CreateAttendanceSessionInput = {
 };
 
 export type CreateCourseInput = {
+  code: string;
+  title: string;
+  status: Exclude<Course['status'], 'deleted'>;
+  startsAt: Date | null;
+  endsAt: Date | null;
+  catalogCategory?: string | null;
+  academicTerm?: string | null;
+  isBlueprint?: boolean;
+};
+
+export type UpdateCourseDependencyInput = {
   code: string;
   title: string;
   status: Exclude<Course['status'], 'deleted'>;
@@ -3215,6 +3307,8 @@ const courseGroupStaffOnlyMessage =
   'Only course staff can create course groups. Ask an instructor for access.';
 const courseGroupSetMissingMessage =
   'Course group set was not found in this tenant. Check the group set id and retry the request.';
+const courseGroupMissingMessage =
+  'Course group was not found in this tenant. Check the group id and retry the request.';
 const courseGroupMemberStaffOnlyMessage =
   'Only course staff can add members to course groups. Ask an instructor for access.';
 const courseGroupMemberDuplicateMessage =
@@ -5826,8 +5920,57 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
     };
   };
 
+  let auth: Auth | null = null;
+  if (environment.BETTER_AUTH_SECRET && environment.BETTER_AUTH_URL) {
+    auth = createAuth({
+      db: dbHandle.db,
+      secret: environment.BETTER_AUTH_SECRET,
+      baseUrl: environment.BETTER_AUTH_URL,
+      trustedOrigins: environment.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      sendPasswordResetEmail: async (input) => {
+        if (process.env.NODE_ENV !== 'production') {
+          // Dev no-op: print the reset URL so the link can be opened locally.
+          console.info('[better-auth] password reset', {
+            to: input.user.email,
+            url: input.url,
+          });
+        }
+      },
+      sendVerificationEmail: async (input) => {
+        if (process.env.NODE_ENV !== 'production') {
+          // Dev no-op: print the verification URL so the link can be opened locally.
+          console.info('[better-auth] email verification', {
+            to: input.user.email,
+            url: input.url,
+          });
+        }
+      },
+    });
+  }
+
   return {
+    authHandler: auth ? (request) => auth.handler(request) : null,
     getSessionByToken: (sessionToken) => getCoreSessionByToken(dbHandle.db, sessionToken),
+    createInitialTenant: async (actorUserId, input) => {
+      try {
+        const result = await signUpWithTenant(dbHandle.db, {
+          userId: actorUserId,
+          tenantSlug: input.slug,
+          tenantDisplayName: input.displayName,
+        });
+        return result.tenant;
+      } catch (error) {
+        if (error instanceof TenantSlugTakenError) {
+          throw new ApiError(
+            'conflict',
+            'That institution slug is already taken. Pick a different one.',
+          );
+        }
+        throw error;
+      }
+    },
     listTenants: async (actorUserId) => {
       const memberships = await listUserTenantMemberships(dbHandle.db, actorUserId);
       const tenants = await Promise.all(
@@ -6459,6 +6602,44 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         throw error;
       }
     },
+    updateCourse: async (actorUserId, tenantId, courseId, input) => {
+      const tenantMemberships = await listUserTenantMemberships(dbHandle.db, actorUserId);
+      const hasTenantStaffAccess = tenantMemberships.some(
+        (membership) =>
+          membership.tenantId === tenantId && tenantStaffRoles.includes(membership.role),
+      );
+
+      if (!hasTenantStaffAccess) {
+        throw new ApiError('forbidden', courseTenantStaffOnlyMessage);
+      }
+
+      try {
+        const updated = await updateCourseRecord(dbHandle.db, {
+          tenantId,
+          courseId,
+          code: input.code,
+          title: input.title,
+          status: input.status,
+          startsAt: input.startsAt,
+          endsAt: input.endsAt,
+          catalogCategory: input.catalogCategory ?? null,
+          academicTerm: input.academicTerm ?? null,
+          isBlueprint: input.isBlueprint ?? false,
+        });
+
+        if (!updated) {
+          throw new ApiError('not_found', courseNotFoundForTenantMessage);
+        }
+
+        return updated;
+      } catch (error) {
+        if (error instanceof ApiError) throw error;
+        if (isCourseCodeDuplicate(error)) {
+          throw new ApiError('conflict', courseDuplicateCodeMessage);
+        }
+        throw error;
+      }
+    },
     deleteCourse: async (actorUserId, tenantId, courseId) => {
       const tenantMemberships = await listUserTenantMemberships(dbHandle.db, actorUserId);
       const hasTenantStaffAccess = tenantMemberships.some(
@@ -6656,6 +6837,37 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
 
         throw error;
       }
+    },
+    listRubrics: async (actorUserId, tenantId) => {
+      const tenantMemberships = await listUserTenantMemberships(dbHandle.db, actorUserId);
+      const hasTenantStaffAccess = tenantMemberships.some(
+        (membership) =>
+          membership.tenantId === tenantId && tenantStaffRoles.includes(membership.role),
+      );
+
+      if (!hasTenantStaffAccess) {
+        throw new ApiError('forbidden', rubricTenantStaffOnlyMessage);
+      }
+
+      return await listRubricsForTenant(dbHandle.db, tenantId);
+    },
+    getRubric: async (actorUserId, tenantId, rubricId) => {
+      const tenantMemberships = await listUserTenantMemberships(dbHandle.db, actorUserId);
+      const hasTenantStaffAccess = tenantMemberships.some(
+        (membership) =>
+          membership.tenantId === tenantId && tenantStaffRoles.includes(membership.role),
+      );
+
+      if (!hasTenantStaffAccess) {
+        throw new ApiError('forbidden', rubricTenantStaffOnlyMessage);
+      }
+
+      const rubric = await getRubricById(dbHandle.db, tenantId, rubricId);
+      if (!rubric) {
+        throw new ApiError('not_found', rubricNotFoundMessage);
+      }
+
+      return rubric;
     },
     createRubric: async (actorUserId, tenantId, input) => {
       const tenantMemberships = await listUserTenantMemberships(dbHandle.db, actorUserId);
@@ -9202,6 +9414,46 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         throw error;
       }
     },
+    updateCourseGroupSet: async (actorUserId, tenantId, courseId, groupSetId, input) => {
+      const access = await readCourseAccessContext(actorUserId, tenantId, courseId);
+
+      if (!canViewCourseRoster(access)) {
+        throw new ApiError('forbidden', courseGroupSetStaffOnlyMessage);
+      }
+
+      const updated = await updateCourseGroupSetRecord(dbHandle.db, {
+        tenantId,
+        courseId,
+        groupSetId,
+        name: input.name,
+        selfSignupEnabled: input.selfSignupEnabled,
+        status: input.status,
+        position: input.position,
+      });
+
+      if (!updated) {
+        throw new ApiError('not_found', courseGroupSetMissingMessage);
+      }
+
+      return updated;
+    },
+    deleteCourseGroupSet: async (actorUserId, tenantId, courseId, groupSetId) => {
+      const access = await readCourseAccessContext(actorUserId, tenantId, courseId);
+
+      if (!canViewCourseRoster(access)) {
+        throw new ApiError('forbidden', courseGroupSetStaffOnlyMessage);
+      }
+
+      const deleted = await deleteCourseGroupSetRecord(dbHandle.db, {
+        tenantId,
+        courseId,
+        groupSetId,
+      });
+
+      if (!deleted) {
+        throw new ApiError('not_found', courseGroupSetMissingMessage);
+      }
+    },
     listCourseGroups: async (actorUserId, tenantId, courseId) => {
       const { hasTenantStaffAccess, hasCourseStaffAccess } = await readCourseAccessContext(
         actorUserId,
@@ -9244,6 +9496,46 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         }
 
         throw error;
+      }
+    },
+    updateCourseGroup: async (actorUserId, tenantId, courseId, groupId, input) => {
+      const access = await readCourseAccessContext(actorUserId, tenantId, courseId);
+
+      if (!canViewCourseRoster(access)) {
+        throw new ApiError('forbidden', courseGroupStaffOnlyMessage);
+      }
+
+      const updated = await updateCourseGroupRecord(dbHandle.db, {
+        tenantId,
+        courseId,
+        groupId,
+        name: input.name,
+        description: input.description,
+        status: input.status,
+        position: input.position,
+      });
+
+      if (!updated) {
+        throw new ApiError('not_found', courseGroupMissingMessage);
+      }
+
+      return updated;
+    },
+    deleteCourseGroup: async (actorUserId, tenantId, courseId, groupId) => {
+      const access = await readCourseAccessContext(actorUserId, tenantId, courseId);
+
+      if (!canViewCourseRoster(access)) {
+        throw new ApiError('forbidden', courseGroupStaffOnlyMessage);
+      }
+
+      const deleted = await deleteCourseGroupRecord(dbHandle.db, {
+        tenantId,
+        courseId,
+        groupId,
+      });
+
+      if (!deleted) {
+        throw new ApiError('not_found', courseGroupMissingMessage);
       }
     },
     listCourseGroupMembers: async (actorUserId, tenantId, courseId, groupId) => {
@@ -9789,6 +10081,59 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         position: nextPosition,
       });
     },
+    downloadSubmissionAttachment: async (
+      actorUserId,
+      tenantId,
+      courseId,
+      assignmentId,
+      submissionId,
+      attachmentId,
+    ) => {
+      const access = await readCourseAccessContext(actorUserId, tenantId, courseId);
+      const assignment = await getAssignmentById(dbHandle.db, tenantId, assignmentId);
+      const submission = await getSubmissionById(dbHandle.db, tenantId, submissionId);
+
+      if (
+        !assignment ||
+        assignment.courseId !== courseId ||
+        !submission ||
+        submission.assignmentId !== assignmentId
+      ) {
+        throw new ApiError('not_found', submissionNotFoundMessage);
+      }
+
+      const canViewAttachments = await canViewSubmissionAttachmentForAssignment(
+        dbHandle.db,
+        tenantId,
+        courseId,
+        actorUserId,
+        access,
+        assignment,
+        submission,
+      );
+
+      if (!canViewAttachments) {
+        throw new ApiError('not_found', submissionNotFoundMessage);
+      }
+
+      const attachment = await getSubmissionAttachmentById(
+        dbHandle.db,
+        tenantId,
+        submissionId,
+        attachmentId,
+      );
+      if (!attachment) {
+        throw new ApiError('not_found', submissionNotFoundMessage);
+      }
+
+      const file = await getFileResourceById(dbHandle.db, tenantId, attachment.fileResourceId);
+      if (!file) {
+        throw new ApiError('not_found', submissionAttachmentFileNotFoundMessage);
+      }
+
+      const bytes = await fileStorage.download(file.storageKey);
+      return { file, bytes };
+    },
     listSubmissionComments: async (actorUserId, tenantId, courseId, assignmentId, submissionId) => {
       const access = await readCourseAccessContext(actorUserId, tenantId, courseId);
       const assignment = await getAssignmentById(dbHandle.db, tenantId, assignmentId);
@@ -10237,6 +10582,85 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         tenantId,
         userId: actorUserId,
         statuses: ['open'],
+      });
+    },
+    createInboxThread: async (actorUserId, tenantId, input) => {
+      await assertTenantMembership(actorUserId, tenantId);
+
+      // Course-scoped threads: ensure actor can access the course, then validate participants are course members.
+      // Tenant-wide threads: validate participants are tenant members.
+      if (input.courseId !== null) {
+        await readCourseAccessContext(actorUserId, tenantId, input.courseId);
+        const courseMemberships = await listCourseMembershipRecords(dbHandle.db, {
+          tenantId,
+          courseId: input.courseId,
+        });
+        const courseMemberIds = new Set<string>(courseMemberships.map((m) => m.userId));
+        for (const participantId of input.participantIds) {
+          if (participantId !== actorUserId && !courseMemberIds.has(participantId)) {
+            throw new ApiError(
+              'bad_request',
+              'One or more selected participants are not members of this course.',
+            );
+          }
+        }
+      } else {
+        for (const participantId of input.participantIds) {
+          if (participantId === actorUserId) continue;
+          const participantTenantMemberships = await listUserTenantMemberships(
+            dbHandle.db,
+            participantId,
+          );
+          if (!participantTenantMemberships.some((m) => m.tenantId === tenantId)) {
+            throw new ApiError(
+              'bad_request',
+              'One or more selected participants are not members of this tenant.',
+            );
+          }
+        }
+      }
+
+      const participantIds = Array.from(new Set([actorUserId, ...input.participantIds]));
+
+      return createConversationThreadRecord(dbHandle.db, {
+        tenantId,
+        courseId: input.courseId,
+        subject: input.subject,
+        participantIds,
+        initialMessageSenderId: actorUserId,
+        initialMessageBody: input.body,
+      });
+    },
+    listInboxThreadMessages: async (actorUserId, tenantId, threadId) => {
+      await assertTenantMembership(actorUserId, tenantId);
+      const thread = await getConversationThreadInTenant(dbHandle.db, tenantId, threadId);
+
+      if (!thread || !thread.participantIds.some((id) => id === actorUserId)) {
+        throw new ApiError(
+          'not_found',
+          'Conversation was not found in this tenant. Check the conversation id and retry the request.',
+        );
+      }
+
+      return listConversationMessagesForThread(dbHandle.db, { tenantId, threadId });
+    },
+    createInboxThreadMessage: async (actorUserId, tenantId, threadId, input) => {
+      await assertTenantMembership(actorUserId, tenantId);
+      const thread = await getConversationThreadInTenant(dbHandle.db, tenantId, threadId);
+
+      if (!thread || !thread.participantIds.some((id) => id === actorUserId)) {
+        throw new ApiError(
+          'not_found',
+          'Conversation was not found in this tenant. Check the conversation id and retry the request.',
+        );
+      }
+
+      return createConversationMessageRecord(dbHandle.db, {
+        tenantId,
+        threadId,
+        senderId: actorUserId,
+        body: input.body,
+        sentAt: new Date(),
       });
     },
     recordResourceView: async (actorUserId, tenantId, courseId, resourceId) => {

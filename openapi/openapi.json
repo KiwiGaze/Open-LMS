@@ -10520,6 +10520,162 @@
         }
       }
     },
+    "/api/v1/onboarding/create-tenant": {
+      "post": {
+        "tags": [
+          "Onboarding"
+        ],
+        "operationId": "createInitialTenant",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "slug": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 64,
+                    "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+                    "description": "URL-safe institution identifier.",
+                    "example": "open-lms-academy"
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "description": "Human-readable institution name.",
+                    "example": "Open-LMS Academy"
+                  }
+                },
+                "required": [
+                  "slug",
+                  "displayName"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The newly created tenant. The caller is its institution admin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request path, query, or body is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "bad_request"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with current resource state (e.g. duplicate key).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "conflict"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tenants/{tenantId}/members": {
       "get": {
         "tags": [
@@ -17980,6 +18136,298 @@
       }
     },
     "/api/v1/tenants/{tenantId}/courses/{courseId}": {
+      "put": {
+        "tags": [
+          "Courses"
+        ],
+        "operationId": "updateCourse",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2X"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2Y"
+            },
+            "required": true,
+            "description": "Course identifier.",
+            "name": "courseId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32,
+                    "description": "Short, tenant-unique course code.",
+                    "example": "WRIT-101"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "description": "Course title.",
+                    "example": "Evidence-Based Writing"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "draft",
+                      "active",
+                      "archived"
+                    ],
+                    "description": "Lifecycle status for the course.",
+                    "example": "draft"
+                  },
+                  "startsAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time",
+                    "description": "Optional start date in ISO 8601 format.",
+                    "example": "2026-08-25T00:00:00.000Z"
+                  },
+                  "endsAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time",
+                    "description": "Optional end date in ISO 8601 format.",
+                    "example": "2026-12-15T00:00:00.000Z"
+                  },
+                  "catalogCategory": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "description": "Optional catalog category, such as a department or subject family.",
+                    "example": "Writing"
+                  },
+                  "academicTerm": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "description": "Optional academic term label.",
+                    "example": "2026 Fall"
+                  },
+                  "isBlueprint": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether this course acts as a blueprint template for copied courses.",
+                    "example": true
+                  }
+                },
+                "required": [
+                  "code",
+                  "title",
+                  "status",
+                  "startsAt",
+                  "endsAt"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated course.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Course"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request path, query, or body is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "bad_request"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with current resource state (e.g. duplicate key).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "conflict"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
       "delete": {
         "tags": [
           "Courses"
@@ -18523,6 +18971,111 @@
       }
     },
     "/api/v1/tenants/{tenantId}/rubrics": {
+      "get": {
+        "tags": [
+          "Rubrics"
+        ],
+        "operationId": "listRubrics",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2X"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rubrics visible to the authenticated user in this tenant.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Rubric"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "Rubrics"
@@ -18700,6 +19253,152 @@
       }
     },
     "/api/v1/tenants/{tenantId}/rubrics/{rubricId}": {
+      "get": {
+        "tags": [
+          "Rubrics"
+        ],
+        "operationId": "getRubric",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2X"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE3C"
+            },
+            "required": true,
+            "description": "Rubric identifier.",
+            "name": "rubricId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rubric metadata and criteria.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Rubric"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
       "put": {
         "tags": [
           "Rubrics"
@@ -33703,6 +34402,574 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "Messaging"
+        ],
+        "operationId": "createInboxThread",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE0A"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "subject": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 180,
+                    "description": "Subject line displayed in conversation lists.",
+                    "example": "Welcome to the new term"
+                  },
+                  "participantIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+                    },
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "description": "Tenant members to include. The authenticated user is added automatically."
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000,
+                    "description": "Initial message body for the new thread."
+                  },
+                  "courseId": {
+                    "type": "string",
+                    "nullable": true,
+                    "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+                    "default": null,
+                    "description": "Optional course scope. Null creates a tenant-wide thread."
+                  }
+                },
+                "required": [
+                  "subject",
+                  "participantIds",
+                  "body"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created conversation thread (course-scoped or tenant-wide).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationThread"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request path, query, or body is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "bad_request"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{tenantId}/inbox/threads/{threadId}/messages": {
+      "get": {
+        "tags": [
+          "Messaging"
+        ],
+        "operationId": "listInboxThreadMessages",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE0A"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE4Y"
+            },
+            "required": true,
+            "description": "Conversation thread identifier.",
+            "name": "threadId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Messages in a thread visible to the authenticated participant. Works for both course-scoped and tenant-wide threads.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConversationMessage"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Messaging"
+        ],
+        "operationId": "createInboxThreadMessage",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE0A"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE4Y"
+            },
+            "required": true,
+            "description": "Conversation thread identifier.",
+            "name": "threadId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000,
+                    "description": "Message body to post."
+                  }
+                },
+                "required": [
+                  "body"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created message.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationMessage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request path, query, or body is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "bad_request"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/tenants/{tenantId}/courses/{courseId}/conversations/{threadId}/messages": {
@@ -34390,6 +35657,394 @@
         }
       }
     },
+    "/api/v1/tenants/{tenantId}/courses/{courseId}/group-sets/{groupSetId}": {
+      "put": {
+        "tags": [
+          "Groups"
+        ],
+        "operationId": "updateCourseGroupSet",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2X"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2Y"
+            },
+            "required": true,
+            "description": "Course identifier.",
+            "name": "courseId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE55"
+            },
+            "required": true,
+            "description": "Course group set identifier.",
+            "name": "groupSetId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "description": "Group set name displayed to learners.",
+                    "example": "Project teams"
+                  },
+                  "selfSignupEnabled": {
+                    "type": "boolean",
+                    "description": "Whether learners can sign themselves up for groups in this set.",
+                    "example": false
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "archived"
+                    ],
+                    "description": "Lifecycle status for the group set.",
+                    "example": "active"
+                  },
+                  "position": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Sort position within the course group catalog.",
+                    "example": 0
+                  }
+                },
+                "required": [
+                  "name",
+                  "selfSignupEnabled",
+                  "status",
+                  "position"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated course group set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseGroupSet"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request path, query, or body is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "bad_request"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Groups"
+        ],
+        "operationId": "deleteCourseGroupSet",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2X"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2Y"
+            },
+            "required": true,
+            "description": "Course identifier.",
+            "name": "courseId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE55"
+            },
+            "required": true,
+            "description": "Course group set identifier.",
+            "name": "groupSetId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Course group set deleted. Contained groups and members are cascaded."
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tenants/{tenantId}/courses/{courseId}/groups": {
       "get": {
         "tags": [
@@ -34688,6 +36343,397 @@
                           "type": "string",
                           "enum": [
                             "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{tenantId}/courses/{courseId}/groups/{groupId}": {
+      "put": {
+        "tags": [
+          "Groups"
+        ],
+        "operationId": "updateCourseGroup",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2X"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2Y"
+            },
+            "required": true,
+            "description": "Course identifier.",
+            "name": "courseId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE56"
+            },
+            "required": true,
+            "description": "Course group identifier.",
+            "name": "groupId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "description": "Group name displayed to learners.",
+                    "example": "Team Alpha"
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 1,
+                    "maxLength": 2000,
+                    "description": "Optional group description.",
+                    "example": "Project team for week 1."
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "archived"
+                    ],
+                    "description": "Lifecycle status for the group.",
+                    "example": "active"
+                  },
+                  "position": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Sort position within the parent group set.",
+                    "example": 0
+                  }
+                },
+                "required": [
+                  "name",
+                  "description",
+                  "status",
+                  "position"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated course group.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request path, query, or body is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "bad_request"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Groups"
+        ],
+        "operationId": "deleteCourseGroup",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2X"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2Y"
+            },
+            "required": true,
+            "description": "Course identifier.",
+            "name": "courseId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE56"
+            },
+            "required": true,
+            "description": "Course group identifier.",
+            "name": "groupId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Course group deleted. Members are cascaded."
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found"
                           ]
                         },
                         "message": {
@@ -36572,6 +38618,188 @@
                   "required": [
                     "error"
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{tenantId}/courses/{courseId}/assignments/{assignmentId}/submissions/{submissionId}/attachments/{attachmentId}/download": {
+      "get": {
+        "tags": [
+          "Submissions"
+        ],
+        "operationId": "downloadSubmissionAttachment",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2X"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2Y"
+            },
+            "required": true,
+            "description": "Course identifier.",
+            "name": "courseId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE36"
+            },
+            "required": true,
+            "description": "Assignment identifier.",
+            "name": "assignmentId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE38"
+            },
+            "required": true,
+            "description": "Submission identifier.",
+            "name": "submissionId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE39"
+            },
+            "required": true,
+            "description": "Submission attachment identifier.",
+            "name": "attachmentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachment bytes. Authorized via the submission scope so graders can read student-private files.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }

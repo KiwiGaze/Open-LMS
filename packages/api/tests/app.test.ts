@@ -107,12 +107,16 @@ import { ApiError } from '../src/http-error.ts';
 import { generateOpenApiDocument } from '../src/openapi.ts';
 
 const dependencies = {
+  authHandler: null,
   getSessionByToken: async () =>
     CoreSession.parse({
       userId: actorId,
       activeTenantId: tenantId,
       expiresAt: new Date('2999-05-10T00:00:00.000Z'),
     }),
+  createInitialTenant: async () => {
+    throw new Error('Not used in dependency tests');
+  },
   listTenants: async (_actorUserId: string) => [],
   updateTenantFileStorageQuotas: async (
     _actorUserId: string,
@@ -479,6 +483,23 @@ const dependencies = {
       createdAt: now,
       updatedAt: now,
     }),
+  updateCourse: async (
+    _actorUserId: string,
+    _tenantId: string,
+    _courseId: string,
+    _input: unknown,
+  ) =>
+    Course.parse({
+      id: courseId,
+      tenantId,
+      code: 'WRIT-101',
+      title: 'Evidence-Based Writing',
+      status: 'active',
+      startsAt: null,
+      endsAt: null,
+      createdAt: now,
+      updatedAt: now,
+    }),
   deleteCourse: async (_actorUserId: string, _tenantId: string, _courseId: string) => {},
   restoreDeletedCourse: async (_actorUserId: string, _tenantId: string, _courseId: string) =>
     Course.parse({
@@ -801,6 +822,33 @@ const dependencies = {
       id: rubricId,
       tenantId,
       title: 'Evidence rubric',
+      version: 1,
+      sourceTemplateId: null,
+      criteria: [
+        {
+          id: 'evidence',
+          label: 'Evidence',
+          description: 'Uses evidence and explains why it matters.',
+          evidenceRequired: true,
+          levels: [
+            {
+              id: 'developing',
+              label: 'Developing',
+              description: 'Evidence is present but weakly explained.',
+              points: 2,
+            },
+          ],
+        },
+      ],
+      createdAt: now,
+      updatedAt: now,
+    }),
+  listRubrics: async (_actorUserId: string, _tenantId: string) => [],
+  getRubric: async (_actorUserId: string, _tenantId: string, _rubricId: string) =>
+    Rubric.parse({
+      id: rubricId,
+      tenantId,
+      title: 'Argument writing rubric',
       version: 1,
       sourceTemplateId: null,
       criteria: [
@@ -1426,6 +1474,30 @@ const dependencies = {
       createdAt: now,
       updatedAt: now,
     }),
+  updateCourseGroupSet: async (
+    _actorUserId: string,
+    _tenantId: string,
+    _courseId: string,
+    _groupSetId: string,
+    _input: unknown,
+  ) =>
+    CourseGroupSet.parse({
+      id: courseGroupSetId,
+      tenantId,
+      courseId,
+      name: 'Project teams (renamed)',
+      selfSignupEnabled: true,
+      status: 'active',
+      position: 0,
+      createdAt: now,
+      updatedAt: now,
+    }),
+  deleteCourseGroupSet: async (
+    _actorUserId: string,
+    _tenantId: string,
+    _courseId: string,
+    _groupSetId: string,
+  ) => {},
   listCourseGroups: async (_actorUserId: string, _tenantId: string, _courseId: string) => [],
   createCourseGroup: async (
     _actorUserId: string,
@@ -1445,6 +1517,31 @@ const dependencies = {
       createdAt: now,
       updatedAt: now,
     }),
+  updateCourseGroup: async (
+    _actorUserId: string,
+    _tenantId: string,
+    _courseId: string,
+    _groupId: string,
+    _input: unknown,
+  ) =>
+    CourseGroup.parse({
+      id: courseGroupId,
+      tenantId,
+      courseId,
+      groupSetId: courseGroupSetId,
+      name: 'Team Alpha (renamed)',
+      description: null,
+      status: 'active',
+      position: 0,
+      createdAt: now,
+      updatedAt: now,
+    }),
+  deleteCourseGroup: async (
+    _actorUserId: string,
+    _tenantId: string,
+    _courseId: string,
+    _groupId: string,
+  ) => {},
   listCourseGroupMembers: async (
     _actorUserId: string,
     _tenantId: string,
@@ -1584,6 +1681,34 @@ const dependencies = {
       position: 0,
       createdAt: now,
     }),
+  downloadSubmissionAttachment: async (
+    _actorUserId: string,
+    _tenantId: string,
+    _courseId: string,
+    _assignmentId: string,
+    _submissionId: string,
+    _attachmentId: string,
+  ) => ({
+    file: FileResource.parse({
+      id: fileId,
+      tenantId,
+      courseId: null,
+      ownerId: actorId,
+      storageProvider: 'local_fs',
+      storageKey: 'test/key',
+      filename: 'evidence-appendix.pdf',
+      mediaType: 'application/pdf',
+      byteSize: 4,
+      checksumSha256: 'a'.repeat(64),
+      visibility: 'private',
+      altText: null,
+      transcriptText: null,
+      license: null,
+      copyrightHolder: null,
+      createdAt: now,
+    }),
+    bytes: new Uint8Array([1, 2, 3, 4]),
+  }),
   listSubmissionComments: async (
     _actorUserId: string,
     _tenantId: string,
@@ -2921,6 +3046,43 @@ const dependencies = {
   listDiscussionGradebookEntries: async () => [],
   exportDiscussionGradebookCsv: async () => '',
   listInboxThreads: async () => [],
+  createInboxThread: async (
+    _actorUserId: string,
+    _tenantId: string,
+    _input: {
+      subject: string;
+      body: string;
+      participantIds: string[];
+      courseId: string | null;
+    },
+  ) =>
+    ConversationThread.parse({
+      id: conversationThreadId,
+      tenantId,
+      courseId: null,
+      subject: 'Welcome',
+      status: 'open',
+      participantIds: [actorId],
+      lastMessageAt: now,
+      createdAt: now,
+      updatedAt: now,
+    }),
+  listInboxThreadMessages: async (_actorUserId: string, _tenantId: string, _threadId: string) => [],
+  createInboxThreadMessage: async (
+    _actorUserId: string,
+    _tenantId: string,
+    _threadId: string,
+    _input: { body: string },
+  ) =>
+    ConversationMessage.parse({
+      id: conversationMessageId,
+      tenantId,
+      threadId: conversationThreadId,
+      senderId: actorId,
+      body: 'Reply.',
+      sentAt: now,
+      createdAt: now,
+    }),
   recordResourceView: async () => {
     throw new Error('recordResourceView stub not configured for this test.');
   },

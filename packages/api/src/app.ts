@@ -151,6 +151,7 @@ import {
   listCoursesRoute,
   restoreDeletedCourseRoute,
   updateCourseCatalogSettingsRoute,
+  updateCourseRoute,
 } from './routes/courses.ts';
 import {
   createCourseCredentialRoute,
@@ -221,11 +222,15 @@ import {
   createCourseGroupMemberRoute,
   createCourseGroupRoute,
   createCourseGroupSetRoute,
+  deleteCourseGroupRoute,
+  deleteCourseGroupSetRoute,
   joinCourseGroupRoute,
   leaveCourseGroupRoute,
   listCourseGroupMembersRoute,
   listCourseGroupSetsRoute,
   listCourseGroupsRoute,
+  updateCourseGroupRoute,
+  updateCourseGroupSetRoute,
 } from './routes/groups.ts';
 import { healthRoute } from './routes/health.ts';
 import {
@@ -254,8 +259,11 @@ import {
 import {
   createConversationMessageRoute,
   createConversationThreadRoute,
+  createInboxThreadMessageRoute,
+  createInboxThreadRoute,
   listConversationMessagesRoute,
   listConversationThreadsRoute,
+  listInboxThreadMessagesRoute,
   listInboxThreadsRoute,
 } from './routes/messaging.ts';
 import {
@@ -277,6 +285,7 @@ import {
   markNotificationReadRoute,
   upsertNotificationPreferenceRoute,
 } from './routes/notifications.ts';
+import { createInitialTenantRoute } from './routes/onboarding.ts';
 import {
   listSubmissionPlagiarismReportsRoute,
   recordSubmissionPlagiarismReportRoute,
@@ -323,7 +332,13 @@ import {
   listRetentionPoliciesRoute,
   upsertRetentionPolicyRoute,
 } from './routes/retention-policies.ts';
-import { createRubricRoute, deleteRubricRoute, updateRubricRoute } from './routes/rubrics.ts';
+import {
+  createRubricRoute,
+  deleteRubricRoute,
+  getRubricRoute,
+  listRubricsRoute,
+  updateRubricRoute,
+} from './routes/rubrics.ts';
 import {
   commitScormRuntimeRoute,
   createScormPackageRoute,
@@ -343,6 +358,7 @@ import {
 } from './routes/section-members.ts';
 import {
   createSubmissionAttachmentRoute,
+  downloadSubmissionAttachmentRoute,
   listSubmissionAttachmentsRoute,
 } from './routes/submission-attachments.ts';
 import {
@@ -490,6 +506,27 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
 
   app.use('*', createHttpRateLimitMiddleware(options.rateLimit));
 
+  // Mount Better Auth at /api/auth/* when configured. The frontend talks to
+  // /api/auth/sign-in/email, /api/auth/sign-up/email, /api/auth/sign-out, and
+  // /api/auth/get-session. When auth is not configured (e.g. OpenAPI generation
+  // or unit-test composition), the mount is a no-op. OPTIONS is included so
+  // CORS preflights succeed when the frontend talks to the API on a different
+  // origin (the Next.js dev proxy avoids preflights, but production might not).
+  app.on(['GET', 'POST', 'OPTIONS'], '/api/auth/*', (context) => {
+    if (!options.dependencies.authHandler) {
+      return context.json(
+        errorResponseBody(
+          new ApiError(
+            'internal_error',
+            'Authentication is not configured on this server. Set BETTER_AUTH_SECRET and BETTER_AUTH_URL.',
+          ),
+        ),
+        500,
+      );
+    }
+    return options.dependencies.authHandler(context.req.raw);
+  });
+
   app.openapi(healthRoute, (context) =>
     context.json(
       {
@@ -507,6 +544,16 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     );
     const tenants = await options.dependencies.listTenants(actorUserId);
     return context.json(tenants, 200);
+  });
+
+  app.openapi(createInitialTenantRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const body = context.req.valid('json');
+    const tenant = await options.dependencies.createInitialTenant(actorUserId, body);
+    return context.json(tenant, 201);
   });
 
   app.openapi(listTenantMembersRoute, async (context) => {
@@ -1104,6 +1151,26 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     return context.json(course, 201);
   });
 
+  app.openapi(updateCourseRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, courseId } = context.req.valid('param');
+    const body = context.req.valid('json');
+    const updated = await options.dependencies.updateCourse(actorUserId, tenantId, courseId, {
+      code: body.code,
+      title: body.title,
+      status: body.status,
+      startsAt: body.startsAt,
+      endsAt: body.endsAt,
+      catalogCategory: body.catalogCategory,
+      academicTerm: body.academicTerm,
+      isBlueprint: body.isBlueprint,
+    });
+    return context.json(updated, 200);
+  });
+
   app.openapi(deleteCourseRoute, async (context) => {
     const actorUserId = await requireAuthenticatedUser(
       options.dependencies,
@@ -1139,6 +1206,26 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     );
 
     return context.json(settings, 200);
+  });
+
+  app.openapi(listRubricsRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId } = context.req.valid('param');
+    const rubrics = await options.dependencies.listRubrics(actorUserId, tenantId);
+    return context.json(rubrics, 200);
+  });
+
+  app.openapi(getRubricRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, rubricId } = context.req.valid('param');
+    const rubric = await options.dependencies.getRubric(actorUserId, tenantId, rubricId);
+    return context.json(rubric, 200);
   });
 
   app.openapi(createRubricRoute, async (context) => {
@@ -2441,6 +2528,52 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     return context.json(threads, 200);
   });
 
+  app.openapi(createInboxThreadRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId } = context.req.valid('param');
+    const body = context.req.valid('json');
+    const thread = await options.dependencies.createInboxThread(actorUserId, tenantId, {
+      subject: body.subject,
+      body: body.body,
+      participantIds: body.participantIds,
+      courseId: body.courseId,
+    });
+    return context.json(thread, 201);
+  });
+
+  app.openapi(listInboxThreadMessagesRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, threadId } = context.req.valid('param');
+    const messages = await options.dependencies.listInboxThreadMessages(
+      actorUserId,
+      tenantId,
+      threadId,
+    );
+    return context.json(messages, 200);
+  });
+
+  app.openapi(createInboxThreadMessageRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, threadId } = context.req.valid('param');
+    const body = context.req.valid('json');
+    const message = await options.dependencies.createInboxThreadMessage(
+      actorUserId,
+      tenantId,
+      threadId,
+      { body: body.body },
+    );
+    return context.json(message, 201);
+  });
+
   app.openapi(createConversationThreadRoute, async (context) => {
     const actorUserId = await requireAuthenticatedUser(
       options.dependencies,
@@ -2527,6 +2660,33 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     return context.json(groupSet, 201);
   });
 
+  app.openapi(updateCourseGroupSetRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, courseId, groupSetId } = context.req.valid('param');
+    const body = context.req.valid('json');
+    const groupSet = await options.dependencies.updateCourseGroupSet(
+      actorUserId,
+      tenantId,
+      courseId,
+      groupSetId,
+      body,
+    );
+    return context.json(groupSet, 200);
+  });
+
+  app.openapi(deleteCourseGroupSetRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, courseId, groupSetId } = context.req.valid('param');
+    await options.dependencies.deleteCourseGroupSet(actorUserId, tenantId, courseId, groupSetId);
+    return context.body(null, 204);
+  });
+
   app.openapi(listCourseGroupsRoute, async (context) => {
     const actorUserId = await requireAuthenticatedUser(
       options.dependencies,
@@ -2552,6 +2712,33 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
       body,
     );
     return context.json(group, 201);
+  });
+
+  app.openapi(updateCourseGroupRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, courseId, groupId } = context.req.valid('param');
+    const body = context.req.valid('json');
+    const group = await options.dependencies.updateCourseGroup(
+      actorUserId,
+      tenantId,
+      courseId,
+      groupId,
+      body,
+    );
+    return context.json(group, 200);
+  });
+
+  app.openapi(deleteCourseGroupRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, courseId, groupId } = context.req.valid('param');
+    await options.dependencies.deleteCourseGroup(actorUserId, tenantId, courseId, groupId);
+    return context.body(null, 204);
   });
 
   app.openapi(listCourseGroupMembersRoute, async (context) => {
@@ -2716,6 +2903,31 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     );
 
     return context.json(attachment, 201);
+  });
+
+  app.openapi(downloadSubmissionAttachmentRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, courseId, assignmentId, submissionId, attachmentId } =
+      context.req.valid('param');
+    const { file, bytes } = await options.dependencies.downloadSubmissionAttachment(
+      actorUserId,
+      tenantId,
+      courseId,
+      assignmentId,
+      submissionId,
+      attachmentId,
+    );
+
+    return new Response(bytes, {
+      status: 200,
+      headers: {
+        'content-type': file.mediaType,
+        'content-disposition': `attachment; filename="${file.filename.replaceAll('"', '')}"`,
+      },
+    });
   });
 
   app.openapi(listSubmissionCommentsRoute, async (context) => {

@@ -1,5 +1,10 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { FileResourceId, SubmissionAttachment, SubmissionId } from '@openlms/contracts';
+import {
+  FileResourceId,
+  SubmissionAttachment,
+  SubmissionAttachmentId,
+  SubmissionId,
+} from '@openlms/contracts';
 import { AssignmentSubmissionsPathParams } from './assignment-submissions.ts';
 import {
   badRequestResponse,
@@ -49,6 +54,40 @@ export const listSubmissionAttachmentsRoute = createRoute({
       content: {
         'application/json': {
           schema: SubmissionAttachmentResponse.array(),
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
+});
+
+export const SubmissionAttachmentDownloadPathParams = SubmissionAttachmentsPathParams.extend({
+  attachmentId: SubmissionAttachmentId.openapi({
+    param: {
+      name: 'attachmentId',
+      in: 'path',
+      description: 'Submission attachment identifier.',
+    },
+    example: '01J9QW7B6N5W2YH3D3A1V0KE39',
+  }),
+});
+
+export const downloadSubmissionAttachmentRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/courses/{courseId}/assignments/{assignmentId}/submissions/{submissionId}/attachments/{attachmentId}/download',
+  tags: ['Submissions'],
+  operationId: 'downloadSubmissionAttachment',
+  security: [{ bearerAuth: [] }],
+  request: { params: SubmissionAttachmentDownloadPathParams },
+  responses: {
+    200: {
+      description:
+        'Attachment bytes. Authorized via the submission scope so graders can read student-private files.',
+      content: {
+        'application/octet-stream': {
+          schema: { type: 'string', format: 'binary' },
         },
       },
     },

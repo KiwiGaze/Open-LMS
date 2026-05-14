@@ -1,5 +1,6 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { type BetterAuthOptions, betterAuth } from 'better-auth';
+import { bearer } from 'better-auth/plugins';
 import { ulid } from 'ulid';
 import type { Database } from '../db/client.ts';
 import { account, session, user, verification } from '../db/schema/auth.ts';
@@ -32,6 +33,11 @@ export const buildAuthOptions = (config: AuthConfig): BetterAuthOptions => ({
   secret: config.secret,
   baseURL: config.baseUrl,
   trustedOrigins: config.trustedOrigins,
+  // `bearer` returns the session token in the sign-in response body and accepts
+  // `Authorization: Bearer <token>` on subsequent calls. The Open-LMS API
+  // already enforces bearer auth via `extractBearerToken`, so this plugin makes
+  // the cookie-free flow first-class for browser SPAs and native clients.
+  plugins: [bearer()],
   advanced: {
     database: {
       generateId: () => ulid(),

@@ -1,0 +1,311 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: en-US
+early_access: false
+enable_free_tier: true
+
+tone_instructions: >-
+  Be direct and technical. Cite file paths and line numbers. Reject
+  over-engineering: abstractions for single use sites, speculative
+  configurability, defensive code for impossible states. No AI
+  attribution in commits or PRs.
+
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: true
+  estimate_code_review_effort: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: true
+  auto_apply_labels: false
+  suggested_reviewers: true
+  auto_assign_reviewers: false
+  poem: false
+  in_progress_fortune: false
+  abort_on_close: true
+  enable_prompt_for_ai_agents: true
+
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!**/.turbo/**"
+    - "!**/coverage/**"
+    - "!**/playwright-report/**"
+    - "!**/test-results/**"
+    - "!**/*.tsbuildinfo"
+    - "!pnpm-lock.yaml"
+    - "!packages/core/drizzle/**"
+    - "!packages/web/src/lib/api/schema.d.ts"
+    - "!openapi/openapi.json"
+    - "!Open-LMS-Specs/**"
+    - "!Open-LMS-Plans/**"
+
+  path_instructions:
+    - path: "**/*.{ts,tsx}"
+      instructions: |
+        TypeScript with verbatimModuleSyntax + allowImportingTsExtensions:
+        every relative import MUST keep its .ts/.tsx extension
+        (e.g. './foo.ts', not './foo'). Disallow `any`, dead code, and
+        TODOs on PRs targeting main. Surface conflicting constraints
+        instead of resolving them silently. Prefer explicit types over
+        inference at module boundaries.
+
+    - path: "packages/contracts/**/*.ts"
+      instructions: |
+        Single source of truth for Zod schemas and branded ULID types
+        (TenantId, UserId, CourseId, ...). No runtime dependency on other
+        workspace packages. New IDs must be branded. String -> branded
+        ID parsing belongs only at system boundaries (e.g. TenantId.parse(...)).
+
+    - path: "packages/ai/**/*.ts"
+      instructions: |
+        Provider-agnostic AI gateway. No DB and no auth. Consumes
+        ProviderConfig and emits generation results plus GatewayUsageRecord.
+        New actions require: declaration in actions.ts (required context,
+        output contract, risk level, human-review flag, allowed audience,
+        scope), an output contract in @openlms/contracts, and a policy
+        evaluation path. AI may suggest; core decides — never persist
+        official state from this package.
+
+    - path: "packages/core/**/*.ts"
+      instructions: |
+        Authoritative LMS state. Every repository function takes tenantId
+        first; never query a tenant-scoped table without it. Grades,
+        permissions, and official state transitions live here. AI provider
+        credentials are stored encrypted via @openlms/core/crypto (AES-GCM
+        with ENCRYPTION_KEY_BASE64); plaintext `apiKey` must never appear
+        in a returned value or log line.
+
+    - path: "packages/core/src/db/schema/**/*.ts"
+      instructions: |
+        Drizzle schema with casing: 'snake_case'. Write camelCase fields;
+        the DB column becomes snake_case automatically. Only add manual
+        column_name mappings if a name does not snake-case cleanly. Most
+        tables must carry tenant_id. When adding a Postgres extension,
+        update BOTH packages/core/src/db/extensions.sql AND ensure a
+        migration installs it (tests/migration-extensions.test.ts asserts
+        the manifest matches migration SQL).
+
+    - path: "packages/core/drizzle/**/*.sql"
+      instructions: |
+        Drizzle-generated migration. Treat as forward-only history; do
+        not edit prior migrations. New columns on existing tables must
+        backfill before adding NOT NULL or a foreign key. Migration-shape
+        tests use sql.js — keep SQL ANSI/Postgres-portable where feasible.
+
+    - path: "packages/api/**/*.ts"
+      instructions: |
+        Hono via @hono/zod-openapi. Each resource exports a createRoute(...)
+        object plus a Zod response schema; routes are wired in app.ts to
+        ApiDependencies methods. Errors must throw ApiError(code, message)
+        where code is one of: bad_request | unauthorized | forbidden |
+        not_found | internal_error. Permission and tenant-membership
+        checks live inside createApiDependencies — do not duplicate them
+        in handlers. Regenerate openapi/openapi.json whenever a route
+        or contract changes.
+
+    - path: "packages/web/**/*.{ts,tsx}"
+      instructions: |
+        Next.js 15 App Router + React 19 + Tailwind v4. Use primitives
+        from @/components/ui and patterns from @/components/patterns;
+        do not hand-roll equivalents. Never reference raw color tokens
+        like --color-brand-500 in components — use semantic vars
+        (--color-brand, --color-text-default, --color-border-subtle, ...)
+        so dark-mode swap works. All HTTP calls go through apiFetch from
+        @/lib/api/client.ts; do not call global fetch in pages. Query
+        keys come from @/lib/api/keys.ts and must include tenantId so a
+        tenant switch invalidates one scope. Check for API storms
+        (per-item requests on mount, waterfall fetches) and infinite
+        recursion (circular invalidations, recursive effect triggers).
+
+    - path: "**/*.test.ts"
+      instructions: |
+        Vitest. Repository tests use mocked Database objects
+        (createSelectOnlyDb / createInsertOnlyDb / etc.) — they must NOT
+        open a real DB connection. Migration-shape tests use sql.js
+        (in-memory SQLite). The @openlms/core package runs serially
+        (sequence.concurrent: false, fileParallelism: false). API
+        dependencies tests construct createApiDependencies with a fake
+        DATABASE_CONNECTION_STRING and exercise predicates without
+        opening a connection.
+
+    - path: ".github/workflows/**"
+      instructions: |
+        Pin third-party actions to a commit SHA, not a floating tag.
+        Use `pnpm` (not npm/yarn). Honor pnpm `minimumReleaseAge` of
+        1440 minutes; do not introduce installs that bypass it.
+
+    - path: "**/*.md"
+      instructions: |
+        Documentation. Check for stale references to removed/renamed
+        symbols, broken relative links, and inconsistencies with the
+        actual code (e.g. function names, package paths, env var names).
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 5
+    drafts: false
+    ignore_title_keywords:
+      - WIP
+      - DO NOT MERGE
+      - "[skip review]"
+
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+    simplify:
+      enabled: false
+
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
+    title:
+      mode: "warning"
+    description:
+      mode: "warning"
+    issue_assessment:
+      mode: "warning"
+
+  tools:
+    # --- Enabled: tools that match this stack ---
+    biome:
+      enabled: true
+    ast-grep:
+      enabled: true
+    actionlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    markdownlint:
+      enabled: true
+    languagetool:
+      enabled: true
+    gitleaks:
+      enabled: true
+    trufflehog:
+      enabled: true
+    semgrep:
+      enabled: true
+    osvScanner:
+      enabled: true
+    dotenvLint:
+      enabled: true
+    sqlfluff:
+      enabled: true
+    shellcheck:
+      enabled: true
+    github-checks:
+      enabled: true
+
+    # --- Disabled: redundant with Biome ---
+    eslint:
+      enabled: false
+    oxc:
+      enabled: false
+
+    # --- Disabled: wrong language / framework ---
+    ruff:
+      enabled: false
+    flake8:
+      enabled: false
+    pylint:
+      enabled: false
+    phpstan:
+      enabled: false
+    phpmd:
+      enabled: false
+    phpcs:
+      enabled: false
+    rubocop:
+      enabled: false
+    brakeman:
+      enabled: false
+    clippy:
+      enabled: false
+    clang:
+      enabled: false
+    cppcheck:
+      enabled: false
+    pmd:
+      enabled: false
+    swiftlint:
+      enabled: false
+    detekt:
+      enabled: false
+    fortitudeLint:
+      enabled: false
+    psscriptanalyzer:
+      enabled: false
+    golangci-lint:
+      enabled: false
+    buf:
+      enabled: false
+    regal:
+      enabled: false
+    luacheck:
+      enabled: false
+    blinter:
+      enabled: false
+    smartyLint:
+      enabled: false
+    emberTemplateLint:
+      enabled: false
+    shopifyThemeCheck:
+      enabled: false
+    prismaLint:
+      enabled: false
+    circleci:
+      enabled: false
+
+    # --- Disabled: no IaC / containers in repo ---
+    tflint:
+      enabled: false
+    checkov:
+      enabled: false
+    trivy:
+      enabled: false
+    hadolint:
+      enabled: false
+
+    # --- Disabled: handled by Biome / not needed ---
+    stylelint:
+      enabled: false
+    htmlhint:
+      enabled: false
+
+chat:
+  art: false
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "CLAUDE.md"
+      - "ARCHITECTURE.md"
+      - "CONTRIBUTING.md"
+      - "packages/*/CLAUDE.md"
+      - "docs/**/*.md"
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  pull_requests:
+    scope: auto
+
+code_generation:
+  docstrings:
+    language: en-US

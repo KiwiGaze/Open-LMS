@@ -23,6 +23,17 @@ export const CourseGroupSetResponse = CourseGroupSet.openapi('CourseGroupSet');
 export const CourseGroupResponse = CourseGroup.openapi('CourseGroup');
 export const CourseGroupMemberResponse = CourseGroupMember.openapi('CourseGroupMember');
 
+export const CourseGroupSetPathParams = CourseAssignmentPathParams.extend({
+  groupSetId: CourseGroupSetId.openapi({
+    param: {
+      name: 'groupSetId',
+      in: 'path',
+      description: 'Course group set identifier.',
+    },
+    example: '01J9QW7B6N5W2YH3D3A1V0KE55',
+  }),
+});
+
 export const CourseGroupPathParams = CourseAssignmentPathParams.extend({
   groupId: CourseGroupId.openapi({
     param: {
@@ -110,6 +121,58 @@ export const createCourseGroupSetRoute = createRoute({
   },
 });
 
+export const UpdateCourseGroupSetBody = CreateCourseGroupSetBody;
+
+export const updateCourseGroupSetRoute = createRoute({
+  method: 'put',
+  path: '/api/v1/tenants/{tenantId}/courses/{courseId}/group-sets/{groupSetId}',
+  tags: ['Groups'],
+  operationId: 'updateCourseGroupSet',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: CourseGroupSetPathParams,
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: UpdateCourseGroupSetBody,
+        },
+      },
+    },
+  },
+  responses: {
+    400: badRequestResponse,
+    200: {
+      description: 'Updated course group set.',
+      content: {
+        'application/json': {
+          schema: CourseGroupSetResponse,
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
+});
+
+export const deleteCourseGroupSetRoute = createRoute({
+  method: 'delete',
+  path: '/api/v1/tenants/{tenantId}/courses/{courseId}/group-sets/{groupSetId}',
+  tags: ['Groups'],
+  operationId: 'deleteCourseGroupSet',
+  security: [{ bearerAuth: [] }],
+  request: { params: CourseGroupSetPathParams },
+  responses: {
+    204: {
+      description: 'Course group set deleted. Contained groups and members are cascaded.',
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
+});
+
 export const listCourseGroupsRoute = createRoute({
   method: 'get',
   path: '/api/v1/tenants/{tenantId}/courses/{courseId}/groups',
@@ -187,6 +250,75 @@ export const createCourseGroupRoute = createRoute({
     },
     401: unauthorizedResponse,
     403: forbiddenResponse,
+  },
+});
+
+export const UpdateCourseGroupBody = z
+  .object({
+    name: z.string().min(1).max(120).openapi({
+      description: 'Group name displayed to learners.',
+      example: 'Team Alpha',
+    }),
+    description: z.string().min(1).max(2_000).nullable().openapi({
+      description: 'Optional group description.',
+      example: 'Project team for week 1.',
+    }),
+    status: CourseGroupStatus.openapi({
+      description: 'Lifecycle status for the group.',
+      example: 'active',
+    }),
+    position: z.number().int().nonnegative().openapi({
+      description: 'Sort position within the parent group set.',
+      example: 0,
+    }),
+  })
+  .strict();
+
+export const updateCourseGroupRoute = createRoute({
+  method: 'put',
+  path: '/api/v1/tenants/{tenantId}/courses/{courseId}/groups/{groupId}',
+  tags: ['Groups'],
+  operationId: 'updateCourseGroup',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: CourseGroupPathParams,
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: UpdateCourseGroupBody,
+        },
+      },
+    },
+  },
+  responses: {
+    400: badRequestResponse,
+    200: {
+      description: 'Updated course group.',
+      content: {
+        'application/json': {
+          schema: CourseGroupResponse,
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
+});
+
+export const deleteCourseGroupRoute = createRoute({
+  method: 'delete',
+  path: '/api/v1/tenants/{tenantId}/courses/{courseId}/groups/{groupId}',
+  tags: ['Groups'],
+  operationId: 'deleteCourseGroup',
+  security: [{ bearerAuth: [] }],
+  request: { params: CourseGroupPathParams },
+  responses: {
+    204: { description: 'Course group deleted. Members are cascaded.' },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
   },
 });
 

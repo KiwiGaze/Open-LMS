@@ -3,6 +3,7 @@ import {
   ConversationMessage,
   ConversationThread,
   ConversationThreadId,
+  CourseId,
   TenantId,
   UserId,
 } from '@openlms/contracts';
@@ -179,6 +180,13 @@ export const TenantInboxPathParams = z.object({
   }),
 });
 
+export const TenantInboxThreadPathParams = TenantInboxPathParams.extend({
+  threadId: ConversationThreadId.openapi({
+    param: { name: 'threadId', in: 'path', description: 'Conversation thread identifier.' },
+    example: '01J9QW7B6N5W2YH3D3A1V0KE4Y',
+  }),
+});
+
 export const listInboxThreadsRoute = createRoute({
   method: 'get',
   path: '/api/v1/tenants/{tenantId}/inbox/threads',
@@ -194,5 +202,100 @@ export const listInboxThreadsRoute = createRoute({
     },
     401: unauthorizedResponse,
     403: forbiddenResponse,
+  },
+});
+
+export const CreateInboxThreadBody = z
+  .object({
+    subject: z.string().min(1).max(180).openapi({
+      description: 'Subject line displayed in conversation lists.',
+      example: 'Welcome to the new term',
+    }),
+    participantIds: z.array(UserId).min(1).max(50).openapi({
+      description: 'Tenant members to include. The authenticated user is added automatically.',
+    }),
+    body: z.string().min(1).max(4000).openapi({
+      description: 'Initial message body for the new thread.',
+    }),
+    courseId: CourseId.nullable().default(null).openapi({
+      description: 'Optional course scope. Null creates a tenant-wide thread.',
+    }),
+  })
+  .strict();
+
+export const createInboxThreadRoute = createRoute({
+  method: 'post',
+  path: '/api/v1/tenants/{tenantId}/inbox/threads',
+  tags: ['Messaging'],
+  operationId: 'createInboxThread',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: TenantInboxPathParams,
+    body: {
+      required: true,
+      content: { 'application/json': { schema: CreateInboxThreadBody } },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Created conversation thread (course-scoped or tenant-wide).',
+      content: { 'application/json': { schema: ConversationThreadResponse } },
+    },
+    400: badRequestResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
+});
+
+export const listInboxThreadMessagesRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/inbox/threads/{threadId}/messages',
+  tags: ['Messaging'],
+  operationId: 'listInboxThreadMessages',
+  security: [{ bearerAuth: [] }],
+  request: { params: TenantInboxThreadPathParams },
+  responses: {
+    200: {
+      description:
+        'Messages in a thread visible to the authenticated participant. Works for both course-scoped and tenant-wide threads.',
+      content: { 'application/json': { schema: ConversationMessageResponse.array() } },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
+});
+
+export const CreateInboxThreadMessageBody = z
+  .object({
+    body: z.string().min(1).max(4000).openapi({
+      description: 'Message body to post.',
+    }),
+  })
+  .strict();
+
+export const createInboxThreadMessageRoute = createRoute({
+  method: 'post',
+  path: '/api/v1/tenants/{tenantId}/inbox/threads/{threadId}/messages',
+  tags: ['Messaging'],
+  operationId: 'createInboxThreadMessage',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: TenantInboxThreadPathParams,
+    body: {
+      required: true,
+      content: { 'application/json': { schema: CreateInboxThreadMessageBody } },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Created message.',
+      content: { 'application/json': { schema: ConversationMessageResponse } },
+    },
+    400: badRequestResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
   },
 });

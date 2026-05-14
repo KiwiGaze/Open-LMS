@@ -48,3 +48,6 @@ packages/*/drizzle/_journal.json.bak
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Local agent state
+.claude/
