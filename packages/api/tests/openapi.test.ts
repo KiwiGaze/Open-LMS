@@ -54,6 +54,8 @@ describe('OpenAPI generation', () => {
       '/api/v1/tenants/{tenantId}/ai/usage-by-action',
       '/api/v1/tenants/{tenantId}/memberships/{membershipId}',
       '/api/v1/me',
+      '/api/v1/me/tenant-memberships',
+      '/api/v1/me/course-memberships',
       '/api/v1/tenants/{tenantId}/courses',
       '/api/v1/tenants/{tenantId}/catalog/courses',
       '/api/v1/tenants/{tenantId}/favorites',

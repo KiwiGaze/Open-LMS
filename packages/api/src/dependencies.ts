@@ -640,6 +640,8 @@ export type ApiDependencies = {
   getCurrentUser: (actorUserId: string) => Promise<User>;
   updateCurrentUser: (actorUserId: string, input: UpdateCurrentUserApiInput) => Promise<User>;
   deleteCurrentUser: (actorUserId: string) => Promise<void>;
+  listMyTenantMemberships: (actorUserId: string) => Promise<TenantMembership[]>;
+  listMyCourseMemberships: (actorUserId: string) => Promise<CourseMembership[]>;
   listTenants: (actorUserId: string) => Promise<Tenant[]>;
   listTenantMembers: (actorUserId: string, tenantId: string) => Promise<TenantMembership[]>;
   updateTenantFileStorageQuotas: (
@@ -6472,6 +6474,12 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
           'The authenticated user no longer exists. Sign in again to continue.',
         );
       }
+    },
+    listMyTenantMemberships: async (actorUserId) => {
+      return listUserTenantMemberships(dbHandle.db, actorUserId);
+    },
+    listMyCourseMemberships: async (actorUserId) => {
+      return listUserCourseMemberships(dbHandle.db, actorUserId);
     },
     listCourses: async (actorUserId, tenantId) => {
       await assertTenantMembership(actorUserId, tenantId);
