@@ -13,6 +13,7 @@ import {
   Shield,
   Sparkles,
   Users,
+  Video,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -59,6 +60,7 @@ export const COURSE_NAV: CourseNavItem[] = [
   { segment: 'pages', label: 'Pages', icon: BookOpen },
   { segment: 'files', label: 'Files', icon: BookOpen },
   { segment: 'glossary', label: 'Glossary', icon: Library },
+  { segment: 'meetings', label: 'Meetings', icon: Video },
   { segment: 'calendar', label: 'Calendar', icon: CalendarClock },
   { segment: 'announcements', label: 'Announcements', icon: Bell },
   { segment: 'settings', label: 'Settings', icon: Settings, staffOnly: true },
