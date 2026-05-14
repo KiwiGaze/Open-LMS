@@ -73,6 +73,8 @@ export const queryKeys = {
       submissionId,
       'comments',
     ] as const,
+  submissionPlagiarismReports: (tenantId: string, submissionId: string) =>
+    ['tenants', tenantId, 'submissions', submissionId, 'plagiarism-reports'] as const,
   courseDiscussions: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'discussion-topics'] as const,
   discussionPosts: (tenantId: string, courseId: string, topicId: string) =>

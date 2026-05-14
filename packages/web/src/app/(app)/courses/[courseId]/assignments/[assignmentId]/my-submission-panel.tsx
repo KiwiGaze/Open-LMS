@@ -17,8 +17,12 @@ import {
 } from '@/lib/api/queries/assignments.ts';
 import { useGradebookEntriesQuery } from '@/lib/api/queries/gradebook.ts';
 import { useMeQuery } from '@/lib/api/queries/me.ts';
+import {
+  pickLatestPlagiarismReport,
+  useSubmissionPlagiarismReportsQuery,
+} from '@/lib/api/queries/plagiarism.ts';
 import { formatDateTime, formatNumber } from '@/lib/format.ts';
-import { FileText, MessageSquare } from 'lucide-react';
+import { ExternalLink, FileText, MessageSquare, ShieldAlert } from 'lucide-react';
 
 export function MySubmissionPanel({
   tenantId,
@@ -44,6 +48,8 @@ export function MySubmissionPanel({
   );
 
   const comments = useSubmissionCommentsQuery(tenantId, courseId, assignmentId, latest?.id ?? null);
+  const plagiarism = useSubmissionPlagiarismReportsQuery(tenantId, latest?.id ?? null);
+  const latestPlagiarismReport = pickLatestPlagiarismReport(plagiarism.data);
 
   if (submissions.isLoading || me.isLoading) {
     return <Skeleton className="h-48 w-full rounded-[var(--radius-lg)]" />;
@@ -113,6 +119,52 @@ export function MySubmissionPanel({
           )}
         </CardContent>
       </Card>
+
+      {latestPlagiarismReport ? (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle>Originality report</CardTitle>
+                <CardDescription>
+                  Checked {formatDateTime(latestPlagiarismReport.checkedAt)}
+                </CardDescription>
+              </div>
+              <Badge
+                tone={
+                  latestPlagiarismReport.status === 'failed'
+                    ? 'danger'
+                    : latestPlagiarismReport.status === 'pending'
+                      ? 'warning'
+                      : latestPlagiarismReport.similarityPercent >= 40
+                        ? 'danger'
+                        : latestPlagiarismReport.similarityPercent >= 20
+                          ? 'warning'
+                          : 'success'
+                }
+              >
+                <ShieldAlert className="mr-1 size-3" aria-hidden />
+                {latestPlagiarismReport.status === 'complete'
+                  ? `${latestPlagiarismReport.similarityPercent.toFixed(1)}% similar`
+                  : latestPlagiarismReport.status}
+              </Badge>
+            </div>
+          </CardHeader>
+          {latestPlagiarismReport.reportUrl ? (
+            <CardContent className="pt-0">
+              <a
+                href={latestPlagiarismReport.reportUrl}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex items-center gap-1 text-sm font-medium text-(--color-brand-700) hover:underline"
+              >
+                Open full report
+                <ExternalLink className="size-3.5" aria-hidden />
+              </a>
+            </CardContent>
+          ) : null}
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader className="pb-3">
