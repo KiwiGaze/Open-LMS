@@ -460,9 +460,11 @@ export const listLatestPlagiarismReportsForCourse = async (
       bySubmission.set(parsed.submissionId, parsed);
       continue;
     }
+    const parsedIsComplete = parsed.status === 'complete';
+    const existingIsComplete = existing.status === 'complete';
     const replaceCurrent =
-      (parsed.status === 'complete' && existing.status !== 'complete') ||
-      (parsed.status === existing.status &&
+      (parsedIsComplete && !existingIsComplete) ||
+      (parsedIsComplete === existingIsComplete &&
         parsed.checkedAt.getTime() >= existing.checkedAt.getTime());
     if (replaceCurrent) {
       bySubmission.set(parsed.submissionId, parsed);
