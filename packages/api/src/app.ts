@@ -162,6 +162,7 @@ import {
   deleteCourseCredentialRoute,
   listCredentialAwardsRoute,
   listCredentialsRoute,
+  listMyCredentialAwardsRoute,
   updateCourseCredentialRoute,
 } from './routes/credentials.ts';
 import {
@@ -2614,6 +2615,16 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
       body,
     );
     return context.json(award, 201);
+  });
+
+  app.openapi(listMyCredentialAwardsRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId } = context.req.valid('param');
+    const awards = await options.dependencies.listMyCredentialAwards(actorUserId, tenantId);
+    return context.json(awards, 200);
   });
 
   app.openapi(listConversationThreadsRoute, async (context) => {

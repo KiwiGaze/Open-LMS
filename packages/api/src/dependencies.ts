@@ -171,6 +171,7 @@ import type {
   ModuleReleaseRuleType,
   ModuleReleaseState,
   ModuleReleaseTargetType,
+  MyCredentialAward,
   NotificationCategory,
   NotificationChannel,
   NotificationFrequency,
@@ -476,6 +477,7 @@ import {
   listCourseUnits,
   listCourses,
   listCredentialAwardsForCredential,
+  listCredentialAwardsForStudent,
   listCredentialsForCourse,
   listDiscussionGradebookEntriesForCourse,
   listDiscussionPostGradesForTopic,
@@ -720,6 +722,7 @@ export type ApiDependencies = {
   listAiActions: (actorUserId: string, tenantId: string) => Promise<AiAction[]>;
   getProviderConfig: (actorUserId: string, tenantId: string) => Promise<ProviderConfigSummary>;
   listMyConsents: (actorUserId: string, tenantId: string) => Promise<Consent[]>;
+  listMyCredentialAwards: (actorUserId: string, tenantId: string) => Promise<MyCredentialAward[]>;
   recordMyConsent: (
     actorUserId: string,
     tenantId: string,
@@ -6358,6 +6361,10 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
     listMyConsents: async (actorUserId, tenantId) => {
       await assertTenantMembership(actorUserId, tenantId);
       return listConsentsForSubject(dbHandle.db, tenantId, actorUserId);
+    },
+    listMyCredentialAwards: async (actorUserId, tenantId) => {
+      await assertTenantMembership(actorUserId, tenantId);
+      return listCredentialAwardsForStudent(dbHandle.db, tenantId, actorUserId);
     },
     recordMyConsent: async (actorUserId, tenantId, input) => {
       await assertTenantMembership(actorUserId, tenantId);

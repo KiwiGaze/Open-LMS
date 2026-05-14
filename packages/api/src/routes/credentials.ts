@@ -6,9 +6,11 @@ import {
   CourseCredentialType,
   CredentialAward,
   CredentialAwardStatus,
+  MyCredentialAward,
   UserId,
 } from '@openlms/contracts';
 import { CourseAssignmentPathParams } from './assignments.ts';
+import { TenantPathParams } from './courses.ts';
 import {
   badRequestResponse,
   conflictResponse,
@@ -19,6 +21,7 @@ import {
 
 export const CourseCredentialResponse = CourseCredential.openapi('CourseCredential');
 export const CredentialAwardResponse = CredentialAward.openapi('CredentialAward');
+export const MyCredentialAwardResponse = MyCredentialAward.openapi('MyCredentialAward');
 
 export const CourseCredentialPathParams = CourseAssignmentPathParams.extend({
   credentialId: CourseCredentialId.openapi({
@@ -263,5 +266,29 @@ export const createCredentialAwardRoute = createRoute({
     403: forbiddenResponse,
     404: notFoundResponse,
     409: conflictResponse,
+  },
+});
+
+export const listMyCredentialAwardsRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/me/credentials',
+  tags: ['Credentials'],
+  operationId: 'listMyCredentialAwards',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: TenantPathParams,
+  },
+  responses: {
+    200: {
+      description:
+        'Credential awards earned by the authenticated user in this tenant, joined with each credential definition.',
+      content: {
+        'application/json': {
+          schema: MyCredentialAwardResponse.array(),
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
   },
 });

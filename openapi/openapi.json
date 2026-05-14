@@ -5723,6 +5723,151 @@
           "updatedAt"
         ]
       },
+      "MyCredentialAward": {
+        "type": "object",
+        "properties": {
+          "award": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+              },
+              "tenantId": {
+                "type": "string",
+                "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+              },
+              "credentialId": {
+                "type": "string",
+                "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+              },
+              "studentId": {
+                "type": "string",
+                "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "issued",
+                  "revoked"
+                ]
+              },
+              "issuedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "revokedAt": {
+                "type": "string",
+                "nullable": true,
+                "format": "date-time"
+              },
+              "expiresAt": {
+                "type": "string",
+                "nullable": true,
+                "format": "date-time"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "tenantId",
+              "credentialId",
+              "studentId",
+              "status",
+              "issuedAt",
+              "revokedAt",
+              "expiresAt",
+              "createdAt",
+              "updatedAt"
+            ]
+          },
+          "credential": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+              },
+              "tenantId": {
+                "type": "string",
+                "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+              },
+              "courseId": {
+                "type": "string",
+                "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+              },
+              "credentialType": {
+                "type": "string",
+                "enum": [
+                  "badge",
+                  "certificate"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 180
+              },
+              "description": {
+                "type": "string",
+                "nullable": true,
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "criteriaSummary": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "published",
+                  "archived"
+                ]
+              },
+              "imageUrl": {
+                "type": "string",
+                "nullable": true,
+                "format": "uri"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "tenantId",
+              "courseId",
+              "credentialType",
+              "title",
+              "description",
+              "criteriaSummary",
+              "status",
+              "imageUrl",
+              "createdAt",
+              "updatedAt"
+            ]
+          }
+        },
+        "required": [
+          "award",
+          "credential"
+        ]
+      },
       "ConversationThread": {
         "type": "object",
         "properties": {
@@ -35575,6 +35720,113 @@
                           "type": "string",
                           "enum": [
                             "conflict"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{tenantId}/me/credentials": {
+      "get": {
+        "tags": [
+          "Credentials"
+        ],
+        "operationId": "listMyCredentialAwards",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2X"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Credential awards earned by the authenticated user in this tenant, joined with each credential definition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyCredentialAward"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
                           ]
                         },
                         "message": {

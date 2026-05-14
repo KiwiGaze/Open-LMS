@@ -12,7 +12,7 @@ import {
   TenantId,
   UserId,
 } from '@openlms/contracts';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { ulid } from 'ulid';
 import type { Database } from '../db/client.ts';
 import { courseCredential, credentialAward } from '../db/schema/credential.ts';
@@ -202,6 +202,43 @@ export const deleteCourseCredential = async (
     .returning({ id: courseCredential.id });
 
   return result.length > 0;
+};
+
+export type StudentCredentialAward = {
+  award: CredentialAwardContract;
+  credential: CourseCredentialContract;
+};
+
+// Lists all credential awards for a given student in a tenant, with the
+// matching credential definition joined in. Ordered newest-issued first so
+// the learner sees their most recent achievement at the top.
+export const listCredentialAwardsForStudent = async (
+  db: Database,
+  tenantId: string,
+  studentId: string,
+): Promise<StudentCredentialAward[]> => {
+  const rows = await db
+    .select({ award: credentialAward, credential: courseCredential })
+    .from(credentialAward)
+    .innerJoin(
+      courseCredential,
+      and(
+        eq(courseCredential.id, credentialAward.credentialId),
+        eq(courseCredential.tenantId, credentialAward.tenantId),
+      ),
+    )
+    .where(
+      and(
+        eq(credentialAward.tenantId, TenantId.parse(tenantId)),
+        eq(credentialAward.studentId, UserId.parse(studentId)),
+      ),
+    )
+    .orderBy(desc(credentialAward.issuedAt));
+
+  return rows.map((row) => ({
+    award: CredentialAward.parse(row.award),
+    credential: CourseCredential.parse(row.credential),
+  }));
 };
 
 export type ListCredentialAwardsForCredentialInput = {
