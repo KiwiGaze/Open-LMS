@@ -133,6 +133,7 @@ import {
   exportCourseRosterCsvRoute,
   importCourseRosterCsvRoute,
   listCourseMembershipsRoute,
+  listMessageableUsersRoute,
   selfEnrollInCourseRoute,
   updateCourseMembershipRoute,
 } from './routes/course-memberships.ts';
@@ -1426,6 +1427,16 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     );
 
     return context.json(memberships, 200);
+  });
+
+  app.openapi(listMessageableUsersRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, courseId } = context.req.valid('param');
+    const users = await options.dependencies.listMessageableUsers(actorUserId, tenantId, courseId);
+    return context.json(users, 200);
   });
 
   app.openapi(createCourseMembershipRoute, async (context) => {

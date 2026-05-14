@@ -25,6 +25,15 @@ export type TenantMembership = z.infer<typeof TenantMembership>;
 export const CourseRole = z.enum(['student', 'instructor', 'teaching_assistant', 'course_admin']);
 export type CourseRole = z.infer<typeof CourseRole>;
 
+export const MessageableUser = z
+  .object({
+    userId: UserId,
+    displayName: z.string().min(1).max(120),
+    role: CourseRole,
+  })
+  .strict();
+export type MessageableUser = z.infer<typeof MessageableUser>;
+
 export const CourseMembershipStatus = z.enum([
   'active',
   'pending_approval',

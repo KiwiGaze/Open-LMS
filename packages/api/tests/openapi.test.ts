@@ -78,6 +78,7 @@ describe('OpenAPI generation', () => {
       '/api/v1/tenants/{tenantId}/courses/{courseId}/announcements',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/announcements/{announcementId}',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/memberships',
+      '/api/v1/tenants/{tenantId}/courses/{courseId}/messageable-users',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/memberships/{courseMembershipId}',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/self-enroll',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/memberships/bulk',

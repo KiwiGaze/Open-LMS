@@ -2,7 +2,12 @@
 
 import { apiFetch } from '@/lib/api/client.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
-import type { ConversationMessage, ConversationThread, CourseMembership } from '@openlms/contracts';
+import type {
+  ConversationMessage,
+  ConversationThread,
+  CourseMembership,
+  MessageableUser,
+} from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useInboxThreadsQuery(tenantId: string | null) {
@@ -78,6 +83,18 @@ export function useCourseMembershipsQuery(tenantId: string | null, courseId: str
         : ['memberships', 'inactive'],
     queryFn: () =>
       apiFetch<CourseMembership[]>(`/tenants/${tenantId}/courses/${courseId}/memberships`),
+    enabled: Boolean(tenantId && courseId),
+  });
+}
+
+export function useMessageableUsersQuery(tenantId: string | null, courseId: string | null) {
+  return useQuery({
+    queryKey:
+      tenantId && courseId
+        ? queryKeys.messageableUsers(tenantId, courseId)
+        : ['messageable-users', 'inactive'],
+    queryFn: () =>
+      apiFetch<MessageableUser[]>(`/tenants/${tenantId}/courses/${courseId}/messageable-users`),
     enabled: Boolean(tenantId && courseId),
   });
 }

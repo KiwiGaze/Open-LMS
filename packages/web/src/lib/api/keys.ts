@@ -79,6 +79,8 @@ export const queryKeys = {
     ['courses', tenantId, courseId, 'gradebook', 'categories'] as const,
   coursePeople: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'memberships'] as const,
+  messageableUsers: (tenantId: string, courseId: string) =>
+    ['courses', tenantId, courseId, 'messageable-users'] as const,
   courseSections: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'sections'] as const,
   sectionMembers: (tenantId: string, courseId: string, sectionId: string) =>

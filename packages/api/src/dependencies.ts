@@ -153,6 +153,7 @@ import type {
   Lti1p3OidcLoginInitiation,
   Lti1p3ServiceAccessToken,
   Lti1p3ServiceTokenRequest,
+  MessageableUser,
   ModuleReleaseCombinator,
   ModuleReleaseDecision,
   ModuleReleaseOverride,
@@ -479,6 +480,7 @@ import {
   listInboxThreadsForUser,
   listLearningObjectiveMasteryForCourse,
   listLearningObjectivesForCourse,
+  listMessageableUsersInCourse,
   listNotificationPreferencesForUser,
   listNotificationsForRecipient,
   listPeerReviewResponsesForReview,
@@ -891,6 +893,11 @@ export type ApiDependencies = {
     role?: CourseRole,
     status?: CourseMembershipStatus,
   ) => Promise<CourseMembership[]>;
+  listMessageableUsers: (
+    actorUserId: string,
+    tenantId: string,
+    courseId: string,
+  ) => Promise<MessageableUser[]>;
   createCourseMembership: (
     actorUserId: string,
     tenantId: string,
@@ -7178,6 +7185,17 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
       }
 
       return listCourseMembershipRecords(dbHandle.db, { tenantId, courseId, role, status });
+    },
+    listMessageableUsers: async (actorUserId, tenantId, courseId) => {
+      const access = await readCourseAccessContext(actorUserId, tenantId, courseId);
+      const users = await listMessageableUsersInCourse(dbHandle.db, { tenantId, courseId });
+      const isStaff = canViewCourseRoster(access);
+
+      return users.filter((member) => {
+        if (member.userId === actorUserId) return false;
+        if (isStaff) return true;
+        return sectionInstructorRoles.includes(member.role);
+      });
     },
     createCourseMembership: async (actorUserId, tenantId, courseId, input) => {
       const access = await readCourseAccessContext(actorUserId, tenantId, courseId);
