@@ -151,29 +151,37 @@ export default function CourseHomePage({ params }: { params: Promise<Params> }) 
                 </div>
               ) : announcements.error ? (
                 <ErrorState error={announcements.error} onRetry={() => announcements.refetch()} />
-              ) : (announcements.data?.length ?? 0) === 0 ? (
-                <EmptyState
-                  icon={Bell}
-                  title="No announcements"
-                  description="When instructors post, they'll show up here."
-                />
               ) : (
-                <ul className="flex flex-col gap-2">
-                  {announcements.data
-                    ?.filter((a) => a.status === 'published')
-                    .slice(0, 5)
-                    .map((a) => (
-                      <li
-                        key={a.id}
-                        className="rounded-[var(--radius-sm)] border border-(--color-border-subtle) p-3"
-                      >
-                        <p className="text-sm font-medium text-(--color-text-default)">{a.title}</p>
-                        <p className="mt-0.5 text-xs text-(--color-text-muted)">
-                          {a.postedAt ? formatRelative(a.postedAt) : 'Draft'}
-                        </p>
-                      </li>
-                    ))}
-                </ul>
+                (() => {
+                  const published =
+                    announcements.data?.filter((a) => a.status === 'published') ?? [];
+                  if (published.length === 0) {
+                    return (
+                      <EmptyState
+                        icon={Bell}
+                        title="No announcements"
+                        description="When instructors post, they'll show up here."
+                      />
+                    );
+                  }
+                  return (
+                    <ul className="flex flex-col gap-2">
+                      {published.slice(0, 5).map((a) => (
+                        <li
+                          key={a.id}
+                          className="rounded-[var(--radius-sm)] border border-(--color-border-subtle) p-3"
+                        >
+                          <p className="text-sm font-medium text-(--color-text-default)">
+                            {a.title}
+                          </p>
+                          <p className="mt-0.5 text-xs text-(--color-text-muted)">
+                            {a.postedAt ? formatRelative(a.postedAt) : 'Draft'}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                })()
               )}
             </CardContent>
           </Card>
