@@ -13,7 +13,7 @@ import { apiFetch } from '@/lib/api/client.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { cn } from '@/lib/cn.ts';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Building2, Check, ChevronsUpDown } from 'lucide-react';
 
 type Tenant = {
@@ -25,11 +25,20 @@ type Tenant = {
 export function TenantSwitcher() {
   const activeTenantId = useSessionStore((s) => s.activeTenantId);
   const setActiveTenant = useSessionStore((s) => s.setActiveTenant);
+  const queryClient = useQueryClient();
 
   const tenantsQuery = useQuery({
     queryKey: queryKeys.tenants(),
     queryFn: () => apiFetch<Tenant[]>('/tenants'),
   });
+
+  const switchTenant = (tenantId: string) => {
+    if (tenantId === activeTenantId) return;
+    setActiveTenant(tenantId);
+    // Refetch every active query and mark inactive ones stale so the next mount
+    // does not read previous-tenant data from the cache.
+    queryClient.invalidateQueries();
+  };
 
   const tenants = tenantsQuery.data ?? [];
   const active = tenants.find((t) => t.id === activeTenantId) ?? tenants[0] ?? null;
@@ -69,7 +78,7 @@ export function TenantSwitcher() {
         {tenants.map((tenant) => (
           <DropdownMenuItem
             key={tenant.id}
-            onSelect={() => setActiveTenant(tenant.id)}
+            onSelect={() => switchTenant(tenant.id)}
             className="justify-between"
           >
             <div className="flex flex-col">
