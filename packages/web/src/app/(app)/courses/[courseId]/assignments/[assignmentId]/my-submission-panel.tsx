@@ -24,6 +24,16 @@ import {
 import { formatDateTime, formatNumber } from '@/lib/format.ts';
 import { ExternalLink, FileText, MessageSquare, ShieldAlert } from 'lucide-react';
 
+function sanitizeHttpsUrl(raw: string | null): string | null {
+  if (!raw) return null;
+  try {
+    const parsed = new URL(raw);
+    return parsed.protocol === 'https:' ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export function MySubmissionPanel({
   tenantId,
   courseId,
@@ -50,6 +60,7 @@ export function MySubmissionPanel({
   const comments = useSubmissionCommentsQuery(tenantId, courseId, assignmentId, latest?.id ?? null);
   const plagiarism = useSubmissionPlagiarismReportsQuery(tenantId, latest?.id ?? null);
   const latestPlagiarismReport = pickLatestPlagiarismReport(plagiarism.data);
+  const safeReportUrl = sanitizeHttpsUrl(latestPlagiarismReport?.reportUrl ?? null);
 
   if (submissions.isLoading || me.isLoading) {
     return <Skeleton className="h-48 w-full rounded-[var(--radius-lg)]" />;
@@ -150,10 +161,10 @@ export function MySubmissionPanel({
               </Badge>
             </div>
           </CardHeader>
-          {latestPlagiarismReport.reportUrl ? (
+          {safeReportUrl ? (
             <CardContent className="pt-0">
               <a
-                href={latestPlagiarismReport.reportUrl}
+                href={safeReportUrl}
                 target="_blank"
                 rel="noreferrer noopener"
                 className="inline-flex items-center gap-1 text-sm font-medium text-(--color-brand-700) hover:underline"
