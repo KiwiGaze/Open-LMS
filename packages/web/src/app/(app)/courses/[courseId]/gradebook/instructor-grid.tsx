@@ -112,19 +112,21 @@ export function InstructorGradebookGrid({
   return (
     <div className="flex flex-col gap-4">
       {hasAnonymousAssignment ? (
-        <output className="flex items-start gap-3 rounded-[var(--radius-md)] border border-(--color-border-subtle) bg-(--color-surface-elevated) p-3">
+        <div
+          role="note"
+          className="flex items-start gap-3 rounded-[var(--radius-md)] border border-(--color-border-subtle) bg-(--color-surface-elevated) p-3"
+        >
           <EyeOff className="mt-0.5 size-4 text-(--color-text-muted)" aria-hidden />
           <div className="text-sm text-(--color-text-default)">
             <p className="font-medium">Anonymous grading is enabled for some assignments.</p>
             <p className="mt-0.5 text-(--color-text-muted)">
               Columns marked with{' '}
-              <EyeOff className="inline size-3 text-(--color-text-muted)" aria-hidden /> hide
-              learner identity in the submissions view. Grade those assignments from the
-              assignment&apos;s submissions screen to preserve anonymity — entering a score in this
-              grid pairs it with a known student.
+              <EyeOff className="inline size-3 text-(--color-text-muted)" aria-hidden /> are
+              read-only here so anonymity isn&apos;t broken. Grade those assignments from the
+              assignment&apos;s submissions screen.
             </p>
           </div>
-        </output>
+        </div>
       ) : null}
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-sm">
@@ -237,6 +239,7 @@ export function InstructorGradebookGrid({
                                 assignmentId={item.id}
                                 entry={entry}
                                 gradingLocked={item.gradingLocked}
+                                anonymousGradingEnabled={item.anonymousGradingEnabled}
                               />
                             </td>
                           );
@@ -269,13 +272,45 @@ type GradeCellProps = {
   assignmentId: string;
   entry: GradebookEntry | undefined;
   gradingLocked: boolean;
+  anonymousGradingEnabled: boolean;
 };
 
-function GradeCell({ tenantId, courseId, assignmentId, entry, gradingLocked }: GradeCellProps) {
+function GradeCell({
+  tenantId,
+  courseId,
+  assignmentId,
+  entry,
+  gradingLocked,
+  anonymousGradingEnabled,
+}: GradeCellProps) {
   const upsert = useUpsertSubmissionGrade(tenantId, courseId);
   const { publish } = useToast();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string>('');
+
+  if (anonymousGradingEnabled) {
+    return entry ? (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex w-full flex-col items-end gap-0.5 rounded-[var(--radius-sm)] px-2 py-1 text-right">
+            <span className="inline-flex items-center gap-1 text-sm font-medium tabular-nums text-(--color-text-default)">
+              <EyeOff className="size-3 text-(--color-text-muted)" aria-label="Anonymous grading" />
+              {formatNumber(entry.score, 1)}
+              <span className="ml-0.5 text-xs text-(--color-text-muted)">
+                /{formatNumber(entry.maxScore, 1)}
+              </span>
+            </span>
+            <Badge tone="outline" className="text-2xs">
+              anonymous
+            </Badge>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>Grade from the assignment&apos;s submissions screen</TooltipContent>
+      </Tooltip>
+    ) : (
+      <span className="text-xs text-(--color-text-muted)">Not submitted</span>
+    );
+  }
 
   if (!entry) {
     return <span className="text-xs text-(--color-text-muted)">Not submitted</span>;

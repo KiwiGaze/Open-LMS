@@ -87,7 +87,10 @@ export default function AssignmentDetailPage({ params }: { params: Promise<Param
       />
 
       {a.anonymousGradingEnabled ? (
-        <output className="flex items-start gap-3 rounded-[var(--radius-md)] border border-(--color-border-subtle) bg-(--color-surface-elevated) p-3">
+        <div
+          role="note"
+          className="flex items-start gap-3 rounded-[var(--radius-md)] border border-(--color-border-subtle) bg-(--color-surface-elevated) p-3"
+        >
           <EyeOff className="mt-0.5 size-4 text-(--color-text-muted)" aria-hidden />
           <div className="text-sm text-(--color-text-default)">
             <p className="font-medium">Anonymous grading is in effect.</p>
@@ -97,7 +100,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<Param
               committed.
             </p>
           </div>
-        </output>
+        </div>
       ) : null}
 
       <section className="grid gap-4 sm:grid-cols-3">
