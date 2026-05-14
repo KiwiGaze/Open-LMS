@@ -36,7 +36,7 @@ import {
   useRestoreCourseBackupMutation,
 } from '@/lib/api/queries/courses.ts';
 import { ArchiveRestore, Copy, Download, Package, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export function CourseToolsCard({
   tenantId,
@@ -124,7 +124,16 @@ function CopyCourseDialog({
   const [sourceCourseId, setSourceCourseId] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!open) {
+      setSourceCourseId('');
+      setError(null);
+    }
+  }, [open]);
+
   const candidates = (courses.data ?? []).filter((c) => c.id !== targetCourseId);
+  const canSubmit =
+    !copy.isPending && !courses.isLoading && !courses.isError && Boolean(sourceCourseId);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -141,7 +150,6 @@ function CopyCourseDialog({
         description: `${result.modulesCopied} modules · ${result.unitsCopied} units · ${result.pagesCopied} pages · ${result.resourcesCopied} resources.`,
       });
       onOpenChange(false);
-      setSourceCourseId('');
     } catch (e) {
       const message = e instanceof ApiHttpError ? e.message : 'Could not copy. Try again.';
       publish({ tone: 'danger', title: 'Copy failed', description: message });
@@ -198,7 +206,7 @@ function CopyCourseDialog({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={copy.isPending} loading={copy.isPending}>
+            <Button type="submit" disabled={!canSubmit} loading={copy.isPending}>
               <Copy className="size-4" aria-hidden /> Copy content
             </Button>
           </DialogFooter>
