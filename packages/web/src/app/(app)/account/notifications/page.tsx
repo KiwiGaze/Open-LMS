@@ -1,9 +1,7 @@
 'use client';
 
-import { EmptyState } from '@/components/patterns/empty-state.tsx';
 import { ErrorState } from '@/components/patterns/error-state.tsx';
 import { PageHeader } from '@/components/patterns/page-header.tsx';
-import { Badge } from '@/components/ui/badge.tsx';
 import {
   Card,
   CardContent,
@@ -11,17 +9,60 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card.tsx';
+import { Label } from '@/components/ui/label.tsx';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
-import { apiFetch } from '@/lib/api/client.ts';
-import type { NotificationPreference } from '@openlms/contracts';
-import { useQuery } from '@tanstack/react-query';
-import { Bell } from 'lucide-react';
+import {
+  useNotificationPreferencesQuery,
+  useUpsertNotificationPreferenceMutation,
+} from '@/lib/api/queries/notifications.ts';
+import { useSessionStore } from '@/lib/auth/store.ts';
+import {
+  NotificationCategory,
+  NotificationChannel,
+  NotificationFrequency,
+} from '@openlms/contracts';
+
+const CATEGORY_LABEL: Record<NotificationCategory, string> = {
+  feedback_published: 'Feedback published',
+  ai_generation_ready: 'AI generation ready',
+  review_requested: 'Review requested',
+  grade_published: 'Grade published',
+  announcement_published: 'Announcement published',
+  discussion_reply: 'Discussion reply',
+  calendar_reminder: 'Calendar reminder',
+  system: 'System',
+};
+
+const CHANNEL_LABEL: Record<NotificationChannel, string> = {
+  in_app: 'In app',
+  email: 'Email',
+  push: 'Push',
+};
+
+const FREQUENCY_LABEL: Record<NotificationFrequency, string> = {
+  immediate: 'Immediate',
+  daily_digest: 'Daily digest',
+  weekly_digest: 'Weekly digest',
+  off: 'Off',
+};
 
 export default function NotificationPreferencesPage() {
-  const prefs = useQuery({
-    queryKey: ['notification-preferences'],
-    queryFn: () => apiFetch<NotificationPreference[]>('/me/notification-preferences'),
-  });
+  const tenantId = useSessionStore((s) => s.activeTenantId);
+  const prefs = useNotificationPreferencesQuery(tenantId);
+  const upsert = useUpsertNotificationPreferenceMutation(tenantId);
+
+  const findFrequency = (
+    category: NotificationCategory,
+    channel: NotificationChannel,
+  ): NotificationFrequency | null =>
+    prefs.data?.find((p) => p.category === category && p.channel === channel)?.frequency ?? null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -31,32 +72,59 @@ export default function NotificationPreferencesPage() {
       />
 
       {prefs.isLoading ? (
-        <Skeleton className="h-64 w-full" />
+        <div className="grid gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={`pref-skel-${i}`} className="h-44 w-full rounded-[var(--radius-lg)]" />
+          ))}
+        </div>
       ) : prefs.error ? (
         <ErrorState error={prefs.error} onRetry={() => prefs.refetch()} />
-      ) : (prefs.data?.length ?? 0) === 0 ? (
-        <EmptyState
-          icon={Bell}
-          title="Defaults in effect"
-          description="You haven't customised any notification preferences yet."
-        />
       ) : (
         <div className="grid gap-3">
-          {prefs.data?.map((pref) => (
-            <Card key={`${pref.category}-${pref.channel}`}>
+          {NotificationCategory.options.map((category) => (
+            <Card key={category}>
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="text-base capitalize">
-                    {pref.category.replace(/_/g, ' ')}
-                  </CardTitle>
-                  <Badge tone="brand">{pref.channel}</Badge>
-                </div>
-                <CardDescription>Frequency: {pref.frequency}</CardDescription>
+                <CardTitle className="text-base">{CATEGORY_LABEL[category]}</CardTitle>
+                <CardDescription>
+                  Set delivery frequency per channel. Selecting a value overrides the tenant default
+                  for that channel.
+                </CardDescription>
               </CardHeader>
-              <CardContent className="text-xs text-(--color-text-muted)">
-                {pref.frequency === 'off'
-                  ? 'You will not be notified for this activity.'
-                  : `Delivered via ${pref.channel}.`}
+              <CardContent className="grid gap-3 sm:grid-cols-3">
+                {NotificationChannel.options.map((channel) => {
+                  const current = findFrequency(category, channel);
+                  const fieldId = `pref-${category}-${channel}`;
+                  return (
+                    <div key={channel} className="flex flex-col gap-1.5">
+                      <Label htmlFor={fieldId}>{CHANNEL_LABEL[channel]}</Label>
+                      <Select
+                        value={current ?? undefined}
+                        onValueChange={(value) =>
+                          upsert.mutate({
+                            category,
+                            channel,
+                            frequency: value as NotificationFrequency,
+                          })
+                        }
+                        disabled={upsert.isPending || !tenantId}
+                      >
+                        <SelectTrigger
+                          id={fieldId}
+                          aria-label={`${CATEGORY_LABEL[category]} via ${CHANNEL_LABEL[channel]}`}
+                        >
+                          <SelectValue placeholder="Default" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {NotificationFrequency.options.map((freq) => (
+                            <SelectItem key={freq} value={freq}>
+                              {FREQUENCY_LABEL[freq]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  );
+                })}
               </CardContent>
             </Card>
           ))}
