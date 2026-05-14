@@ -153,6 +153,7 @@ const emptyDependencies: ApiDependencies = {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
   listCourseMemberships: async () => [],
+  listMessageableUsers: async () => [],
   createCourseMembership: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },

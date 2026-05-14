@@ -603,6 +603,7 @@ const dependencies = {
     _announcementId: string,
   ) => undefined,
   listCourseMemberships: async (_actorUserId: string, _tenantId: string, _courseId: string) => [],
+  listMessageableUsers: async (_actorUserId: string, _tenantId: string, _courseId: string) => [],
   createCourseMembership: async (
     _actorUserId: string,
     _tenantId: string,

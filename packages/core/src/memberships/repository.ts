@@ -8,6 +8,7 @@ import {
   CourseRole,
   type CourseRole as CourseRoleContract,
   MembershipId,
+  type MessageableUser as MessageableUserContract,
   TenantId,
   TenantMembership,
   type TenantMembership as TenantMembershipContract,
@@ -18,6 +19,7 @@ import {
 import { and, eq, sql } from 'drizzle-orm';
 import { ulid } from 'ulid';
 import type { Database } from '../db/client.ts';
+import { user } from '../db/schema/auth.ts';
 import {
   type CourseMembershipRow,
   type TenantMembershipRow,
@@ -252,6 +254,33 @@ export const listCourseMemberships = async (
     .where(and(...conditions));
 
   return rows.map(toCourseMembership);
+};
+
+export const listMessageableUsersInCourse = async (
+  db: Database,
+  input: { tenantId: string; courseId: string },
+): Promise<MessageableUserContract[]> => {
+  const rows = await db
+    .select({
+      userId: courseMembership.userId,
+      displayName: user.name,
+      role: courseMembership.role,
+    })
+    .from(courseMembership)
+    .innerJoin(user, eq(courseMembership.userId, user.id))
+    .where(
+      and(
+        eq(courseMembership.tenantId, TenantId.parse(input.tenantId)),
+        eq(courseMembership.courseId, CourseId.parse(input.courseId)),
+        eq(courseMembership.status, 'active'),
+      ),
+    );
+
+  return rows.map((row) => ({
+    userId: UserId.parse(row.userId),
+    displayName: row.displayName,
+    role: CourseRole.parse(row.role),
+  }));
 };
 
 export type UpdateCourseMembershipInput = {

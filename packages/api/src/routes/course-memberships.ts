@@ -4,6 +4,7 @@ import {
   CourseMembershipId,
   CourseMembershipStatus,
   CourseRole,
+  MessageableUser,
   RosterImportSummary,
   UserId,
 } from '@openlms/contracts';
@@ -17,6 +18,7 @@ import {
 } from './responses.ts';
 
 export const CourseMembershipResponse = CourseMembership.openapi('CourseMembership');
+export const MessageableUserResponse = MessageableUser.openapi('MessageableUser');
 export const CreateCourseMembershipBody = z
   .object({
     userId: UserId.openapi({
@@ -381,6 +383,31 @@ export const bulkDeleteCourseMembershipsRoute = createRoute({
       content: { 'application/json': { schema: BulkDeleteMembershipsResponse } },
     },
     400: badRequestResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
+});
+
+export const listMessageableUsersRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/courses/{courseId}/messageable-users',
+  tags: ['Course Memberships'],
+  operationId: 'listMessageableUsers',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: CourseAssignmentPathParams,
+  },
+  responses: {
+    200: {
+      description:
+        'Course members the authenticated user can message. Staff see the full active roster (excluding self); students see only active course staff.',
+      content: {
+        'application/json': {
+          schema: MessageableUserResponse.array(),
+        },
+      },
+    },
     401: unauthorizedResponse,
     403: forbiddenResponse,
     404: notFoundResponse,
