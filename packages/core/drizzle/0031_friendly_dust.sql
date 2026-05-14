@@ -1,0 +1,1 @@
+CREATE INDEX "conversation_thread_participant_ids_gin_idx" ON "conversation_thread" USING gin ("participant_ids");

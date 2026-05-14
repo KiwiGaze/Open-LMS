@@ -1,0 +1,1 @@
+CREATE INDEX "course_group_member_tenant_user_idx" ON "course_group_member" USING btree ("tenant_id","user_id");

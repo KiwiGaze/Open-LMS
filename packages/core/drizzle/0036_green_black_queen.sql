@@ -1,0 +1,1 @@
+CREATE INDEX "course_announcement_tenant_course_status_idx" ON "course_announcement" USING btree ("tenant_id","course_id","status");

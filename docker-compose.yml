@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: open-lms-postgres
+    environment:
+      POSTGRES_USER: openlms
+      POSTGRES_PASSWORD: openlms_dev
+      POSTGRES_DB: openlms
+    ports:
+      - '5432:5432'
+    volumes:
+      - openlms-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U openlms -d openlms']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  openlms-pgdata:
