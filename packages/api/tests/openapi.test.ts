@@ -123,6 +123,7 @@ describe('OpenAPI generation', () => {
       '/api/v1/tenants/{tenantId}/courses/{courseId}/credentials',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/credentials/{credentialId}',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/credentials/{credentialId}/awards',
+      '/api/v1/tenants/{tenantId}/me/credentials',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/conversations',
       '/api/v1/tenants/{tenantId}/inbox/threads',
       '/api/v1/tenants/{tenantId}/inbox/threads/{threadId}/messages',

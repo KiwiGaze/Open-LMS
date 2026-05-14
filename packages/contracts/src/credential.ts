@@ -38,3 +38,12 @@ export const CredentialAward = z.object({
   updatedAt: z.date(),
 });
 export type CredentialAward = z.infer<typeof CredentialAward>;
+
+// A learner-facing credential award joined with its definition. Returned by
+// `GET /api/v1/tenants/:tenantId/me/credentials` so the account page can show
+// the badge image, title, and course in a single fetch.
+export const MyCredentialAward = z.object({
+  award: CredentialAward,
+  credential: CourseCredential,
+});
+export type MyCredentialAward = z.infer<typeof MyCredentialAward>;
