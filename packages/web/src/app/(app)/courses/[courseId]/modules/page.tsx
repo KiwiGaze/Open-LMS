@@ -65,7 +65,8 @@ export default function ModulesPage({ params }: { params: Promise<Params> }) {
     resources.isLoading ||
     assignments.isLoading ||
     quizzes.isLoading ||
-    topics.isLoading;
+    topics.isLoading ||
+    releaseStatus.isLoading;
 
   const loadError =
     modules.error ||
@@ -73,7 +74,8 @@ export default function ModulesPage({ params }: { params: Promise<Params> }) {
     resources.error ||
     assignments.error ||
     quizzes.error ||
-    topics.error;
+    topics.error ||
+    releaseStatus.error;
 
   if (isLoading) {
     return (
@@ -95,6 +97,7 @@ export default function ModulesPage({ params }: { params: Promise<Params> }) {
           assignments.refetch();
           quizzes.refetch();
           topics.refetch();
+          releaseStatus.refetch();
         }}
       />
     );
@@ -239,7 +242,7 @@ function ModuleCard({
           </div>
         </CardContent>
       ) : null}
-      {units.length > 0 ? (
+      {!isLocked && units.length > 0 ? (
         <CardContent className="pt-0">
           <ul className="flex flex-col gap-3 border-t border-(--color-border-subtle) pt-3">
             {units.map((unit) => {
