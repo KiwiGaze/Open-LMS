@@ -72,13 +72,16 @@ export const upsertProviderConfig = async (
       .for('update')
       .limit(1);
 
-    if (!existing && parsedEncryptedApiKey === null) {
+    let encryptedApiKey: string;
+    if (parsedEncryptedApiKey !== null) {
+      encryptedApiKey = parsedEncryptedApiKey;
+    } else if (existing) {
+      encryptedApiKey = existing.encryptedApiKey;
+    } else {
       throw new Error(
         'Provider config cannot be created without an encrypted API key — none was supplied.',
       );
     }
-
-    const encryptedApiKey = parsedEncryptedApiKey ?? existing!.encryptedApiKey;
 
     const [row] = await tx
       .insert(providerConfig)
