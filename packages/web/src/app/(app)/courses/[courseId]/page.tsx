@@ -25,7 +25,9 @@ import {
   Bell,
   BookOpen,
   CalendarClock,
+  CheckSquare,
   ClipboardList,
+  FileText,
   GraduationCap,
   MessagesSquare,
 } from 'lucide-react';
@@ -76,31 +78,31 @@ export default function CourseHomePage({ params }: { params: Promise<Params> }) 
           <KpiCard
             label="Enrolled students"
             icon={GraduationCap}
-            value={analytics.isLoading ? undefined : analytics.data?.enrolledStudents}
+            value={analytics.data?.enrolledStudents}
             loading={analytics.isLoading}
           />
           <KpiCard
             label="Assignments"
             icon={ClipboardList}
-            value={analytics.isLoading ? undefined : analytics.data?.publishedAssignments}
+            value={analytics.data?.publishedAssignments}
             loading={analytics.isLoading}
           />
           <KpiCard
             label="Quizzes"
-            icon={ClipboardList}
-            value={analytics.isLoading ? undefined : analytics.data?.publishedQuizzes}
+            icon={CheckSquare}
+            value={analytics.data?.publishedQuizzes}
             loading={analytics.isLoading}
           />
           <KpiCard
             label="Discussions"
             icon={MessagesSquare}
-            value={analytics.isLoading ? undefined : analytics.data?.publishedDiscussionTopics}
+            value={analytics.data?.publishedDiscussionTopics}
             loading={analytics.isLoading}
           />
           <KpiCard
             label="Submissions"
-            icon={ClipboardList}
-            value={analytics.isLoading ? undefined : analytics.data?.totalSubmissions}
+            icon={FileText}
+            value={analytics.data?.totalSubmissions}
             loading={analytics.isLoading}
           />
         </section>
