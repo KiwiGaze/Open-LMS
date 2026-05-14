@@ -19,6 +19,7 @@ import {
   getAiUsageSummaryRoute,
   listAiActionsRoute,
   listAiUsageByActionRoute,
+  listAiUsageByActorRoute,
 } from './routes/ai-usage.ts';
 import {
   createCourseAnnouncementsRoute,
@@ -946,6 +947,22 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     const { tenantId } = context.req.valid('param');
     const { from, to } = context.req.valid('query');
     const rows = await options.dependencies.listAiUsageByAction(
+      actorUserId,
+      tenantId,
+      new Date(from),
+      new Date(to),
+    );
+    return context.json(rows, 200);
+  });
+
+  app.openapi(listAiUsageByActorRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId } = context.req.valid('param');
+    const { from, to } = context.req.valid('query');
+    const rows = await options.dependencies.listAiUsageByActor(
       actorUserId,
       tenantId,
       new Date(from),

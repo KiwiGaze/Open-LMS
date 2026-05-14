@@ -161,6 +161,7 @@ export const queryKeys = {
 
   aiUsageSummary: (tenantId: string) => ['tenants', tenantId, 'ai-usage', 'summary'] as const,
   aiUsageByAction: (tenantId: string) => ['tenants', tenantId, 'ai-usage', 'by-action'] as const,
+  aiUsageByActor: (tenantId: string) => ['tenants', tenantId, 'ai-usage', 'by-actor'] as const,
   providerConfig: (tenantId: string) => ['tenants', tenantId, 'provider-config'] as const,
   auditLogs: (tenantId: string) => ['tenants', tenantId, 'audit-logs'] as const,
 } as const;

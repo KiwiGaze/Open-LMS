@@ -36,6 +36,7 @@ import type {
   AiAction,
   AiProviderType,
   AiUsageByAction,
+  AiUsageByActor,
   AiUsageSummary,
   Assignment,
   AssignmentAiSettings,
@@ -380,6 +381,7 @@ import {
   filterQuizOverridesForLearner,
   getActiveLti1p3PlatformSigningKey,
   getAiUsageByAction,
+  getAiUsageByActor,
   getAiUsageSummary,
   getAssignmentById,
   getAssignmentOverrideById,
@@ -730,6 +732,12 @@ export type ApiDependencies = {
     from: Date,
     to: Date,
   ) => Promise<AiUsageByAction[]>;
+  listAiUsageByActor: (
+    actorUserId: string,
+    tenantId: string,
+    from: Date,
+    to: Date,
+  ) => Promise<AiUsageByActor[]>;
   listAuditLogs: (
     actorUserId: string,
     tenantId: string,
@@ -6441,6 +6449,22 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
       }
 
       return getAiUsageByAction(dbHandle.db, { tenantId, from, to });
+    },
+    listAiUsageByActor: async (actorUserId, tenantId, from, to) => {
+      const memberships = await listUserTenantMemberships(dbHandle.db, actorUserId);
+      const isStaff = memberships.some(
+        (membership) =>
+          membership.tenantId === tenantId && tenantStaffRoles.includes(membership.role),
+      );
+
+      if (!isStaff) {
+        throw new ApiError(
+          'forbidden',
+          'Only tenant staff can view AI usage telemetry. Ask an administrator for access.',
+        );
+      }
+
+      return getAiUsageByActor(dbHandle.db, { tenantId, from, to });
     },
     updateTenantMembership: async (actorUserId, tenantId, membershipId, input) => {
       await assertInstitutionAdmin(

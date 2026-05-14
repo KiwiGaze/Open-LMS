@@ -1541,6 +1541,52 @@
         ],
         "additionalProperties": false
       },
+      "AiUsageByActor": {
+        "type": "object",
+        "properties": {
+          "actorUserId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+          },
+          "actorName": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1
+          },
+          "actorEmail": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1
+          },
+          "callCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalInputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalOutputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "estimatedCostCents": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "actorUserId",
+          "actorName",
+          "actorEmail",
+          "callCount",
+          "totalInputTokens",
+          "totalOutputTokens",
+          "estimatedCostCents"
+        ],
+        "additionalProperties": false
+      },
       "User": {
         "type": "object",
         "properties": {
@@ -15565,6 +15611,168 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/AiUsageByAction"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request path, query, or body is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "bad_request"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{tenantId}/ai/usage-by-actor": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "listAiUsageByActor",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2X"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Inclusive range start as an ISO 8601 timestamp.",
+              "example": "2026-04-01T00:00:00.000Z"
+            },
+            "required": true,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Inclusive range end as an ISO 8601 timestamp.",
+              "example": "2026-05-01T00:00:00.000Z"
+            },
+            "required": true,
+            "name": "to",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AI generation telemetry grouped by actor (top consumers first). Staff-only. Anonymous calls aggregate into a single null-actor row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiUsageByActor"
                   }
                 }
               }
