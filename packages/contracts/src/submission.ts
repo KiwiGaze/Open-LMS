@@ -54,6 +54,11 @@ export const Submission = z.object({
 });
 export type Submission = z.infer<typeof Submission>;
 
+export const AssignmentSubmissionListItem = Submission.extend({
+  studentId: Submission.shape.studentId.nullable(),
+});
+export type AssignmentSubmissionListItem = z.infer<typeof AssignmentSubmissionListItem>;
+
 export const SubmissionAttachment = z.object({
   id: SubmissionAttachmentId,
   tenantId: TenantId,

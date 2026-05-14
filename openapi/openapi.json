@@ -5728,18 +5728,9 @@
             "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
           },
           "studentId": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
-              },
-              {
-                "nullable": true
-              },
-              {
-                "nullable": true
-              }
-            ]
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
           },
           "groupId": {
             "type": "string",

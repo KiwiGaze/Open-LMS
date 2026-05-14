@@ -15,7 +15,7 @@ import { useGradebookEntriesQuery, useUpsertSubmissionGrade } from '@/lib/api/qu
 import { cn } from '@/lib/cn';
 import { formatNumber, formatPercent } from '@/lib/format.ts';
 import type { Assignment, CourseMembership, GradebookEntry } from '@openlms/contracts';
-import { ClipboardList, Download, Lock, Search } from 'lucide-react';
+import { ClipboardList, Download, EyeOff, Lock, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { CsvImportDialog } from './csv-import-dialog.tsx';
 
@@ -61,6 +61,12 @@ export function InstructorGradebookGrid({
     [assignments.data],
   );
 
+  const hasAnonymousAssignment = items.some((a) => a.anonymousGradingEnabled);
+  const anonymousAssignmentIds = useMemo(
+    () => new Set(items.filter((a) => a.anonymousGradingEnabled).map((a) => a.id)),
+    [items],
+  );
+
   const entriesByCell = useMemo(() => {
     const map = new Map<CellKey, GradebookEntry>();
     for (const entry of entries.data ?? []) {
@@ -72,13 +78,14 @@ export function InstructorGradebookGrid({
   const studentTotals = useMemo(() => {
     const totals = new Map<string, { earned: number; possible: number }>();
     for (const entry of entries.data ?? []) {
+      if (anonymousAssignmentIds.has(entry.assignmentId)) continue;
       const t = totals.get(entry.studentId) ?? { earned: 0, possible: 0 };
       t.earned += entry.score;
       t.possible += entry.maxScore;
       totals.set(entry.studentId, t);
     }
     return totals;
-  }, [entries.data]);
+  }, [entries.data, anonymousAssignmentIds]);
 
   const isLoading = entries.isLoading || assignments.isLoading;
   const loadError = entries.error || assignments.error;
@@ -109,6 +116,23 @@ export function InstructorGradebookGrid({
 
   return (
     <div className="flex flex-col gap-4">
+      {hasAnonymousAssignment ? (
+        <div
+          role="note"
+          className="flex items-start gap-3 rounded-[var(--radius-md)] border border-(--color-border-subtle) bg-(--color-surface-elevated) p-3"
+        >
+          <EyeOff className="mt-0.5 size-4 text-(--color-text-muted)" aria-hidden />
+          <div className="text-sm text-(--color-text-default)">
+            <p className="font-medium">Anonymous grading is enabled for some assignments.</p>
+            <p className="mt-0.5 text-(--color-text-muted)">
+              Columns marked with{' '}
+              <EyeOff className="inline size-3 text-(--color-text-muted)" aria-hidden /> hide
+              individual scores and are excluded from row totals to keep grading anonymous. Grade
+              those assignments from the assignment&apos;s submissions screen.
+            </p>
+          </div>
+        </div>
+      ) : null}
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-sm">
           <Search
@@ -159,7 +183,20 @@ export function InstructorGradebookGrid({
                         className="min-w-32 border-b border-(--color-border-subtle) px-3 py-3 text-left text-xs font-medium text-(--color-text-default)"
                       >
                         <div className="flex flex-col gap-0.5">
-                          <span className="line-clamp-2">{item.title}</span>
+                          <span className="line-clamp-2 inline-flex items-center gap-1">
+                            {item.anonymousGradingEnabled ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <EyeOff
+                                    className="size-3 shrink-0 text-(--color-text-muted)"
+                                    aria-label="Anonymous grading"
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent>Anonymous grading is enabled</TooltipContent>
+                              </Tooltip>
+                            ) : null}
+                            {item.title}
+                          </span>
                           <span className="text-2xs uppercase tracking-wider text-(--color-text-muted)">
                             {item.extraCredit ? 'Extra credit' : 'Assignment'}
                           </span>
@@ -207,6 +244,7 @@ export function InstructorGradebookGrid({
                                 assignmentId={item.id}
                                 entry={entry}
                                 gradingLocked={item.gradingLocked}
+                                anonymousGradingEnabled={item.anonymousGradingEnabled}
                               />
                             </td>
                           );
@@ -239,13 +277,30 @@ type GradeCellProps = {
   assignmentId: string;
   entry: GradebookEntry | undefined;
   gradingLocked: boolean;
+  anonymousGradingEnabled: boolean;
 };
 
-function GradeCell({ tenantId, courseId, assignmentId, entry, gradingLocked }: GradeCellProps) {
+function GradeCell({
+  tenantId,
+  courseId,
+  assignmentId,
+  entry,
+  gradingLocked,
+  anonymousGradingEnabled,
+}: GradeCellProps) {
   const upsert = useUpsertSubmissionGrade(tenantId, courseId);
   const { publish } = useToast();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string>('');
+
+  if (anonymousGradingEnabled) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-(--color-text-muted)">
+        <EyeOff className="size-3" aria-hidden />
+        Grade from submissions
+      </span>
+    );
+  }
 
   if (!entry) {
     return <span className="text-xs text-(--color-text-muted)">Not submitted</span>;
