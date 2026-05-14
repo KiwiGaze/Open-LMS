@@ -427,3 +427,49 @@ export const listSubmissionPlagiarismReports = async (
 
   return rows.map((row) => SubmissionPlagiarismReport.parse(row));
 };
+
+// Returns the latest plagiarism report per submission in a course. Used by
+// the gradebook to render a similarity column without N+1 fetches. Prefers
+// reports with status `complete`; falls back to the most recent of any
+// status when no complete report exists for a given submission.
+export const listLatestPlagiarismReportsForCourse = async (
+  db: Database,
+  tenantId: string,
+  courseId: string,
+): Promise<SubmissionPlagiarismReportContract[]> => {
+  const rows = await db
+    .select()
+    .from(submissionPlagiarismReport)
+    .where(
+      and(
+        eq(submissionPlagiarismReport.tenantId, tenantId),
+        eq(submissionPlagiarismReport.courseId, courseId),
+      ),
+    )
+    .orderBy(
+      asc(submissionPlagiarismReport.submissionId),
+      asc(submissionPlagiarismReport.checkedAt),
+    );
+
+  // Pick the latest report per submissionId, preferring `complete` status.
+  const bySubmission = new Map<string, SubmissionPlagiarismReportContract>();
+  for (const row of rows) {
+    const parsed = SubmissionPlagiarismReport.parse(row);
+    const existing = bySubmission.get(parsed.submissionId);
+    if (!existing) {
+      bySubmission.set(parsed.submissionId, parsed);
+      continue;
+    }
+    const parsedIsComplete = parsed.status === 'complete';
+    const existingIsComplete = existing.status === 'complete';
+    const replaceCurrent =
+      (parsedIsComplete && !existingIsComplete) ||
+      (parsedIsComplete === existingIsComplete &&
+        parsed.checkedAt.getTime() >= existing.checkedAt.getTime());
+    if (replaceCurrent) {
+      bySubmission.set(parsed.submissionId, parsed);
+    }
+  }
+
+  return [...bySubmission.values()];
+};

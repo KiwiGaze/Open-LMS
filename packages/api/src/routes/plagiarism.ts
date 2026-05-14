@@ -6,6 +6,7 @@ import {
   SubmissionPlagiarismReportStatus,
   TenantId,
 } from '@openlms/contracts';
+import { CourseAssignmentPathParams } from './assignments.ts';
 import {
   badRequestResponse,
   forbiddenResponse,
@@ -108,6 +109,31 @@ export const listSubmissionPlagiarismReportsRoute = createRoute({
   responses: {
     200: {
       description: 'Plagiarism reports recorded for this submission.',
+      content: {
+        'application/json': {
+          schema: SubmissionPlagiarismReportResponse.array(),
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
+});
+
+export const listCoursePlagiarismReportsRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/courses/{courseId}/plagiarism-reports/latest',
+  tags: ['Submissions'],
+  operationId: 'listCoursePlagiarismReports',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: CourseAssignmentPathParams,
+  },
+  responses: {
+    200: {
+      description:
+        'Latest plagiarism report per submission for this course, used by the gradebook similarity column. Staff-only.',
       content: {
         'application/json': {
           schema: SubmissionPlagiarismReportResponse.array(),

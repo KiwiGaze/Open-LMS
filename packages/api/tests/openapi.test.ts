@@ -93,6 +93,7 @@ describe('OpenAPI generation', () => {
       '/api/v1/tenants/{tenantId}/courses/{courseId}/assignments/{assignmentId}/effective-schedule',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/assignments/{assignmentId}/lti-outcomes',
       '/api/v1/tenants/{tenantId}/submissions/{submissionId}/plagiarism-reports',
+      '/api/v1/tenants/{tenantId}/courses/{courseId}/plagiarism-reports/latest',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/assignments/{assignmentId}/overrides',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/assignments/{assignmentId}/overrides/{overrideId}',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/assignments/{assignmentId}/rubric',

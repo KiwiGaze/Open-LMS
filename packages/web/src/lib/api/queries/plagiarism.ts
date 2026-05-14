@@ -5,6 +5,20 @@ import { queryKeys } from '@/lib/api/keys.ts';
 import type { SubmissionPlagiarismReport } from '@openlms/contracts';
 import { useQuery } from '@tanstack/react-query';
 
+export function useCoursePlagiarismReportsQuery(tenantId: string | null, courseId: string | null) {
+  return useQuery({
+    queryKey:
+      tenantId && courseId
+        ? queryKeys.coursePlagiarismReports(tenantId, courseId)
+        : ['course-plagiarism-reports', 'inactive'],
+    queryFn: () =>
+      apiFetch<SubmissionPlagiarismReport[]>(
+        `/tenants/${tenantId}/courses/${courseId}/plagiarism-reports/latest`,
+      ),
+    enabled: Boolean(tenantId && courseId),
+  });
+}
+
 export function useSubmissionPlagiarismReportsQuery(
   tenantId: string | null,
   submissionId: string | null,

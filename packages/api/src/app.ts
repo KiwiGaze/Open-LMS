@@ -293,6 +293,7 @@ import {
 } from './routes/notifications.ts';
 import { createInitialTenantRoute } from './routes/onboarding.ts';
 import {
+  listCoursePlagiarismReportsRoute,
   listSubmissionPlagiarismReportsRoute,
   recordSubmissionPlagiarismReportRoute,
 } from './routes/plagiarism.ts';
@@ -1808,6 +1809,21 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
       actorUserId,
       tenantId,
       submissionId,
+    );
+
+    return context.json(reports, 200);
+  });
+
+  app.openapi(listCoursePlagiarismReportsRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, courseId } = context.req.valid('param');
+    const reports = await options.dependencies.listCoursePlagiarismReports(
+      actorUserId,
+      tenantId,
+      courseId,
     );
 
     return context.json(reports, 200);
