@@ -8,7 +8,30 @@ import type {
   Rubric,
   Submission,
 } from '@openlms/contracts';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+export type AssignmentInput = {
+  moduleId: string | null;
+  unitId: string | null;
+  position: number | null;
+  title: string;
+  instructions: string;
+  status: 'draft' | 'published' | 'archived';
+  dueAt: string | null;
+  allowResubmission: boolean;
+  activeRubricId: string | null;
+  aiSettings: {
+    precheckEnabled: boolean;
+    feedbackDraftEnabled: boolean;
+    scoreSuggestionEnabled: boolean;
+  };
+  extraCredit?: boolean;
+  anonymousGradingEnabled?: boolean;
+  groupSubmissionEnabled?: boolean;
+  groupSetId?: string | null;
+  allowedFileExtensions?: string[];
+  maxFileSizeBytes?: number | null;
+};
 
 export function useAssignmentsQuery(tenantId: string | null, courseId: string | null) {
   return useQuery({
@@ -66,6 +89,57 @@ export function useAssignmentScheduleQuery(
         `/tenants/${tenantId}/courses/${courseId}/assignments/${assignmentId}/effective-schedule`,
       ),
     enabled: Boolean(tenantId && courseId && assignmentId),
+  });
+}
+
+export function useCreateAssignment(tenantId: string | null, courseId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AssignmentInput) =>
+      apiFetch<Assignment>(`/tenants/${tenantId}/courses/${courseId}/assignments`, {
+        method: 'POST',
+        body: input,
+      }),
+    onSuccess: () => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.courseAssignments(tenantId, courseId),
+        });
+      }
+    },
+  });
+}
+
+export function useUpdateAssignment(tenantId: string | null, courseId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      assignmentId,
+      input,
+    }: {
+      assignmentId: string;
+      input: AssignmentInput;
+    }) =>
+      apiFetch<Assignment>(`/tenants/${tenantId}/courses/${courseId}/assignments/${assignmentId}`, {
+        method: 'PUT',
+        body: input,
+      }),
+    onSuccess: (_data, vars) => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.courseAssignments(tenantId, courseId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.assignment(tenantId, courseId, vars.assignmentId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['assignment-rubric', tenantId, courseId, vars.assignmentId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['assignment-schedule', tenantId, courseId, vars.assignmentId],
+        });
+      }
+    },
   });
 }
 

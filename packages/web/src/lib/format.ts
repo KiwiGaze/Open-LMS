@@ -43,6 +43,17 @@ export function formatPercent(
   }).format(value);
 }
 
+export function formatDuration(totalSeconds: number): string {
+  if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return '0:00';
+  const seconds = Math.floor(totalSeconds);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  if (hours > 0) return `${hours}:${pad(minutes)}:${pad(secs)}`;
+  return `${minutes}:${pad(secs)}`;
+}
+
 export function initialsOf(name: string | null | undefined): string {
   if (!name) return '·';
   const trimmed = name.trim();

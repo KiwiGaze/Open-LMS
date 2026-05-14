@@ -14,7 +14,7 @@ import {
 import { useAssignmentsQuery } from '@/lib/api/queries/assignments.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatDateTime } from '@/lib/format.ts';
-import { ClipboardList, Plus, Search } from 'lucide-react';
+import { ClipboardList, Pencil, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { use } from 'react';
@@ -82,6 +82,21 @@ export default function CourseAssignmentsPage({ params }: { params: Promise<Para
         <span className="text-sm text-(--color-text-muted)">
           {a.allowResubmission ? 'Allowed' : 'Single attempt'}
         </span>
+      ),
+    },
+    {
+      id: 'actions',
+      header: '',
+      width: '88px',
+      cell: (a) => (
+        <Button asChild intent="ghost" size="sm">
+          <Link
+            href={`/courses/${courseId}/assignments/${a.id}/edit`}
+            aria-label={`Edit ${a.title}`}
+          >
+            <Pencil className="size-3.5" aria-hidden /> Edit
+          </Link>
+        </Button>
       ),
     },
   ];

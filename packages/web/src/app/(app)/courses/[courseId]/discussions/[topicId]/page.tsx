@@ -18,6 +18,7 @@ import { useToast } from '@/components/ui/toast.tsx';
 import { apiFetch } from '@/lib/api/client.ts';
 import { ApiHttpError } from '@/lib/api/errors.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
+import { useCourseMembershipsQuery } from '@/lib/api/queries/gradebook.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatRelative, initialsOf } from '@/lib/format.ts';
 import type { DiscussionPost, DiscussionTopic } from '@openlms/contracts';
@@ -25,15 +26,23 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MessagesSquare, Send } from 'lucide-react';
 import { useState } from 'react';
 import { use } from 'react';
+import { InstructorGradingPanel } from './instructor-grading-panel.tsx';
+
+const STAFF_ROLES = new Set(['instructor', 'teaching_assistant', 'course_admin']);
 
 type Params = { courseId: string; topicId: string };
 
 export default function DiscussionTopicPage({ params }: { params: Promise<Params> }) {
   const { courseId, topicId } = use(params);
   const tenantId = useSessionStore((s) => s.activeTenantId);
+  const user = useSessionStore((s) => s.user);
   const queryClient = useQueryClient();
   const { publish } = useToast();
   const [body, setBody] = useState('');
+
+  const memberships = useCourseMembershipsQuery(tenantId, courseId);
+  const myMembership = memberships.data?.find((m) => m.userId === user?.id);
+  const isStaff = myMembership ? STAFF_ROLES.has(myMembership.role) : false;
 
   const topic = useQuery({
     queryKey: ['discussion-topic', tenantId ?? '', courseId, topicId],
@@ -174,6 +183,16 @@ export default function DiscussionTopicPage({ params }: { params: Promise<Params
             ))}
         </ul>
       )}
+
+      {isStaff && t.gradingEnabled && t.pointsPossible !== null ? (
+        <InstructorGradingPanel
+          tenantId={tenantId}
+          courseId={courseId}
+          topicId={topicId}
+          pointsPossible={t.pointsPossible}
+          posts={posts.data ?? []}
+        />
+      ) : null}
     </div>
   );
 }

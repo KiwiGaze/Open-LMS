@@ -3,6 +3,7 @@
 import { ErrorState } from '@/components/patterns/error-state.tsx';
 import { PageHeader } from '@/components/patterns/page-header.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
+import { Button } from '@/components/ui/button.tsx';
 import {
   Card,
   CardContent,
@@ -19,7 +20,8 @@ import {
 } from '@/lib/api/queries/assignments.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatDateTime } from '@/lib/format.ts';
-import { CalendarClock, FileText, ListChecks } from 'lucide-react';
+import { CalendarClock, FileText, ListChecks, Pencil, Settings2 } from 'lucide-react';
+import Link from 'next/link';
 import { use } from 'react';
 import { SubmitAssignmentPanel } from './submit-panel.tsx';
 
@@ -69,6 +71,16 @@ export default function AssignmentDetailPage({ params }: { params: Promise<Param
             {a.anonymousGradingEnabled ? <Badge tone="info">Anonymous</Badge> : null}
             {a.gradingLocked ? <Badge tone="warning">Locked</Badge> : null}
             {a.extraCredit ? <Badge tone="brand">Extra credit</Badge> : null}
+            <Button asChild intent="secondary" size="sm">
+              <Link href={`/courses/${courseId}/assignments/${assignmentId}/overrides`}>
+                <Settings2 className="size-3.5" aria-hidden /> Overrides
+              </Link>
+            </Button>
+            <Button asChild intent="secondary" size="sm">
+              <Link href={`/courses/${courseId}/assignments/${assignmentId}/edit`}>
+                <Pencil className="size-3.5" aria-hidden /> Edit
+              </Link>
+            </Button>
           </div>
         }
       />
@@ -185,6 +197,8 @@ export default function AssignmentDetailPage({ params }: { params: Promise<Param
             tenantId={tenantId}
             courseId={courseId}
             assignmentId={assignmentId}
+            allowedExtensions={a.allowedFileExtensions}
+            maxFileSizeBytes={a.maxFileSizeBytes}
           />
         </TabsContent>
       </Tabs>

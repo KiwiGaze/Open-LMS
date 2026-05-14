@@ -12,33 +12,35 @@ import {
   CardTitle,
 } from '@/components/ui/card.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
-import { apiFetch } from '@/lib/api/client.ts';
-import { queryKeys } from '@/lib/api/keys.ts';
+import { useToast } from '@/components/ui/toast.tsx';
+import { ApiHttpError } from '@/lib/api/errors.ts';
+import { useCoursePagesQuery, useDeleteCoursePageMutation } from '@/lib/api/queries/pages.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
-import { useQuery } from '@tanstack/react-query';
-import { BookOpen, Plus } from 'lucide-react';
+import { formatRelative } from '@/lib/format.ts';
+import { BookOpen, Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { use } from 'react';
 
 type Params = { courseId: string };
 
-type Page = {
-  id: string;
-  title: string;
-  slug: string;
-  visibility: 'draft' | 'published' | 'scheduled' | 'archived';
-  updatedAt: string;
-};
-
 export default function CoursePagesPage({ params }: { params: Promise<Params> }) {
   const { courseId } = use(params);
   const tenantId = useSessionStore((s) => s.activeTenantId);
+  const pages = useCoursePagesQuery(tenantId, courseId);
+  const deletePage = useDeleteCoursePageMutation(tenantId, courseId);
+  const { publish } = useToast();
 
-  const pages = useQuery({
-    queryKey: tenantId ? queryKeys.coursePages(tenantId, courseId) : ['pages', 'inactive'],
-    queryFn: () => apiFetch<Page[]>(`/tenants/${tenantId}/courses/${courseId}/pages`),
-    enabled: Boolean(tenantId),
-  });
+  const handleDelete = async (pageId: string, title: string) => {
+    if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
+    try {
+      await deletePage.mutateAsync(pageId);
+      publish({ tone: 'success', title: 'Page deleted', description: title });
+    } catch (error) {
+      const message =
+        error instanceof ApiHttpError ? error.message : 'Could not delete. Try again.';
+      publish({ tone: 'danger', title: 'Delete failed', description: message });
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -66,6 +68,13 @@ export default function CoursePagesPage({ params }: { params: Promise<Params> })
           icon={BookOpen}
           title="No pages yet"
           description="Pages let you publish readings, FAQs, and reference content."
+          action={
+            <Button asChild>
+              <Link href={`/courses/${courseId}/pages/new`}>
+                <Plus className="size-4" aria-hidden /> New page
+              </Link>
+            </Button>
+          }
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -73,14 +82,42 @@ export default function CoursePagesPage({ params }: { params: Promise<Params> })
             <Card key={page.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="text-base">{page.title}</CardTitle>
-                  <Badge tone={page.visibility === 'published' ? 'success' : 'neutral'}>
+                  <Link
+                    href={`/courses/${courseId}/pages/${page.id}`}
+                    className="hover:text-(--color-text-link)"
+                  >
+                    <CardTitle className="text-base">{page.title}</CardTitle>
+                  </Link>
+                  <Badge
+                    tone={
+                      page.visibility === 'published'
+                        ? 'success'
+                        : page.visibility === 'archived'
+                          ? 'outline'
+                          : 'neutral'
+                    }
+                  >
                     {page.visibility}
                   </Badge>
                 </div>
-                <CardDescription>/{page.slug}</CardDescription>
+                <CardDescription>Updated {formatRelative(page.updatedAt)}</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0 text-xs text-(--color-text-subtle)" />
+              <CardContent className="flex items-center justify-end gap-1 pt-0">
+                <Button asChild intent="ghost" size="icon-sm" aria-label={`Edit ${page.title}`}>
+                  <Link href={`/courses/${courseId}/pages/${page.id}/edit`}>
+                    <Pencil className="size-4" aria-hidden />
+                  </Link>
+                </Button>
+                <Button
+                  intent="ghost"
+                  size="icon-sm"
+                  aria-label={`Delete ${page.title}`}
+                  onClick={() => handleDelete(page.id, page.title)}
+                  disabled={deletePage.isPending}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
+              </CardContent>
             </Card>
           ))}
         </div>
