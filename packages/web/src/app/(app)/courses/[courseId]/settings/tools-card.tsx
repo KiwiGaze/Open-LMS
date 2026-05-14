@@ -119,7 +119,7 @@ function CopyCourseDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { publish } = useToast();
-  const courses = useCoursesQuery(tenantId);
+  const courses = useCoursesQuery(tenantId, open);
   const copy = useCopyCourseMutation(tenantId);
   const [sourceCourseId, setSourceCourseId] = useState('');
   const [error, setError] = useState<string | null>(null);

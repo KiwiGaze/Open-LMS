@@ -25,11 +25,11 @@ export type CreateCourseInput = {
   isBlueprint?: boolean;
 };
 
-export function useCoursesQuery(tenantId: string | null) {
+export function useCoursesQuery(tenantId: string | null, enabled = true) {
   return useQuery({
     queryKey: tenantId ? queryKeys.courses(tenantId) : ['courses', 'inactive'],
     queryFn: () => apiFetch<Course[]>(`/tenants/${tenantId}/courses`),
-    enabled: Boolean(tenantId),
+    enabled: Boolean(tenantId) && enabled,
   });
 }
 
