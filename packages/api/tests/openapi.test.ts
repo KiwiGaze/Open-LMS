@@ -36,6 +36,7 @@ describe('OpenAPI generation', () => {
       '/api/v1/tenants/{tenantId}/feature-flags',
       '/api/v1/tenants/{tenantId}/feature-flags/{key}',
       '/api/v1/tenants/{tenantId}/ai/usage-summary',
+      '/api/v1/tenants/{tenantId}/me/consents',
       '/api/v1/tenants/{tenantId}/provider-config',
       '/api/v1/tenants/{tenantId}/lti-1p3/jwks',
       '/api/v1/lti-1p3/authorize',

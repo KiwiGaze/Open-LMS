@@ -290,6 +290,7 @@ import {
   upsertNotificationPreferenceRoute,
 } from './routes/notifications.ts';
 import { createInitialTenantRoute } from './routes/onboarding.ts';
+import { listMyConsentsRoute, recordMyConsentRoute } from './routes/consents.ts';
 import {
   listSubmissionPlagiarismReportsRoute,
   recordSubmissionPlagiarismReportRoute,
@@ -708,6 +709,34 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
       new Date(to),
     );
     return context.json(summary, 200);
+  });
+
+  app.openapi(listMyConsentsRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId } = context.req.valid('param');
+    const consents = await options.dependencies.listMyConsents(actorUserId, tenantId);
+    return context.json(consents, 200);
+  });
+
+  app.openapi(recordMyConsentRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId } = context.req.valid('param');
+    const body = context.req.valid('json');
+    const consent = await options.dependencies.recordMyConsent(actorUserId, tenantId, {
+      actionType: body.actionType,
+      scope: body.scope,
+      scopeId: body.scopeId,
+      state: body.state,
+      expiresAt: body.expiresAt ?? null,
+      evidence: body.evidence ?? null,
+    });
+    return context.json(consent, 201);
   });
 
   app.openapi(getProviderConfigRoute, async (context) => {

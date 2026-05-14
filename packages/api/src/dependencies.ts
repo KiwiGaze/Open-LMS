@@ -35,6 +35,9 @@ import {
 import type {
   AiAction,
   AiProviderType,
+  Consent,
+  ConsentActionType,
+  ConsentScope,
   AiUsageByAction,
   AiUsageByActor,
   AiUsageSummary,
@@ -350,6 +353,8 @@ import {
   deleteCourseResource as deleteCourseResourceRecord,
   deleteCourseSection as deleteCourseSectionRecord,
   deleteCourseUnit as deleteCourseUnitRecord,
+  appendConsent,
+  listConsentsForSubject,
   deleteDiscussionPost as deleteDiscussionPostRecord,
   deleteDiscussionTopic as deleteDiscussionTopicRecord,
   deleteFileResourceForOwner,
@@ -714,6 +719,19 @@ export type ApiDependencies = {
   deleteTenantFeatureFlag: (actorUserId: string, tenantId: string, key: string) => Promise<void>;
   listAiActions: (actorUserId: string, tenantId: string) => Promise<AiAction[]>;
   getProviderConfig: (actorUserId: string, tenantId: string) => Promise<ProviderConfigSummary>;
+  listMyConsents: (actorUserId: string, tenantId: string) => Promise<Consent[]>;
+  recordMyConsent: (
+    actorUserId: string,
+    tenantId: string,
+    input: {
+      actionType: ConsentActionType;
+      scope: ConsentScope;
+      scopeId: string;
+      state: 'granted' | 'revoked';
+      expiresAt: Date | null;
+      evidence: string | null;
+    },
+  ) => Promise<Consent>;
   upsertProviderConfig: (
     actorUserId: string,
     tenantId: string,
@@ -6335,6 +6353,24 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         result: input.result ?? null,
         context: input.context ?? null,
         timestamp: input.timestamp ? new Date(input.timestamp) : null,
+      });
+    },
+    listMyConsents: async (actorUserId, tenantId) => {
+      await assertTenantMembership(actorUserId, tenantId);
+      return listConsentsForSubject(dbHandle.db, tenantId, actorUserId);
+    },
+    recordMyConsent: async (actorUserId, tenantId, input) => {
+      await assertTenantMembership(actorUserId, tenantId);
+
+      return appendConsent(dbHandle.db, {
+        tenantId,
+        subjectId: actorUserId,
+        actionType: input.actionType,
+        scope: input.scope,
+        scopeId: input.scopeId,
+        state: input.state,
+        evidence: input.evidence,
+        expiresAt: input.expiresAt,
       });
     },
     getProviderConfig: async (actorUserId, tenantId) => {

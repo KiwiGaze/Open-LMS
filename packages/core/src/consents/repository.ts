@@ -1,10 +1,12 @@
 import {
   Consent,
   type Consent as ConsentContract,
+  ConsentId,
   InstitutionConsentPolicy,
   type InstitutionConsentPolicy as InstitutionConsentPolicyContract,
 } from '@openlms/contracts';
 import { and, eq, inArray } from 'drizzle-orm';
+import { ulid } from 'ulid';
 import type { Database } from '../db/client.ts';
 import {
   type ConsentRow,
@@ -96,6 +98,58 @@ export const saveConsent = async (
   }
 
   return toConsent(row);
+};
+
+export type AppendConsentInput = {
+  tenantId: string;
+  subjectId: string;
+  actionType: ConsentContract['actionType'];
+  scope: ConsentContract['scope'];
+  scopeId: string;
+  state: 'granted' | 'revoked';
+  evidence: string | null;
+  expiresAt: Date | null;
+};
+
+// Appends a new consent record (with a fresh ULID) for the subject. The
+// `consent` table is append-only history; the AI policy evaluator picks the
+// most recent matching row at decision time.
+export const appendConsent = async (
+  db: Database,
+  input: AppendConsentInput,
+): Promise<ConsentContract> => {
+  const now = new Date();
+  const base = {
+    id: ConsentId.parse(ulid()),
+    tenantId: input.tenantId,
+    subjectId: input.subjectId,
+    actionType: input.actionType,
+    scope: input.scope,
+    scopeId: input.scopeId,
+    evidence: input.evidence,
+    expiresAt: input.expiresAt,
+    createdAt: now,
+    updatedAt: now,
+  };
+  const record: ConsentContract = Consent.parse(
+    input.state === 'granted'
+      ? {
+          ...base,
+          state: 'granted',
+          grantedBy: 'subject',
+          grantedAt: now,
+          revokedAt: null,
+        }
+      : {
+          ...base,
+          state: 'revoked',
+          grantedBy: null,
+          grantedAt: null,
+          revokedAt: now,
+        },
+  );
+
+  return saveConsent(db, record);
 };
 
 export const listConsentsForSubject = async (

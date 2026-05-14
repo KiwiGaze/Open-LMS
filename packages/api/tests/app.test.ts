@@ -293,6 +293,10 @@ const dependencies = {
       updatedAt: now,
     }),
   listAiActions: async (_actorUserId: string, _tenantId: string) => [],
+  listMyConsents: async (_actorUserId: string, _tenantId: string) => [],
+  recordMyConsent: async (_actorUserId: string, _tenantId: string) => {
+    throw new Error('Test stub for recordMyConsent should not be invoked.');
+  },
   getProviderConfig: async (_actorUserId: string, _tenantId: string) =>
     ProviderConfigSummary.parse({
       id: '01J9QW7B6N5W2YH3D3A1V0KEH9',
