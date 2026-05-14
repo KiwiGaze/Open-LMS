@@ -18,8 +18,7 @@ import {
 
 export const WikiPageResponse = WikiPage.openapi('WikiPage');
 export const WikiPageRevisionResponse = WikiPageRevision.openapi('WikiPageRevision');
-export const WikiPageRevisionDiffResponse =
-  WikiPageRevisionDiff.openapi('WikiPageRevisionDiff');
+export const WikiPageRevisionDiffResponse = WikiPageRevisionDiff.openapi('WikiPageRevisionDiff');
 
 export const CourseWikiPagePathParams = CourseAssignmentPathParams.extend({
   wikiPageId: WikiPageId.openapi({
@@ -33,14 +32,18 @@ export const CourseWikiPagePathParams = CourseAssignmentPathParams.extend({
 });
 
 const WikiRevisionNumberParam = (name: string, description: string) =>
-  z.coerce.number().int().positive().openapi({
-    param: {
-      name,
-      in: 'path',
-      description,
-    },
-    example: 2,
-  });
+  z.coerce
+    .number()
+    .int()
+    .positive()
+    .openapi({
+      param: {
+        name,
+        in: 'path',
+        description,
+      },
+      example: 2,
+    });
 
 export const CourseWikiPageRevisionDiffPathParams = CourseWikiPagePathParams.extend({
   baseRevision: WikiRevisionNumberParam('baseRevision', 'Base wiki revision number.'),

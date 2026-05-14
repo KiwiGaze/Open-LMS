@@ -78,17 +78,24 @@ describe('section instructor API dependency authorization', () => {
       dependencies.listSectionInstructors(actorUserId, tenantId, courseId, sectionId),
     ).resolves.toEqual([sampleInstructorAssignment()]);
 
-    expect(coreMocks.listSectionInstructorsForSection).toHaveBeenCalledWith(
-      coreMocks.dbHandle.db,
-      { tenantId, courseId, sectionId },
-    );
+    expect(coreMocks.listSectionInstructorsForSection).toHaveBeenCalledWith(coreMocks.dbHandle.db, {
+      tenantId,
+      courseId,
+      sectionId,
+    });
   });
 
   it('assigns active course staff as section instructors', async () => {
     const dependencies = createDependencies();
 
     await expect(
-      dependencies.assignSectionInstructor(actorUserId, tenantId, courseId, sectionId, instructorId),
+      dependencies.assignSectionInstructor(
+        actorUserId,
+        tenantId,
+        courseId,
+        sectionId,
+        instructorId,
+      ),
     ).resolves.toMatchObject({
       tenantId,
       courseId,
@@ -108,7 +115,13 @@ describe('section instructor API dependency authorization', () => {
     const dependencies = createDependencies();
 
     await expect(
-      dependencies.removeSectionInstructor(actorUserId, tenantId, courseId, sectionId, instructorId),
+      dependencies.removeSectionInstructor(
+        actorUserId,
+        tenantId,
+        courseId,
+        sectionId,
+        instructorId,
+      ),
     ).resolves.toBeUndefined();
 
     expect(coreMocks.removeInstructorFromSection).toHaveBeenCalledWith(coreMocks.dbHandle.db, {
@@ -124,7 +137,13 @@ describe('section instructor API dependency authorization', () => {
     const dependencies = createDependencies();
 
     await expect(
-      dependencies.assignSectionInstructor(actorUserId, tenantId, courseId, sectionId, instructorId),
+      dependencies.assignSectionInstructor(
+        actorUserId,
+        tenantId,
+        courseId,
+        sectionId,
+        instructorId,
+      ),
     ).rejects.toMatchObject({
       code: 'not_found',
       message: 'Section was not found in this course. Check the section id and retry the request.',
@@ -143,7 +162,13 @@ describe('section instructor API dependency authorization', () => {
     const dependencies = createDependencies();
 
     await expect(
-      dependencies.assignSectionInstructor(actorUserId, tenantId, courseId, sectionId, instructorId),
+      dependencies.assignSectionInstructor(
+        actorUserId,
+        tenantId,
+        courseId,
+        sectionId,
+        instructorId,
+      ),
     ).rejects.toMatchObject({
       code: 'bad_request',
       message:
@@ -158,10 +183,17 @@ describe('section instructor API dependency authorization', () => {
     const dependencies = createDependencies();
 
     await expect(
-      dependencies.assignSectionInstructor(actorUserId, tenantId, courseId, sectionId, instructorId),
+      dependencies.assignSectionInstructor(
+        actorUserId,
+        tenantId,
+        courseId,
+        sectionId,
+        instructorId,
+      ),
     ).rejects.toMatchObject({
       code: 'forbidden',
-      message: 'Only course staff can assign instructors to sections. Ask an instructor for access.',
+      message:
+        'Only course staff can assign instructors to sections. Ask an instructor for access.',
     });
 
     expect(coreMocks.assignInstructorToSection).not.toHaveBeenCalled();

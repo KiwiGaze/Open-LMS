@@ -540,7 +540,10 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
       context.req.header('authorization'),
     );
     const { tenantId } = context.req.valid('param');
-    const subscriptions = await options.dependencies.listWebhookSubscriptions(actorUserId, tenantId);
+    const subscriptions = await options.dependencies.listWebhookSubscriptions(
+      actorUserId,
+      tenantId,
+    );
     return context.json(subscriptions, 200);
   });
 

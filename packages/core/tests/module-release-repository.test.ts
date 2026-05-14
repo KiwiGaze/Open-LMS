@@ -276,14 +276,24 @@ describe('module release repository', () => {
 
   it('deletes a release rule', async () => {
     const { db, deleteSpy } = createDeleteDb([{ id: ruleIdValue }]);
-    const deleted = await deleteReleaseRule(db, { tenantId, courseId, moduleId, ruleId: ruleIdValue });
+    const deleted = await deleteReleaseRule(db, {
+      tenantId,
+      courseId,
+      moduleId,
+      ruleId: ruleIdValue,
+    });
     expect(deleteSpy).toHaveBeenCalled();
     expect(deleted).toBe(true);
   });
 
   it('returns false when deleting a missing release rule', async () => {
     const { db } = createDeleteDb([]);
-    const deleted = await deleteReleaseRule(db, { tenantId, courseId, moduleId, ruleId: ruleIdValue });
+    const deleted = await deleteReleaseRule(db, {
+      tenantId,
+      courseId,
+      moduleId,
+      ruleId: ruleIdValue,
+    });
     expect(deleted).toBe(false);
   });
 

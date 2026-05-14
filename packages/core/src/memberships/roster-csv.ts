@@ -1,11 +1,11 @@
 import {
   CourseMembership,
-  CourseMembershipStatus,
-  CourseRole,
-  UserId,
   type CourseMembership as CourseMembershipContract,
+  CourseMembershipStatus,
   type CourseMembershipStatus as CourseMembershipStatusContract,
+  CourseRole,
   type CourseRole as CourseRoleContract,
+  UserId,
 } from '@openlms/contracts';
 
 export type RosterCsvImportRow = {

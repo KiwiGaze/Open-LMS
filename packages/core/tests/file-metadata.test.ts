@@ -7,8 +7,8 @@ import {
   getFileResourceById,
   getFileResourceForOwner,
   getFileStorageUsage,
-  listFileResourcesForOwner,
   listFileResourcesForCourse,
+  listFileResourcesForOwner,
   saveFileResource,
 } from '../src/files/repository.ts';
 
@@ -52,6 +52,7 @@ const createSelectOnlyDb = <T>(rows: T[]): Database =>
     select: () => ({
       from: () => ({
         where: () => ({
+          // biome-ignore lint/suspicious/noThenProperty: mocks Drizzle's thenable query builder for `await db.select()...` calls in repository tests.
           then: (resolve: (value: T[]) => unknown) => Promise.resolve(rows).then(resolve),
           limit: async () => rows,
           orderBy: async () => rows,

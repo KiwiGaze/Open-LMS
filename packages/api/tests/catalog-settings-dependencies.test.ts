@@ -67,9 +67,9 @@ describe('course catalog settings API dependency authorization', () => {
         catalogVisibility: 'listed',
         enrollmentCode: 'JOIN-WRIT-101',
         catalogCategory: 'Writing',
-      academicTerm: '2026 Fall',
-      enrollmentApprovalRequired: true,
-    }),
+        academicTerm: '2026 Fall',
+        enrollmentApprovalRequired: true,
+      }),
     ).resolves.toMatchObject({
       tenantId,
       courseId,

@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import {
-  getWikiPageRevisionDiff,
-  restoreWikiPageRevision,
-} from '../src/wiki/repository.ts';
 import type { Database } from '../src/db/client.ts';
 import { wikiPage, wikiPageRevision } from '../src/db/schema/wiki.ts';
+import { getWikiPageRevisionDiff, restoreWikiPageRevision } from '../src/wiki/repository.ts';
 
 const tenantId = '01J9QW7B6N5W2YH3D3A1V0KE85';
 const courseId = '01J9QW7B6N5W2YH3D3A1V0KE86';
@@ -19,6 +16,7 @@ type SelectQueue = Map<unknown, unknown[][]>;
 const createSelectResult = (rows: unknown[]) => ({
   orderBy: async () => rows,
   limit: async () => rows,
+  // biome-ignore lint/suspicious/noThenProperty: mocks Drizzle's thenable query builder for `await db.select()...` calls in repository tests.
   then: <TResult1 = unknown[], TResult2 = never>(
     onfulfilled?: ((value: unknown[]) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,

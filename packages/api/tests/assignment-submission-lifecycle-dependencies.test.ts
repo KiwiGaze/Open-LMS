@@ -721,8 +721,7 @@ describe('assignment submission lifecycle API dependency authorization', () => {
       ),
     ).rejects.toMatchObject({
       code: 'bad_request',
-      message:
-        'File is larger than this assignment allows. Upload a smaller file and retry.',
+      message: 'File is larger than this assignment allows. Upload a smaller file and retry.',
     });
 
     expect(coreMocks.createSubmissionAttachment).not.toHaveBeenCalled();

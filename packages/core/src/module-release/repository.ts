@@ -13,8 +13,8 @@ import {
   ModuleReleaseRule,
   type ModuleReleaseRule as ModuleReleaseRuleContract,
   type ModuleReleaseRuleStatus,
-  type ModuleReleaseTargetType,
   type ModuleReleaseRuleType,
+  type ModuleReleaseTargetType,
   TenantId,
   UserId,
 } from '@openlms/contracts';

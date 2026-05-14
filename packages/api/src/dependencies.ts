@@ -326,7 +326,6 @@ import {
   createWebhookSubscription as createWebhookSubscriptionRecord,
   createWikiPage as createWikiPageRecord,
   decryptSecret,
-  deleteWebhookSubscription as deleteWebhookSubscriptionRecord,
   deleteAssignmentOverride as deleteAssignmentOverrideRecord,
   deleteAssignment as deleteAssignmentRecord,
   deleteCourseAnnouncement as deleteCourseAnnouncementRecord,
@@ -355,9 +354,10 @@ import {
   deleteRubric as deleteRubricRecord,
   deleteSurvey as deleteSurveyRecord,
   deleteTenantFeatureFlag as deleteTenantFeatureFlagRecord,
+  deleteWebhookSubscription as deleteWebhookSubscriptionRecord,
   deleteWikiPage as deleteWikiPageRecord,
-  encryptSecret,
   encodeLti1p3DeepLinkingSessionData,
+  encryptSecret,
   evaluateCourseReleases,
   expandRecurrence,
   exportCourseBackup,
@@ -556,9 +556,9 @@ import {
   serializeCourseFinalGradesAsCsv,
   serializeCourseRosterCsv,
   serializeDiscussionGradebookEntriesAsCsv,
+  serializeEncryptedSecret,
   serializeGradebookEntriesAsCsv,
   serializeSisFinalGradesAsCsv,
-  serializeEncryptedSecret,
   softDeleteCourse as softDeleteCourseRecord,
   submitQuizAttempt as submitQuizAttemptRecord,
   subscribeToDiscussionTopic as subscribeToDiscussionTopicRecord,
@@ -594,8 +594,8 @@ import {
   updateSurvey as updateSurveyRecord,
   updateTenantFileStorageQuotas as updateTenantFileStorageQuotasRecord,
   updateTenantMembership as updateTenantMembershipRecord,
-  updateWebhookSubscription as updateWebhookSubscriptionRecord,
   updateUserProfile as updateUserProfileRecord,
+  updateWebhookSubscription as updateWebhookSubscriptionRecord,
   updateWikiPage as updateWikiPageRecord,
   upsertCourseSyllabus as upsertCourseSyllabusRecord,
   upsertDiscussionPostGrade,
@@ -4522,11 +4522,7 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
     'course_admin',
     'institution_admin',
   ];
-  const sectionInstructorRoles: CourseRole[] = [
-    'instructor',
-    'teaching_assistant',
-    'course_admin',
-  ];
+  const sectionInstructorRoles: CourseRole[] = ['instructor', 'teaching_assistant', 'course_admin'];
   const allAssignmentStatuses: AssignmentStatus[] = ['draft', 'published', 'archived'];
   const allAssignmentOverrideStatuses: AssignmentOverrideStatus[] = ['active', 'archived'];
   const allCourseAnnouncementStatuses: CourseAnnouncementStatus[] = [
@@ -12572,7 +12568,14 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
 
       return diff;
     },
-    restoreWikiPageRevision: async (actorUserId, tenantId, courseId, wikiPageId, revision, input) => {
+    restoreWikiPageRevision: async (
+      actorUserId,
+      tenantId,
+      courseId,
+      wikiPageId,
+      revision,
+      input,
+    ) => {
       await readCourseAccessContext(actorUserId, tenantId, courseId);
 
       const result = await restoreWikiPageRevisionRecord(dbHandle.db, {

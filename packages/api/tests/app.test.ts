@@ -96,8 +96,8 @@ import {
   UserPushToken,
   WebhookSubscription,
   WikiPage,
-  WikiPageRevisionDiff,
   WikiPageRevision,
+  WikiPageRevisionDiff,
   XapiStatement,
 } from '@openlms/contracts';
 import { CoreSession } from '@openlms/core/auth/session';

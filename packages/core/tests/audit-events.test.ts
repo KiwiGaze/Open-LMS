@@ -14,7 +14,6 @@ import {
   buildHumanReviewAssignedEvent,
   buildHumanReviewAuditLog,
   buildHumanReviewCompletedEvent,
-  buildTenantFileStorageQuotaChangedAuditLog,
   buildLearningFeedbackOpenedEvent,
   buildLearningPageViewedEvent,
   buildLearningPrecheckRequestedEvent,
@@ -22,6 +21,7 @@ import {
   buildProviderConfigValidationAuditLog,
   buildProviderConfigValidationEvent,
   buildSisFinalGradesSubmittedEvent,
+  buildTenantFileStorageQuotaChangedAuditLog,
   buildTenantMembershipRoleChangedAuditLog,
   buildXapiStatementEmittedEvent,
 } from '../src/events/audit-outbox.ts';

@@ -153,7 +153,8 @@ export const UpdateCourseMembershipBody = z
       example: 'teaching_assistant',
     }),
     status: CourseMembershipStatus.optional().openapi({
-      description: 'Updated lifecycle status for add, drop, withdraw, invitation, or waitlist flows.',
+      description:
+        'Updated lifecycle status for add, drop, withdraw, invitation, or waitlist flows.',
       example: 'withdrawn',
     }),
   })

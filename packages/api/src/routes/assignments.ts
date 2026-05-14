@@ -5,8 +5,8 @@ import {
   AssignmentEffectiveSchedule,
   AssignmentId,
   AssignmentStatus,
-  CourseId,
   CourseGroupSetId,
+  CourseId,
   CourseModuleId,
   CourseUnitId,
   RubricId,
@@ -141,7 +141,13 @@ export const CreateAssignmentBody = z
       example: '01J9QW7B6N5W2YH3D3A1V0KE55',
     }),
     allowedFileExtensions: z
-      .array(z.string().min(1).max(32).regex(/^[a-z0-9][a-z0-9_-]*$/))
+      .array(
+        z
+          .string()
+          .min(1)
+          .max(32)
+          .regex(/^[a-z0-9][a-z0-9_-]*$/),
+      )
       .optional()
       .openapi({
         description:

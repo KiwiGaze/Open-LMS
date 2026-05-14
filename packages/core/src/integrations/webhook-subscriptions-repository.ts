@@ -1,7 +1,7 @@
 import {
   WebhookSubscription,
-  WebhookSubscriptionId,
   type WebhookSubscription as WebhookSubscriptionContract,
+  WebhookSubscriptionId,
 } from '@openlms/contracts';
 import { and, asc, eq } from 'drizzle-orm';
 import { ulid } from 'ulid';
@@ -63,7 +63,9 @@ export const createWebhookSubscription = async (
     });
 
   if (!row) {
-    throw new Error('Webhook subscription could not be created because the database returned no row.');
+    throw new Error(
+      'Webhook subscription could not be created because the database returned no row.',
+    );
   }
 
   return toWebhookSubscription(row);

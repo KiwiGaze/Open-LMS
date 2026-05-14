@@ -1,4 +1,4 @@
-import { WebhookSubscription, type TenantRole } from '@openlms/contracts';
+import { type TenantRole, WebhookSubscription } from '@openlms/contracts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApiDependencies } from '../src/dependencies.ts';
 
@@ -113,11 +113,11 @@ describe('webhook subscription API dependency', () => {
     setActorRole('instructor');
     const dependencies = createDependencies();
 
-    await expect(dependencies.listWebhookSubscriptions(actorUserId, tenantId)).rejects.toMatchObject(
-      {
-        code: 'forbidden',
-      },
-    );
+    await expect(
+      dependencies.listWebhookSubscriptions(actorUserId, tenantId),
+    ).rejects.toMatchObject({
+      code: 'forbidden',
+    });
     expect(coreMocks.listWebhookSubscriptions).not.toHaveBeenCalled();
   });
 

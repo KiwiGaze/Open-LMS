@@ -12,7 +12,8 @@ export const FileMetadataResponse = FileMetadata.openapi('FileMetadata');
 export const CreateFileUploadBody = CreateFileUpload.openapi('CreateFileUpload');
 export const ListFilesQuery = z.object({
   courseId: CourseId.optional().openapi({
-    description: 'When provided, list files in the course library instead of the authenticated owner library.',
+    description:
+      'When provided, list files in the course library instead of the authenticated owner library.',
     example: '01J9QW7B6N5W2YH3D3A1V0KE2Y',
   }),
 });

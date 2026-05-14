@@ -4,12 +4,12 @@ import { CoursePathParams } from './courses.ts';
 import { badRequestResponse, forbiddenResponse, unauthorizedResponse } from './responses.ts';
 
 export const CopyCourseBody = z
-	.object({
-		targetCourseId: CourseId.openapi({
-			description: 'Target course to receive copied course content.',
-			example: '01J9QW7B6N5W2YH3D3A1V0KE2Z',
-		}),
-	})
+  .object({
+    targetCourseId: CourseId.openapi({
+      description: 'Target course to receive copied course content.',
+      example: '01J9QW7B6N5W2YH3D3A1V0KE2Z',
+    }),
+  })
   .strict();
 
 export const CopyCourseResponse = z

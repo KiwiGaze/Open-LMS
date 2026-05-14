@@ -27,10 +27,13 @@ export const CreateWebhookSubscriptionBody = z
       description: 'HTTPS endpoint that receives webhook deliveries.',
       example: 'https://hooks.example.edu/open-lms',
     }),
-    topics: WebhookEventTopic.array().min(1).max(50).openapi({
-      description: 'Outbox topics to deliver to this subscription.',
-      example: ['grade.lifecycle', 'assignment.feedback'],
-    }),
+    topics: WebhookEventTopic.array()
+      .min(1)
+      .max(50)
+      .openapi({
+        description: 'Outbox topics to deliver to this subscription.',
+        example: ['grade.lifecycle', 'assignment.feedback'],
+      }),
     status: WebhookSubscriptionStatus.openapi({
       description: 'Whether this subscription should receive deliveries.',
       example: 'enabled',
@@ -52,10 +55,13 @@ export const UpdateWebhookSubscriptionBody = z
       description: 'HTTPS endpoint that receives webhook deliveries.',
       example: 'https://hooks.example.edu/open-lms',
     }),
-    topics: WebhookEventTopic.array().min(1).max(50).openapi({
-      description: 'Outbox topics to deliver to this subscription.',
-      example: ['grade.lifecycle', 'assignment.feedback'],
-    }),
+    topics: WebhookEventTopic.array()
+      .min(1)
+      .max(50)
+      .openapi({
+        description: 'Outbox topics to deliver to this subscription.',
+        example: ['grade.lifecycle', 'assignment.feedback'],
+      }),
     status: WebhookSubscriptionStatus.openapi({
       description: 'Whether this subscription should receive deliveries.',
       example: 'enabled',

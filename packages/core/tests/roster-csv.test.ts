@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { CourseMembership } from '@openlms/contracts';
+import { describe, expect, it } from 'vitest';
 import { parseRosterCsv, serializeCourseRosterCsv } from '../src/memberships/roster-csv.ts';
 
 const now = new Date('2026-05-10T00:00:00.000Z');

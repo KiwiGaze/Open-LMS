@@ -382,23 +382,13 @@ const copyWikiPages = async (
   const sourcePages = await tx
     .select()
     .from(wikiPage)
-    .where(
-      and(
-        eq(wikiPage.tenantId, input.tenantId),
-        eq(wikiPage.courseId, input.sourceCourseId),
-      ),
-    )
+    .where(and(eq(wikiPage.tenantId, input.tenantId), eq(wikiPage.courseId, input.sourceCourseId)))
     .orderBy(asc(wikiPage.title), asc(wikiPage.id));
 
   const targetPages = await tx
     .select({ slug: wikiPage.slug })
     .from(wikiPage)
-    .where(
-      and(
-        eq(wikiPage.tenantId, input.tenantId),
-        eq(wikiPage.courseId, input.targetCourseId),
-      ),
-    );
+    .where(and(eq(wikiPage.tenantId, input.tenantId), eq(wikiPage.courseId, input.targetCourseId)));
   const existingSlugs = new Set(targetPages.map((page) => page.slug));
 
   for (const page of sourcePages) {

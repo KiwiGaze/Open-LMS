@@ -1,5 +1,4 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { MiddlewareHandler } from 'hono';
 import {
   AssignmentId,
   Lti1p3AgsResultContainer,
@@ -15,6 +14,7 @@ import {
   Lti1p3ServiceTokenRequest,
   UserId,
 } from '@openlms/contracts';
+import type { MiddlewareHandler } from 'hono';
 import { CourseExternalToolPathParams } from './course-external-tools.ts';
 import { CoursePathParams, TenantPathParams } from './courses.ts';
 import { badRequestResponse, forbiddenResponse, unauthorizedResponse } from './responses.ts';

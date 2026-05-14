@@ -1,7 +1,7 @@
 import {
   FileResource,
-  FileResourceId,
   type FileResource as FileResourceContract,
+  FileResourceId,
 } from '@openlms/contracts';
 import { and, eq, sql } from 'drizzle-orm';
 import { ulid } from 'ulid';

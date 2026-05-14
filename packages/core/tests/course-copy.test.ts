@@ -27,6 +27,7 @@ type SelectQueue = Map<unknown, unknown[][]>;
 
 const createSelectResult = (rows: unknown[]) => ({
   orderBy: async () => rows,
+  // biome-ignore lint/suspicious/noThenProperty: mocks Drizzle's thenable query builder for `await db.select()...` calls in repository tests.
   then: <TResult1 = unknown[], TResult2 = never>(
     onfulfilled?: ((value: unknown[]) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
@@ -121,11 +122,7 @@ describe('course copy', () => {
       ]),
     );
 
-    const result = await copyCourseTemplate(
-      db,
-      { tenantId, sourceCourseId, targetCourseId },
-      now,
-    );
+    const result = await copyCourseTemplate(db, { tenantId, sourceCourseId, targetCourseId }, now);
 
     const copiedObjective = inserts.find((insert) => insert.table === learningObjective)?.value;
     const copiedWikiPage = inserts.find((insert) => insert.table === wikiPage)?.value;

@@ -1,7 +1,7 @@
 import {
   Assignment,
-  type AssignmentAllowedFileExtension,
   type AssignmentAiSettings,
+  type AssignmentAllowedFileExtension,
   type Assignment as AssignmentContract,
   AssignmentId,
   AssignmentOverride,
@@ -10,8 +10,8 @@ import {
   type AssignmentOverrideStatus,
   type AssignmentOverrideTargetType,
   type AssignmentStatus,
-  CourseId,
   CourseGroupSetId,
+  CourseId,
   CourseModuleId,
   CourseUnitId,
   RubricId,

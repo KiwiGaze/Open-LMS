@@ -1,11 +1,11 @@
 import type { CourseResourceViewEvent } from '@openlms/contracts';
-import type { Database } from '../db/client.ts';
 import {
   completeCompletionProgress,
   listActiveViewResourceCompletionRequirements,
 } from '../completion/repository.ts';
 import { getCourseResourceForCourse } from '../courses/repository.ts';
-import { recordResourceView, type RecordResourceViewInput } from './repository.ts';
+import type { Database } from '../db/client.ts';
+import { type RecordResourceViewInput, recordResourceView } from './repository.ts';
 
 export type RecordResourceViewWithCompletionInput = RecordResourceViewInput & {
   completeRequirements?: boolean;

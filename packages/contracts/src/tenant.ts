@@ -14,7 +14,13 @@ export const Tenant = z.object({
   id: TenantId,
   slug: TenantSlug,
   displayName: z.string().min(1).max(120),
-  storageByteLimit: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).nullable().default(null),
+  storageByteLimit: z
+    .number()
+    .int()
+    .positive()
+    .max(Number.MAX_SAFE_INTEGER)
+    .nullable()
+    .default(null),
   defaultUserStorageByteLimit: z
     .number()
     .int()
