@@ -121,6 +121,8 @@ export const queryKeys = {
     ['courses', tenantId, courseId, 'analytics'] as const,
 
   notifications: (tenantId: string) => ['tenants', tenantId, 'notifications'] as const,
+  notificationPreferences: (tenantId: string) =>
+    ['tenants', tenantId, 'notifications', 'preferences'] as const,
   inboxThreads: (tenantId: string) => ['tenants', tenantId, 'inbox'] as const,
   conversationMessages: (tenantId: string, threadId: string) =>
     ['tenants', tenantId, 'inbox', threadId, 'messages'] as const,
