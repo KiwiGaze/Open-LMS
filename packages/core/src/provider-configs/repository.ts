@@ -111,6 +111,18 @@ export type RecordProviderConfigValidationResultInput = {
   validationError: string | null;
 };
 
+export const deleteProviderConfigByTenantId = async (
+  db: Database,
+  tenantId: string,
+): Promise<boolean> => {
+  const rows = await db
+    .delete(providerConfig)
+    .where(eq(providerConfig.tenantId, TenantId.parse(tenantId)))
+    .returning({ id: providerConfig.id });
+
+  return rows.length > 0;
+};
+
 export const recordProviderConfigValidationResult = async (
   db: Database,
   input: RecordProviderConfigValidationResultInput,

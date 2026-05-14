@@ -488,6 +488,137 @@
         ],
         "additionalProperties": false
       },
+      "UpsertProviderConfigBody": {
+        "type": "object",
+        "properties": {
+          "providerType": {
+            "type": "string",
+            "enum": [
+              "openai",
+              "anthropic",
+              "google",
+              "azure_openai",
+              "openai_compatible",
+              "local"
+            ]
+          },
+          "baseUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "apiKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "description": "Plaintext API key. Required on first create; optional on subsequent updates."
+          },
+          "modelPreferences": {
+            "type": "object",
+            "properties": {
+              "precheckModel": {
+                "type": "string",
+                "minLength": 1
+              },
+              "feedbackDraftModel": {
+                "type": "string",
+                "minLength": 1
+              },
+              "trendCardModel": {
+                "type": "string",
+                "minLength": 1
+              },
+              "rubricClarityModel": {
+                "type": "string",
+                "minLength": 1
+              },
+              "pageExplanationModel": {
+                "type": "string",
+                "minLength": 1
+              },
+              "embeddingModel": {
+                "type": "string",
+                "minLength": 1
+              },
+              "rerankModel": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          },
+          "capabilities": {
+            "type": "object",
+            "properties": {
+              "supportsStructuredOutput": {
+                "type": "boolean"
+              },
+              "supportsTools": {
+                "type": "boolean"
+              },
+              "supportsVision": {
+                "type": "boolean"
+              },
+              "supportsPromptCaching": {
+                "type": "boolean"
+              },
+              "maxContextTokens": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true
+              },
+              "supportsDeterministic": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "supportsStructuredOutput",
+              "supportsTools",
+              "supportsVision",
+              "supportsPromptCaching",
+              "maxContextTokens",
+              "supportsDeterministic"
+            ],
+            "additionalProperties": false
+          },
+          "quota": {
+            "type": "object",
+            "properties": {
+              "softWarnTokensPerPeriod": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "hardCapTokensPerPeriod": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true
+              },
+              "period": {
+                "type": "string",
+                "enum": [
+                  "day",
+                  "week",
+                  "month"
+                ]
+              }
+            },
+            "required": [
+              "softWarnTokensPerPeriod",
+              "hardCapTokensPerPeriod",
+              "period"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "providerType",
+          "baseUrl",
+          "modelPreferences",
+          "capabilities",
+          "quota"
+        ],
+        "additionalProperties": false
+      },
       "Lti1p3JsonWebKeySet": {
         "type": "object",
         "properties": {
@@ -12587,6 +12718,279 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "upsertProviderConfig",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2X"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertProviderConfigBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved AI provider config (encrypted key redacted). institution_admin only.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderConfigSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request path, query, or body is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "bad_request"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "unauthorized"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated user is not allowed to access this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "forbidden"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "deleteProviderConfig",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "example": "01J9QW7B6N5W2YH3D3A1V0KE2X"
+            },
+            "required": true,
+            "description": "Tenant identifier.",
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "AI provider config deleted. institution_admin only."
           },
           "401": {
             "description": "Authentication is required.",
