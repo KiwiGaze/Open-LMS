@@ -5,8 +5,8 @@ import { queryKeys } from '@/lib/api/keys.ts';
 import type {
   Assignment,
   AssignmentEffectiveSchedule,
+  AssignmentSubmissionListItem,
   Rubric,
-  Submission,
   SubmissionComment,
 } from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -166,7 +166,7 @@ export function useAssignmentSubmissionsQuery(
         ? queryKeys.assignmentSubmissions(tenantId, courseId, assignmentId)
         : ['submissions', 'inactive'],
     queryFn: () =>
-      apiFetch<Submission[]>(
+      apiFetch<AssignmentSubmissionListItem[]>(
         `/tenants/${tenantId}/courses/${courseId}/assignments/${assignmentId}/submissions`,
       ),
     enabled: Boolean(tenantId && courseId && assignmentId),

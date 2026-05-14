@@ -1,5 +1,12 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { AssignmentId, Draft, DraftBlock, DraftId, Submission } from '@openlms/contracts';
+import {
+  AssignmentId,
+  AssignmentSubmissionListItem,
+  Draft,
+  DraftBlock,
+  DraftId,
+  Submission,
+} from '@openlms/contracts';
 import { CourseAssignmentPathParams } from './assignments.ts';
 import {
   badRequestResponse,
@@ -10,12 +17,13 @@ import {
 
 export const DraftResponse = Draft.openapi('Draft');
 export const SubmissionResponse = Submission.openapi('Submission');
-export const AssignmentSubmissionListItemResponse = Submission.extend({
-  studentId: z.union([Submission.shape.studentId, z.null()]),
-}).openapi('AssignmentSubmissionListItem', {
-  description:
-    'Assignment submission list item. studentId is null for staff views of anonymous-grading assignments.',
-});
+export const AssignmentSubmissionListItemResponse = AssignmentSubmissionListItem.openapi(
+  'AssignmentSubmissionListItem',
+  {
+    description:
+      'Assignment submission list item. studentId is null for staff views of anonymous-grading assignments.',
+  },
+);
 export const SaveAssignmentDraftBody = z.object({
   blocks: DraftBlock.array().openapi({
     description: 'Structured draft content blocks to autosave or submit.',

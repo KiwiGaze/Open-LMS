@@ -15,7 +15,7 @@ import { useGradebookEntriesQuery, useUpsertSubmissionGrade } from '@/lib/api/qu
 import { cn } from '@/lib/cn';
 import { formatNumber, formatPercent } from '@/lib/format.ts';
 import type { Assignment, CourseMembership, GradebookEntry } from '@openlms/contracts';
-import { ClipboardList, Download, Lock, Search } from 'lucide-react';
+import { ClipboardList, Download, EyeOff, Lock, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { CsvImportDialog } from './csv-import-dialog.tsx';
 
@@ -60,6 +60,8 @@ export function InstructorGradebookGrid({
         .sort((a, b) => a.title.localeCompare(b.title)),
     [assignments.data],
   );
+
+  const hasAnonymousAssignment = items.some((a) => a.anonymousGradingEnabled);
 
   const entriesByCell = useMemo(() => {
     const map = new Map<CellKey, GradebookEntry>();
@@ -109,6 +111,21 @@ export function InstructorGradebookGrid({
 
   return (
     <div className="flex flex-col gap-4">
+      {hasAnonymousAssignment ? (
+        <output className="flex items-start gap-3 rounded-[var(--radius-md)] border border-(--color-border-subtle) bg-(--color-surface-elevated) p-3">
+          <EyeOff className="mt-0.5 size-4 text-(--color-text-muted)" aria-hidden />
+          <div className="text-sm text-(--color-text-default)">
+            <p className="font-medium">Anonymous grading is enabled for some assignments.</p>
+            <p className="mt-0.5 text-(--color-text-muted)">
+              Columns marked with{' '}
+              <EyeOff className="inline size-3 text-(--color-text-muted)" aria-hidden /> hide
+              learner identity in the submissions view. Grade those assignments from the
+              assignment&apos;s submissions screen to preserve anonymity — entering a score in this
+              grid pairs it with a known student.
+            </p>
+          </div>
+        </output>
+      ) : null}
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-sm">
           <Search
@@ -159,7 +176,20 @@ export function InstructorGradebookGrid({
                         className="min-w-32 border-b border-(--color-border-subtle) px-3 py-3 text-left text-xs font-medium text-(--color-text-default)"
                       >
                         <div className="flex flex-col gap-0.5">
-                          <span className="line-clamp-2">{item.title}</span>
+                          <span className="line-clamp-2 inline-flex items-center gap-1">
+                            {item.anonymousGradingEnabled ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <EyeOff
+                                    className="size-3 shrink-0 text-(--color-text-muted)"
+                                    aria-label="Anonymous grading"
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent>Anonymous grading is enabled</TooltipContent>
+                              </Tooltip>
+                            ) : null}
+                            {item.title}
+                          </span>
                           <span className="text-2xs uppercase tracking-wider text-(--color-text-muted)">
                             {item.extraCredit ? 'Extra credit' : 'Assignment'}
                           </span>

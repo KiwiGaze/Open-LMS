@@ -20,7 +20,7 @@ import {
 } from '@/lib/api/queries/assignments.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatDateTime } from '@/lib/format.ts';
-import { CalendarClock, FileText, ListChecks, Pencil, Settings2 } from 'lucide-react';
+import { CalendarClock, EyeOff, FileText, ListChecks, Pencil, Settings2 } from 'lucide-react';
 import Link from 'next/link';
 import { use } from 'react';
 import { MySubmissionPanel } from './my-submission-panel.tsx';
@@ -85,6 +85,20 @@ export default function AssignmentDetailPage({ params }: { params: Promise<Param
           </div>
         }
       />
+
+      {a.anonymousGradingEnabled ? (
+        <output className="flex items-start gap-3 rounded-[var(--radius-md)] border border-(--color-border-subtle) bg-(--color-surface-elevated) p-3">
+          <EyeOff className="mt-0.5 size-4 text-(--color-text-muted)" aria-hidden />
+          <div className="text-sm text-(--color-text-default)">
+            <p className="font-medium">Anonymous grading is in effect.</p>
+            <p className="mt-0.5 text-(--color-text-muted)">
+              Staff views of submissions hide the learner&apos;s identity behind labels like
+              &ldquo;Student A&rdquo;. The mapping back to identity is only revealed once grading is
+              committed.
+            </p>
+          </div>
+        </output>
+      ) : null}
 
       <section className="grid gap-4 sm:grid-cols-3">
         <Card>
