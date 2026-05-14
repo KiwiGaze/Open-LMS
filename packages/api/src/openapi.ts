@@ -61,6 +61,10 @@ const emptyDependencies: ApiDependencies = {
   getProviderConfig: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
+  listMyConsents: async () => [],
+  recordMyConsent: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
   upsertProviderConfig: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
