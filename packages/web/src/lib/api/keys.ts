@@ -144,6 +144,10 @@ export const queryKeys = {
     ['courses', tenantId, courseId, 'glossary'] as const,
   courseMeetings: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'meetings'] as const,
+  attendanceSessions: (tenantId: string, courseId: string) =>
+    ['courses', tenantId, courseId, 'attendance-sessions'] as const,
+  attendanceRecords: (tenantId: string, courseId: string, sessionId: string) =>
+    ['courses', tenantId, courseId, 'attendance-sessions', sessionId, 'records'] as const,
 
   notifications: (tenantId: string) => ['tenants', tenantId, 'notifications'] as const,
   notificationPreferences: (tenantId: string) =>
