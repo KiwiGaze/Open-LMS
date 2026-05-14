@@ -6364,33 +6364,38 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         );
       }
 
-      let encryptedApiKey: string;
-      if (input.apiKey !== undefined && input.apiKey.trim() !== '') {
-        encryptedApiKey = serializeEncryptedSecret(
-          encryptSecret(input.apiKey, environment.ENCRYPTION_KEY_BASE64),
-        );
-      } else {
-        const existing = await getProviderConfigByTenantId(dbHandle.db, tenantId);
-        if (!existing) {
+      const encryptedApiKey =
+        input.apiKey !== undefined && input.apiKey.trim() !== ''
+          ? serializeEncryptedSecret(
+              encryptSecret(input.apiKey, environment.ENCRYPTION_KEY_BASE64),
+            )
+          : null;
+
+      try {
+        const saved = await upsertProviderConfigRecord(dbHandle.db, {
+          tenantId,
+          providerType: input.providerType,
+          baseUrl: input.baseUrl,
+          encryptedApiKey,
+          modelPreferences: input.modelPreferences,
+          capabilities: input.capabilities,
+          quota: input.quota,
+        });
+
+        return toProviderConfigSummary(saved);
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message ===
+            'Provider config cannot be created without an encrypted API key — none was supplied.'
+        ) {
           throw new ApiError(
             'bad_request',
             'An API key is required when creating a new provider config.',
           );
         }
-        encryptedApiKey = existing.encryptedApiKey;
+        throw error;
       }
-
-      const saved = await upsertProviderConfigRecord(dbHandle.db, {
-        tenantId,
-        providerType: input.providerType,
-        baseUrl: input.baseUrl,
-        encryptedApiKey,
-        modelPreferences: input.modelPreferences,
-        capabilities: input.capabilities,
-        quota: input.quota,
-      });
-
-      return toProviderConfigSummary(saved);
     },
     deleteProviderConfig: async (actorUserId, tenantId) => {
       await assertInstitutionAdmin(

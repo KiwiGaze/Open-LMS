@@ -173,28 +173,30 @@ describe('provider config upsert API dependency', () => {
     expect(summary.providerType).toEqual('openai');
   });
 
-  it('keeps the existing encrypted key when apiKey is omitted', async () => {
+  it('passes encryptedApiKey: null when apiKey is omitted (repository preserves existing)', async () => {
     setActorRole('institution_admin');
-    coreMocks.getProviderConfigByTenantId.mockResolvedValue(sampleConfig());
     const dependencies = createDependenciesWithKey();
 
     const { apiKey: _omit, ...input } = sampleUpsertInput();
     await dependencies.upsertProviderConfig(actorUserId, tenantId, input);
 
     const passedInput = coreMocks.upsertProviderConfig.mock.calls[0]?.[1];
-    expect(passedInput.encryptedApiKey).toEqual(sampleConfig().encryptedApiKey);
+    expect(passedInput.encryptedApiKey).toBeNull();
   });
 
-  it('rejects creating a new config without an API key', async () => {
+  it('maps the repository "no existing key" error to bad_request', async () => {
     setActorRole('institution_admin');
-    coreMocks.getProviderConfigByTenantId.mockResolvedValue(null);
+    coreMocks.upsertProviderConfig.mockRejectedValueOnce(
+      new Error(
+        'Provider config cannot be created without an encrypted API key — none was supplied.',
+      ),
+    );
     const dependencies = createDependenciesWithKey();
 
     const { apiKey: _omit, ...input } = sampleUpsertInput();
     await expect(
       dependencies.upsertProviderConfig(actorUserId, tenantId, input),
     ).rejects.toMatchObject({ code: 'bad_request' });
-    expect(coreMocks.upsertProviderConfig).not.toHaveBeenCalled();
   });
 
   it('fails with internal_error when ENCRYPTION_KEY_BASE64 is missing', async () => {

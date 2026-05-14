@@ -23,7 +23,12 @@ export type UpsertProviderConfigInput = {
   tenantId: string;
   providerType: AiProviderTypeContract;
   baseUrl: string | null;
-  encryptedApiKey: string;
+  /**
+   * The serialized encrypted API key to set, or `null` to keep the existing
+   * key when updating. Creating a new row with `null` is rejected because the
+   * column is NOT NULL.
+   */
+  encryptedApiKey: string | null;
   modelPreferences: ModelPreferences;
   capabilities: ProviderCapabilitiesContract;
   quota: ProviderQuotaContract;
@@ -52,44 +57,67 @@ export const upsertProviderConfig = async (
 ): Promise<ProviderConfigContract> => {
   const tenantId = TenantId.parse(input.tenantId);
   const baseUrl = input.baseUrl === null ? null : ProviderBaseUrl.parse(input.baseUrl);
-  const encryptedApiKey = EncryptedApiKey.parse(input.encryptedApiKey);
-  const [row] = await db
-    .insert(providerConfig)
-    .values({
-      id: ProviderConfigId.parse(ulid()),
-      tenantId,
-      providerType: AiProviderType.parse(input.providerType),
-      baseUrl,
-      encryptedApiKey,
-      modelPreferences: input.modelPreferences,
-      capabilities: ProviderCapabilities.parse(input.capabilities),
-      quota: ProviderQuota.parse(input.quota),
-      validationStatus: 'pending',
-      validationError: null,
-      validatedAt: null,
-    })
-    .onConflictDoUpdate({
-      target: providerConfig.tenantId,
-      set: {
-        providerType: AiProviderType.parse(input.providerType),
+  const parsedEncryptedApiKey =
+    input.encryptedApiKey === null ? null : EncryptedApiKey.parse(input.encryptedApiKey);
+  const providerType = AiProviderType.parse(input.providerType);
+  const capabilities = ProviderCapabilities.parse(input.capabilities);
+  const quota = ProviderQuota.parse(input.quota);
+  const now = new Date();
+
+  return db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select({ encryptedApiKey: providerConfig.encryptedApiKey })
+      .from(providerConfig)
+      .where(eq(providerConfig.tenantId, tenantId))
+      .for('update')
+      .limit(1);
+
+    if (!existing && parsedEncryptedApiKey === null) {
+      throw new Error(
+        'Provider config cannot be created without an encrypted API key — none was supplied.',
+      );
+    }
+
+    const encryptedApiKey = parsedEncryptedApiKey ?? existing!.encryptedApiKey;
+
+    const [row] = await tx
+      .insert(providerConfig)
+      .values({
+        id: ProviderConfigId.parse(ulid()),
+        tenantId,
+        providerType,
         baseUrl,
         encryptedApiKey,
         modelPreferences: input.modelPreferences,
-        capabilities: ProviderCapabilities.parse(input.capabilities),
-        quota: ProviderQuota.parse(input.quota),
+        capabilities,
+        quota,
         validationStatus: 'pending',
         validationError: null,
         validatedAt: null,
-        updatedAt: new Date(),
-      },
-    })
-    .returning();
+      })
+      .onConflictDoUpdate({
+        target: providerConfig.tenantId,
+        set: {
+          providerType,
+          baseUrl,
+          encryptedApiKey,
+          modelPreferences: input.modelPreferences,
+          capabilities,
+          quota,
+          validationStatus: 'pending',
+          validationError: null,
+          validatedAt: null,
+          updatedAt: now,
+        },
+      })
+      .returning();
 
-  if (!row) {
-    throw new Error('Provider config could not be saved because the database returned no row.');
-  }
+    if (!row) {
+      throw new Error('Provider config could not be saved because the database returned no row.');
+    }
 
-  return toProviderConfig(row);
+    return toProviderConfig(row);
+  });
 };
 
 export const getProviderConfigByTenantId = async (

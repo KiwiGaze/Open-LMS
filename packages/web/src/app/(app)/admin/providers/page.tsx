@@ -11,8 +11,16 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card.tsx';
+import { Checkbox } from '@/components/ui/checkbox.tsx';
 import { Input } from '@/components/ui/input.tsx';
 import { Label } from '@/components/ui/label.tsx';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useToast } from '@/components/ui/toast.tsx';
 import { ApiHttpError } from '@/lib/api/errors.ts';
@@ -278,20 +286,23 @@ export default function AdminProvidersPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="providerType">Provider type</Label>
-                <select
-                  id="providerType"
-                  className="mt-1 h-9 w-full rounded-[var(--radius-sm)] border border-(--color-border-subtle) bg-(--color-surface-base) px-2 text-sm"
+                <Select
                   value={form.providerType}
-                  onChange={(e) =>
-                    setForm({ ...form, providerType: e.target.value as AiProviderType })
+                  onValueChange={(value) =>
+                    setForm({ ...form, providerType: value as AiProviderType })
                   }
                 >
-                  {PROVIDER_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="providerType" className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PROVIDER_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="baseUrl">Base URL (optional)</Label>
@@ -411,18 +422,21 @@ export default function AdminProvidersPage() {
 
             <div>
               <Label htmlFor="period">Period</Label>
-              <select
-                id="period"
-                className="mt-1 h-9 w-full rounded-[var(--radius-sm)] border border-(--color-border-subtle) bg-(--color-surface-base) px-2 text-sm sm:w-48"
+              <Select
                 value={form.period}
-                onChange={(e) =>
-                  setForm({ ...form, period: e.target.value as FormState['period'] })
+                onValueChange={(value) =>
+                  setForm({ ...form, period: value as FormState['period'] })
                 }
               >
-                <option value="day">day</option>
-                <option value="week">week</option>
-                <option value="month">month</option>
-              </select>
+                <SelectTrigger id="period" className="mt-1 sm:w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">day</SelectItem>
+                  <SelectItem value="week">week</SelectItem>
+                  <SelectItem value="month">month</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <fieldset className="grid gap-2 sm:grid-cols-2">
@@ -438,11 +452,11 @@ export default function AdminProvidersPage() {
                   ['supportsDeterministic', 'Deterministic'],
                 ] as const
               ).map(([key, label]) => (
-                <label key={key} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
+                <label key={key} htmlFor={key} className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    id={key}
                     checked={form[key]}
-                    onChange={(e) => setForm({ ...form, [key]: e.target.checked })}
+                    onCheckedChange={(checked) => setForm({ ...form, [key]: checked === true })}
                   />
                   {label}
                 </label>

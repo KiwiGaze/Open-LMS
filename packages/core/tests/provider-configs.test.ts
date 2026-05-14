@@ -43,8 +43,17 @@ const providerConfig = ProviderConfig.parse({
   updatedAt: now,
 });
 
-const createInsertOnlyDb = <T>(row: T): Database =>
-  ({
+const createInsertOnlyDb = <T extends { encryptedApiKey: string }>(row: T): Database => {
+  const txDb = {
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          for: () => ({
+            limit: async () => [{ encryptedApiKey: row.encryptedApiKey }],
+          }),
+        }),
+      }),
+    }),
     insert: () => ({
       values: () => ({
         onConflictDoUpdate: () => ({
@@ -52,7 +61,11 @@ const createInsertOnlyDb = <T>(row: T): Database =>
         }),
       }),
     }),
-  }) as unknown as Database;
+  };
+  return {
+    transaction: async (fn: (tx: typeof txDb) => Promise<unknown>) => fn(txDb),
+  } as unknown as Database;
+};
 
 const createTransitionDb = <T>(rows: T[]): Database =>
   ({
