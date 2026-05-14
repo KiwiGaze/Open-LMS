@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useToast } from '@/components/ui/toast.tsx';
+import { changePassword } from '@/lib/api/auth-client.ts';
 import { apiFetch } from '@/lib/api/client.ts';
 import { ApiHttpError } from '@/lib/api/errors.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
@@ -32,6 +33,32 @@ const Schema = z.object({
 });
 
 type Values = z.infer<typeof Schema>;
+
+const PasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Required.'),
+    newPassword: z.string().min(8, 'Must be at least 8 characters.').max(128),
+    confirmPassword: z.string().min(1, 'Required.'),
+    revokeOtherSessions: z.boolean(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.newPassword !== value.confirmPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['confirmPassword'],
+        message: 'New passwords do not match.',
+      });
+    }
+    if (value.currentPassword === value.newPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['newPassword'],
+        message: 'New password must differ from the current one.',
+      });
+    }
+  });
+
+type PasswordValues = z.infer<typeof PasswordSchema>;
 
 export default function AccountPage() {
   const me = useMeQuery();
@@ -74,6 +101,38 @@ export default function AccountPage() {
     onError: (error: unknown) => {
       const message = error instanceof ApiHttpError ? error.message : 'Could not save profile.';
       publish({ tone: 'danger', title: 'Update failed', description: message });
+    },
+  });
+
+  const passwordForm = useForm<PasswordValues>({
+    resolver: zodResolver(PasswordSchema),
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+      revokeOtherSessions: true,
+    },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: (values: PasswordValues) =>
+      changePassword({
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
+        revokeOtherSessions: values.revokeOtherSessions,
+      }),
+    onSuccess: () => {
+      passwordForm.reset({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+        revokeOtherSessions: true,
+      });
+      publish({ tone: 'success', title: 'Password updated' });
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof ApiHttpError ? error.message : 'Could not change password.';
+      publish({ tone: 'danger', title: 'Password change failed', description: message });
     },
   });
 
@@ -132,6 +191,81 @@ export default function AccountPage() {
             <div className="sm:col-span-2 flex justify-end">
               <Button type="submit" loading={update.isPending}>
                 Save changes
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Change password</CardTitle>
+          <CardDescription>
+            Choose a new password. Existing sessions on other devices can be revoked at the same
+            time so they have to sign in again with the new password.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="grid gap-4 sm:grid-cols-2"
+            onSubmit={passwordForm.handleSubmit((values) => changePasswordMutation.mutate(values))}
+            noValidate
+          >
+            <FormField
+              id="currentPassword"
+              label="Current password"
+              error={passwordForm.formState.errors.currentPassword?.message}
+              required
+            >
+              <Input
+                id="currentPassword"
+                type="password"
+                autoComplete="current-password"
+                invalid={Boolean(passwordForm.formState.errors.currentPassword)}
+                {...passwordForm.register('currentPassword')}
+              />
+            </FormField>
+            <div className="hidden sm:block" />
+            <FormField
+              id="newPassword"
+              label="New password"
+              description="At least 8 characters."
+              error={passwordForm.formState.errors.newPassword?.message}
+              required
+            >
+              <Input
+                id="newPassword"
+                type="password"
+                autoComplete="new-password"
+                invalid={Boolean(passwordForm.formState.errors.newPassword)}
+                {...passwordForm.register('newPassword')}
+              />
+            </FormField>
+            <FormField
+              id="confirmPassword"
+              label="Confirm new password"
+              error={passwordForm.formState.errors.confirmPassword?.message}
+              required
+            >
+              <Input
+                id="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                invalid={Boolean(passwordForm.formState.errors.confirmPassword)}
+                {...passwordForm.register('confirmPassword')}
+              />
+            </FormField>
+            <label className="sm:col-span-2 flex items-center gap-2 text-sm text-(--color-text-default)">
+              <input
+                type="checkbox"
+                {...passwordForm.register('revokeOtherSessions')}
+                className="size-4 rounded-[var(--radius-xs)] border-(--color-border-default)"
+              />
+              Sign out other devices after updating
+            </label>
+            <div className="sm:col-span-2 flex justify-end">
+              <Button type="submit" loading={changePasswordMutation.isPending}>
+                Update password
               </Button>
             </div>
           </form>

@@ -148,6 +148,19 @@ export async function signOut(): Promise<void> {
   await authFetch<unknown>('/sign-out', { method: 'POST', json: {} });
 }
 
+export type ChangePasswordInput = {
+  currentPassword: string;
+  newPassword: string;
+  revokeOtherSessions?: boolean;
+};
+
+export async function changePassword(input: ChangePasswordInput): Promise<void> {
+  await authFetch<unknown>('/change-password', {
+    method: 'POST',
+    json: input,
+  });
+}
+
 export async function getSession(): Promise<AuthSession | null> {
   try {
     const { body, tokenHeader } = await authFetch<BetterAuthShape>('/get-session', {
