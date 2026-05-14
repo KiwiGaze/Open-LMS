@@ -8,6 +8,7 @@ import {
   CourseRole,
   type CourseRole as CourseRoleContract,
   MembershipId,
+  MessageableUser,
   type MessageableUser as MessageableUserContract,
   TenantId,
   TenantMembership,
@@ -276,11 +277,7 @@ export const listMessageableUsersInCourse = async (
       ),
     );
 
-  return rows.map((row) => ({
-    userId: UserId.parse(row.userId),
-    displayName: row.displayName,
-    role: CourseRole.parse(row.role),
-  }));
+  return rows.map((row) => MessageableUser.parse(row));
 };
 
 export type UpdateCourseMembershipInput = {

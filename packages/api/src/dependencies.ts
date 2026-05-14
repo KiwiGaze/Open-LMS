@@ -7194,7 +7194,7 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
       return users.filter((member) => {
         if (member.userId === actorUserId) return false;
         if (isStaff) return true;
-        return member.role !== 'student';
+        return sectionInstructorRoles.includes(member.role);
       });
     },
     createCourseMembership: async (actorUserId, tenantId, courseId, input) => {
