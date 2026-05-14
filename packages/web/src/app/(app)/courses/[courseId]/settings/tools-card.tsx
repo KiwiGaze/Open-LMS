@@ -231,6 +231,10 @@ function RestoreCourseDialog({
   const restore = useRestoreCourseBackupMutation(tenantId, courseId);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!open) setError(null);
+  }, [open]);
+
   const handleFile = async (file: File) => {
     setError(null);
     try {
@@ -307,6 +311,10 @@ function ImportCartridgeDialog({
   const { publish } = useToast();
   const importMutation = useImportCommonCartridgeMutation(tenantId, courseId);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) setError(null);
+  }, [open]);
 
   const handleFile = async (file: File) => {
     setError(null);
