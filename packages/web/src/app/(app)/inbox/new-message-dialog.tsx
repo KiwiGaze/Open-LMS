@@ -26,13 +26,25 @@ import { Textarea } from '@/components/ui/textarea.tsx';
 import { useToast } from '@/components/ui/toast.tsx';
 import { ApiHttpError } from '@/lib/api/errors.ts';
 import { useCoursesQuery } from '@/lib/api/queries/courses.ts';
+import { useMyTenantMembershipsQuery } from '@/lib/api/queries/me.ts';
 import {
   useCreateConversationThreadMutation,
   useMessageableUsersQuery,
+  useTenantMessageableUsersQuery,
 } from '@/lib/api/queries/messaging.ts';
 import { Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+
+const TENANT_WIDE_KEY = '__tenant_wide__';
+const TENANT_STAFF_ROLES = new Set([
+  'instructor',
+  'teaching_assistant',
+  'course_admin',
+  'institution_admin',
+]);
+
+type ScopeValue = string | typeof TENANT_WIDE_KEY | null;
 
 export function NewMessageDialog({
   tenantId,
@@ -46,18 +58,28 @@ export function NewMessageDialog({
   const router = useRouter();
   const { publish } = useToast();
   const courses = useCoursesQuery(tenantId);
-  const [courseId, setCourseId] = useState<string | null>(null);
+  const myMemberships = useMyTenantMembershipsQuery();
+  const [scope, setScope] = useState<ScopeValue>(null);
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [recipientIds, setRecipientIds] = useState<string[]>([]);
 
-  const candidatesQuery = useMessageableUsersQuery(tenantId, courseId);
+  const isTenantWide = scope === TENANT_WIDE_KEY;
+  const courseId = isTenantWide || scope === null ? null : scope;
+  const isStaff =
+    !!tenantId &&
+    (myMemberships.data?.some((m) => m.tenantId === tenantId && TENANT_STAFF_ROLES.has(m.role)) ??
+      false);
+
+  const courseCandidatesQuery = useMessageableUsersQuery(tenantId, courseId);
+  const tenantCandidatesQuery = useTenantMessageableUsersQuery(tenantId, isTenantWide);
   const create = useCreateConversationThreadMutation(tenantId);
 
+  const candidatesQuery = isTenantWide ? tenantCandidatesQuery : courseCandidatesQuery;
   const candidates = candidatesQuery.data ?? [];
 
   const reset = () => {
-    setCourseId(null);
+    setScope(null);
     setSubject('');
     setBody('');
     setRecipientIds([]);
@@ -71,12 +93,12 @@ export function NewMessageDialog({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!tenantId || !courseId) return;
+    if (!tenantId || scope === null) return;
     if (recipientIds.length === 0) {
       publish({
         tone: 'danger',
         title: 'Pick at least one recipient',
-        description: 'Select one or more course members to message.',
+        description: 'Select one or more members to message.',
       });
       return;
     }
@@ -91,7 +113,7 @@ export function NewMessageDialog({
       publish({ tone: 'success', title: 'Message sent' });
       reset();
       onOpenChange(false);
-      router.push(`/inbox/${thread.id}?courseId=${courseId}`);
+      router.push(courseId ? `/inbox/${thread.id}?courseId=${courseId}` : `/inbox/${thread.id}`);
     } catch (error) {
       const message = error instanceof ApiHttpError ? error.message : 'Could not send. Try again.';
       publish({ tone: 'danger', title: 'Send failed', description: message });
@@ -100,7 +122,7 @@ export function NewMessageDialog({
 
   const canSubmit =
     Boolean(tenantId) &&
-    Boolean(courseId) &&
+    scope !== null &&
     subject.trim().length > 0 &&
     body.trim().length > 0 &&
     recipientIds.length > 0 &&
@@ -118,18 +140,22 @@ export function NewMessageDialog({
         <DialogHeader>
           <DialogTitle>New message</DialogTitle>
           <DialogDescription>
-            Conversations are scoped to a single course. Tenant-wide messages aren't supported yet.
+            Pick a course to message its members, or send a tenant-wide message visible to every
+            recipient.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="course">Course</Label>
-            <Select value={courseId ?? ''} onValueChange={(v) => setCourseId(v)}>
-              <SelectTrigger id="course" disabled={courses.isLoading}>
+            <Label htmlFor="scope">Scope</Label>
+            <Select value={scope ?? ''} onValueChange={(v) => setScope(v as ScopeValue)}>
+              <SelectTrigger id="scope" disabled={courses.isLoading}>
                 <SelectValue placeholder={courses.isLoading ? 'Loading…' : 'Pick a course'} />
               </SelectTrigger>
               <SelectContent>
+                {isStaff ? (
+                  <SelectItem value={TENANT_WIDE_KEY}>No course (tenant-wide)</SelectItem>
+                ) : null}
                 {courses.data?.map((course) => (
                   <SelectItem key={course.id} value={course.id}>
                     {course.code} · {course.title}
@@ -154,13 +180,15 @@ export function NewMessageDialog({
 
           <fieldset className="flex flex-col gap-1.5">
             <legend className="text-sm font-medium text-(--color-text-default)">Recipients</legend>
-            {!courseId ? (
-              <p className="text-sm text-(--color-text-muted)">Pick a course to see members.</p>
+            {scope === null ? (
+              <p className="text-sm text-(--color-text-muted)">Pick a scope to see members.</p>
             ) : candidatesQuery.isLoading ? (
               <Skeleton className="h-32 w-full" />
             ) : candidates.length === 0 ? (
               <p className="text-sm text-(--color-text-muted)">
-                No one to message in this course yet.
+                {isTenantWide
+                  ? 'No other tenant members to message yet.'
+                  : 'No one to message in this course yet.'}
               </p>
             ) : (
               <div className="flex max-h-48 flex-col gap-1 overflow-y-auto rounded-[var(--radius-md)] border border-(--color-border-subtle) p-2">

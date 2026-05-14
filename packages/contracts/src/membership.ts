@@ -34,6 +34,15 @@ export const MessageableUser = z
   .strict();
 export type MessageableUser = z.infer<typeof MessageableUser>;
 
+export const TenantMessageableUser = z
+  .object({
+    userId: UserId,
+    displayName: z.string().min(1).max(120),
+    role: TenantRole,
+  })
+  .strict();
+export type TenantMessageableUser = z.infer<typeof TenantMessageableUser>;
+
 export const CourseMembershipStatus = z.enum([
   'active',
   'pending_approval',

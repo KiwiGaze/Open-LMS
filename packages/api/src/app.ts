@@ -385,6 +385,7 @@ import {
 } from './routes/surveys.ts';
 import {
   listTenantMembersRoute,
+  listTenantMessageableUsersRoute,
   listTenantsRoute,
   updateTenantFileStorageQuotasRoute,
   updateTenantMembershipRoute,
@@ -567,6 +568,16 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     const { tenantId } = context.req.valid('param');
     const members = await options.dependencies.listTenantMembers(actorUserId, tenantId);
     return context.json(members, 200);
+  });
+
+  app.openapi(listTenantMessageableUsersRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId } = context.req.valid('param');
+    const users = await options.dependencies.listTenantMessageableUsers(actorUserId, tenantId);
+    return context.json(users, 200);
   });
 
   app.openapi(updateTenantFileStorageQuotasRoute, async (context) => {

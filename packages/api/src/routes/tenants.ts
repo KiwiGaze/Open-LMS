@@ -1,5 +1,11 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { MembershipId, Tenant, TenantMembership, TenantRole } from '@openlms/contracts';
+import {
+  MembershipId,
+  Tenant,
+  TenantMembership,
+  TenantMessageableUser,
+  TenantRole,
+} from '@openlms/contracts';
 import { TenantPathParams } from './courses.ts';
 import {
   badRequestResponse,
@@ -11,6 +17,7 @@ import {
 
 export const TenantResponse = Tenant.openapi('Tenant');
 export const TenantMembershipResponse = TenantMembership.openapi('TenantMembership');
+export const TenantMessageableUserResponse = TenantMessageableUser.openapi('TenantMessageableUser');
 const FileStorageQuotaLimit = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
 
 export const UpdateTenantFileStorageQuotasBody = z
@@ -60,6 +67,30 @@ export const listTenantMembersRoute = createRoute({
       content: {
         'application/json': {
           schema: TenantMembershipResponse.array(),
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+  },
+});
+
+export const listTenantMessageableUsersRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/messageable-users',
+  tags: ['Tenants'],
+  operationId: 'listTenantMessageableUsers',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: TenantPathParams,
+  },
+  responses: {
+    200: {
+      description:
+        'Tenant members the authenticated staff user can message tenant-wide. Excludes the caller.',
+      content: {
+        'application/json': {
+          schema: TenantMessageableUserResponse.array(),
         },
       },
     },
