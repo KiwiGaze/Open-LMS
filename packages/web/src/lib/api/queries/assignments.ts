@@ -7,6 +7,7 @@ import type {
   AssignmentEffectiveSchedule,
   Rubric,
   Submission,
+  SubmissionComment,
 } from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -169,5 +170,24 @@ export function useAssignmentSubmissionsQuery(
         `/tenants/${tenantId}/courses/${courseId}/assignments/${assignmentId}/submissions`,
       ),
     enabled: Boolean(tenantId && courseId && assignmentId),
+  });
+}
+
+export function useSubmissionCommentsQuery(
+  tenantId: string | null,
+  courseId: string | null,
+  assignmentId: string | null,
+  submissionId: string | null,
+) {
+  return useQuery({
+    queryKey:
+      tenantId && courseId && assignmentId && submissionId
+        ? queryKeys.submissionComments(tenantId, courseId, assignmentId, submissionId)
+        : ['submission-comments', 'inactive'],
+    queryFn: () =>
+      apiFetch<SubmissionComment[]>(
+        `/tenants/${tenantId}/courses/${courseId}/assignments/${assignmentId}/submissions/${submissionId}/comments`,
+      ),
+    enabled: Boolean(tenantId && courseId && assignmentId && submissionId),
   });
 }

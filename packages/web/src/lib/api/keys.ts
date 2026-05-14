@@ -55,6 +55,22 @@ export const queryKeys = {
       submissionId,
       'attachments',
     ] as const,
+  submissionComments: (
+    tenantId: string,
+    courseId: string,
+    assignmentId: string,
+    submissionId: string,
+  ) =>
+    [
+      'courses',
+      tenantId,
+      courseId,
+      'assignments',
+      assignmentId,
+      'submissions',
+      submissionId,
+      'comments',
+    ] as const,
   courseDiscussions: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'discussion-topics'] as const,
   discussionPosts: (tenantId: string, courseId: string, topicId: string) =>
