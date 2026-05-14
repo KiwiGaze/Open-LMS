@@ -5,8 +5,11 @@ import { queryKeys } from '@/lib/api/keys.ts';
 import type {
   CatalogCourse,
   CatalogVisibility,
+  CommonCartridgeImportRequest,
+  CommonCartridgeImportResult,
   Course,
   CourseAnalyticsSummary,
+  CourseBackup,
   CourseCatalogSettings,
 } from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -22,11 +25,11 @@ export type CreateCourseInput = {
   isBlueprint?: boolean;
 };
 
-export function useCoursesQuery(tenantId: string | null) {
+export function useCoursesQuery(tenantId: string | null, enabled = true) {
   return useQuery({
     queryKey: tenantId ? queryKeys.courses(tenantId) : ['courses', 'inactive'],
     queryFn: () => apiFetch<Course[]>(`/tenants/${tenantId}/courses`),
-    enabled: Boolean(tenantId),
+    enabled: Boolean(tenantId) && enabled,
   });
 }
 
@@ -45,6 +48,91 @@ export function useCourseAnalyticsQuery(
         `/tenants/${tenantId}/courses/${courseId}/analytics/summary`,
       ),
     enabled: Boolean(tenantId && courseId) && enabled,
+  });
+}
+
+export type CopyCourseResult = {
+  learningObjectivesCopied: number;
+  modulesCopied: number;
+  unitsCopied: number;
+  pagesCopied: number;
+  resourcesCopied: number;
+};
+
+export function useCopyCourseMutation(tenantId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      sourceCourseId,
+      targetCourseId,
+    }: {
+      sourceCourseId: string;
+      targetCourseId: string;
+    }) => {
+      if (!tenantId) {
+        return Promise.reject(new Error('No active tenant — cannot copy course.'));
+      }
+      return apiFetch<CopyCourseResult>(`/tenants/${tenantId}/courses/${sourceCourseId}/copy`, {
+        method: 'POST',
+        body: { targetCourseId },
+      });
+    },
+    onSuccess: (_data, variables) => {
+      if (tenantId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.course(tenantId, variables.targetCourseId),
+        });
+        queryClient.invalidateQueries({ queryKey: queryKeys.courses(tenantId) });
+      }
+    },
+  });
+}
+
+export type RestoreCourseBackupResult = {
+  learningObjectivesRestored: number;
+  modulesRestored: number;
+  unitsRestored: number;
+  pagesRestored: number;
+  resourcesRestored: number;
+};
+
+export function useRestoreCourseBackupMutation(tenantId: string | null, courseId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (backup: CourseBackup) => {
+      if (!tenantId || !courseId) {
+        return Promise.reject(new Error('No active course — cannot restore backup.'));
+      }
+      return apiFetch<RestoreCourseBackupResult>(
+        `/tenants/${tenantId}/courses/${courseId}/restore`,
+        { method: 'POST', body: { backup } },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.course(tenantId, courseId) });
+      }
+    },
+  });
+}
+
+export function useImportCommonCartridgeMutation(tenantId: string | null, courseId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (cartridge: CommonCartridgeImportRequest) => {
+      if (!tenantId || !courseId) {
+        return Promise.reject(new Error('No active course — cannot import cartridge.'));
+      }
+      return apiFetch<CommonCartridgeImportResult>(
+        `/tenants/${tenantId}/courses/${courseId}/common-cartridge/import`,
+        { method: 'POST', body: cartridge },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.course(tenantId, courseId) });
+      }
+    },
   });
 }
 
