@@ -6366,9 +6366,7 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
 
       const encryptedApiKey =
         input.apiKey !== undefined && input.apiKey.trim() !== ''
-          ? serializeEncryptedSecret(
-              encryptSecret(input.apiKey, environment.ENCRYPTION_KEY_BASE64),
-            )
+          ? serializeEncryptedSecret(encryptSecret(input.apiKey, environment.ENCRYPTION_KEY_BASE64))
           : null;
 
       try {

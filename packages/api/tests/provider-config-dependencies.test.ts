@@ -230,9 +230,7 @@ describe('provider config delete API dependency', () => {
     coreMocks.deleteProviderConfigByTenantId.mockResolvedValue(true);
     const dependencies = createDependencies();
 
-    await expect(
-      dependencies.deleteProviderConfig(actorUserId, tenantId),
-    ).resolves.toBeUndefined();
+    await expect(dependencies.deleteProviderConfig(actorUserId, tenantId)).resolves.toBeUndefined();
     expect(coreMocks.deleteProviderConfigByTenantId).toHaveBeenCalledWith(
       coreMocks.dbHandle.db,
       tenantId,
