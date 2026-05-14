@@ -91,6 +91,8 @@ export function MeetingDialog({
   const [errors, setErrors] = useState<{
     title?: string;
     externalUrl?: string;
+    recordingUrl?: string;
+    playbackUrl?: string;
     startsAt?: string;
     endsAt?: string;
   }>({});
@@ -113,6 +115,8 @@ export function MeetingDialog({
     event.preventDefault();
     const trimmedTitle = title.trim();
     const trimmedExternalUrl = externalUrl.trim();
+    const trimmedRecording = recordingUrl.trim();
+    const trimmedPlayback = playbackUrl.trim();
     const startIso = toIso(startsAt);
     const endIso = toIso(endsAt);
 
@@ -121,15 +125,16 @@ export function MeetingDialog({
     if (!trimmedExternalUrl) nextErrors.externalUrl = 'Enter a join URL.';
     else if (!/^https:\/\//.test(trimmedExternalUrl))
       nextErrors.externalUrl = 'Join URL must start with https://';
+    if (trimmedRecording && !/^https:\/\//.test(trimmedRecording))
+      nextErrors.recordingUrl = 'Recording URL must start with https://';
+    if (trimmedPlayback && !/^https:\/\//.test(trimmedPlayback))
+      nextErrors.playbackUrl = 'Playback URL must start with https://';
     if (!startIso) nextErrors.startsAt = 'Pick a start time.';
     if (startIso && endIso && new Date(endIso).getTime() <= new Date(startIso).getTime()) {
       nextErrors.endsAt = 'End time must be after the start time.';
     }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0 || !startIso) return;
-
-    const trimmedRecording = recordingUrl.trim();
-    const trimmedPlayback = playbackUrl.trim();
 
     const input: CourseMeetingInput = {
       title: trimmedTitle,
@@ -275,23 +280,31 @@ export function MeetingDialog({
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label="Recording URL" id="meeting-recording">
+            <FormField label="Recording URL" id="meeting-recording" error={errors.recordingUrl}>
               <Input
                 id="meeting-recording"
                 type="url"
                 maxLength={2048}
                 value={recordingUrl}
-                onChange={(e) => setRecordingUrl(e.target.value)}
+                onChange={(e) => {
+                  setRecordingUrl(e.target.value);
+                  if (errors.recordingUrl)
+                    setErrors((prev) => ({ ...prev, recordingUrl: undefined }));
+                }}
                 placeholder="https://…"
               />
             </FormField>
-            <FormField label="Playback URL" id="meeting-playback">
+            <FormField label="Playback URL" id="meeting-playback" error={errors.playbackUrl}>
               <Input
                 id="meeting-playback"
                 type="url"
                 maxLength={2048}
                 value={playbackUrl}
-                onChange={(e) => setPlaybackUrl(e.target.value)}
+                onChange={(e) => {
+                  setPlaybackUrl(e.target.value);
+                  if (errors.playbackUrl)
+                    setErrors((prev) => ({ ...prev, playbackUrl: undefined }));
+                }}
                 placeholder="https://…"
               />
             </FormField>
