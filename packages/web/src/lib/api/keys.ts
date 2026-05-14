@@ -120,7 +120,7 @@ export const queryKeys = {
   courseAnalytics: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'analytics'] as const,
 
-  notifications: () => ['notifications'] as const,
+  notifications: (tenantId: string) => ['tenants', tenantId, 'notifications'] as const,
   inboxThreads: (tenantId: string) => ['tenants', tenantId, 'inbox'] as const,
   conversationMessages: (tenantId: string, threadId: string) =>
     ['tenants', tenantId, 'inbox', threadId, 'messages'] as const,
