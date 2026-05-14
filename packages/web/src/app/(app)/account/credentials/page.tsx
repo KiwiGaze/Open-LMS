@@ -61,7 +61,15 @@ export default function MyCredentialsPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <CardTitle className="flex items-center gap-2 text-base">
-                        <Award className="size-4 text-(--color-text-muted)" aria-hidden />
+                        {credential.imageUrl ? (
+                          <img
+                            src={credential.imageUrl}
+                            alt=""
+                            className="size-5 rounded-[var(--radius-xs)] object-cover"
+                          />
+                        ) : (
+                          <Award className="size-4 text-(--color-text-muted)" aria-hidden />
+                        )}
                         {credential.title}
                       </CardTitle>
                       <CardDescription className="capitalize">
