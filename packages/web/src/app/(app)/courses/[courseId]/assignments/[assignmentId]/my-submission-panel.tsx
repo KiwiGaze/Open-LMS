@@ -45,11 +45,14 @@ export function MySubmissionPanel({
 
   const comments = useSubmissionCommentsQuery(tenantId, courseId, assignmentId, latest?.id ?? null);
 
-  if (submissions.isLoading) {
+  if (submissions.isLoading || me.isLoading) {
     return <Skeleton className="h-48 w-full rounded-[var(--radius-lg)]" />;
   }
   if (submissions.error) {
     return <ErrorState error={submissions.error} onRetry={() => submissions.refetch()} />;
+  }
+  if (me.error) {
+    return <ErrorState error={me.error} onRetry={() => me.refetch()} />;
   }
   if (!latest) {
     return (

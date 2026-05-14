@@ -182,16 +182,7 @@ export function useSubmissionCommentsQuery(
   return useQuery({
     queryKey:
       tenantId && courseId && assignmentId && submissionId
-        ? ([
-            'courses',
-            tenantId,
-            courseId,
-            'assignments',
-            assignmentId,
-            'submissions',
-            submissionId,
-            'comments',
-          ] as const)
+        ? queryKeys.submissionComments(tenantId, courseId, assignmentId, submissionId)
         : ['submission-comments', 'inactive'],
     queryFn: () =>
       apiFetch<SubmissionComment[]>(
