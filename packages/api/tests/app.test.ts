@@ -295,7 +295,7 @@ const dependencies = {
   listAiActions: async (_actorUserId: string, _tenantId: string) => [],
   listMyConsents: async (_actorUserId: string, _tenantId: string) => [],
   recordMyConsent: async (_actorUserId: string, _tenantId: string) => {
-    throw new Error('Test stub for recordMyConsent should not be invoked.');
+    throw new ApiError('internal_error', 'Test stub for recordMyConsent should not be invoked.');
   },
   getProviderConfig: async (_actorUserId: string, _tenantId: string) =>
     ProviderConfigSummary.parse({

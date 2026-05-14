@@ -85,14 +85,5 @@ export const recordMyConsentRoute = createRoute({
   },
 });
 
-export type RecordMyConsentInput = {
-  actionType: z.infer<typeof ConsentActionType>;
-  scope: z.infer<typeof ConsentScope>;
-  scopeId: string;
-  state: 'granted' | 'revoked';
-  expiresAt: Date | null;
-  evidence: string | null;
-};
-
 // Re-export for the response type consumers that need the runtime schema for parsing.
 export { ConsentState };

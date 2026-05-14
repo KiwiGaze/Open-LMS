@@ -69,6 +69,7 @@ import {
   listCompletionProgressRoute,
   listCompletionRequirementsRoute,
 } from './routes/completion.ts';
+import { listMyConsentsRoute, recordMyConsentRoute } from './routes/consents.ts';
 import { getCourseAnalyticsSummaryRoute } from './routes/course-analytics.ts';
 import { exportCourseBackupRoute } from './routes/course-backup.ts';
 import {
@@ -290,7 +291,6 @@ import {
   upsertNotificationPreferenceRoute,
 } from './routes/notifications.ts';
 import { createInitialTenantRoute } from './routes/onboarding.ts';
-import { listMyConsentsRoute, recordMyConsentRoute } from './routes/consents.ts';
 import {
   listSubmissionPlagiarismReportsRoute,
   recordSubmissionPlagiarismReportRoute,

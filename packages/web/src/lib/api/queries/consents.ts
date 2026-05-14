@@ -43,8 +43,11 @@ export function useRecordMyConsentMutation(tenantId: string | null) {
 }
 
 // Picks the most recent consent record for a given (actionType, scope, scopeId)
-// triple. The API returns `consent.checkedAt`-style timestamps as ISO strings;
-// they sort lexicographically. Returns `null` when no record matches.
+// triple. The API returns `consent.updatedAt` as an ISO string; ISO strings sort
+// lexicographically. The schema types `updatedAt` as `Date` so the `String()`
+// coercion keeps the comparison sound when consumers run schemas through
+// `.parse()` and end up with a real `Date` instead of the raw response. Returns
+// `null` when no record matches.
 export function pickCurrentConsent(
   consents: Consent[] | undefined,
   actionType: ConsentActionType,
