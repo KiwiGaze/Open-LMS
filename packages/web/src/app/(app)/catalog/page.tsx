@@ -194,7 +194,11 @@ export default function CatalogPage() {
                         Enrolled
                       </Button>
                     ) : (
-                      <Button size="sm" onClick={() => setEnrolling(course)}>
+                      <Button
+                        size="sm"
+                        onClick={() => setEnrolling(course)}
+                        disabled={!enrolled.isSuccess}
+                      >
                         Enroll
                       </Button>
                     )}
