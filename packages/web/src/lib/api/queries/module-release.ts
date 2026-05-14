@@ -4,6 +4,7 @@ import { apiFetch } from '@/lib/api/client.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
 import type {
   ModuleReleaseCombinator,
+  ModuleReleaseDecision,
   ModuleReleasePolicy,
   ModuleReleaseRule,
   ModuleReleaseRuleStatus,
@@ -108,6 +109,18 @@ export function useDeleteReleaseRuleMutation(
         });
       }
     },
+  });
+}
+
+export function useMyModuleReleaseStatusQuery(tenantId: string | null, courseId: string | null) {
+  return useQuery({
+    queryKey:
+      tenantId && courseId
+        ? queryKeys.moduleReleaseStatus(tenantId, courseId)
+        : ['module-release-status', 'inactive'],
+    queryFn: () =>
+      apiFetch<ModuleReleaseDecision[]>(`/tenants/${tenantId}/courses/${courseId}/release-status`),
+    enabled: Boolean(tenantId && courseId),
   });
 }
 

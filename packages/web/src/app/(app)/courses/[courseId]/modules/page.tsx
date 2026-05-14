@@ -13,6 +13,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useAssignmentsQuery } from '@/lib/api/queries/assignments.ts';
 import { useDiscussionTopicsQuery } from '@/lib/api/queries/discussions.ts';
+import { useMyModuleReleaseStatusQuery } from '@/lib/api/queries/module-release.ts';
 import {
   useCourseModulesQuery,
   useCourseResourcesQuery,
@@ -27,6 +28,7 @@ import type {
   CourseResource,
   CourseUnit,
   DiscussionTopic,
+  ModuleReleaseBlocker,
   Quiz,
 } from '@openlms/contracts';
 import {
@@ -35,6 +37,7 @@ import {
   ClipboardList,
   ExternalLink,
   FileText,
+  Lock,
   MessagesSquare,
   Paperclip,
   TimerReset,
@@ -53,6 +56,7 @@ export default function ModulesPage({ params }: { params: Promise<Params> }) {
   const resources = useCourseResourcesQuery(tenantId, courseId);
   const assignments = useAssignmentsQuery(tenantId, courseId);
   const quizzes = useQuizzesQuery(tenantId, courseId);
+  const releaseStatus = useMyModuleReleaseStatusQuery(tenantId, courseId);
   const topics = useDiscussionTopicsQuery(tenantId, courseId);
 
   const isLoading =
@@ -122,6 +126,12 @@ export default function ModulesPage({ params }: { params: Promise<Params> }) {
     (resources.data ?? []).filter((r) => r.unitId !== null),
     (r) => r.unitId as string,
   );
+  const moduleLocks = new Map<string, ModuleReleaseBlocker[]>();
+  for (const decision of releaseStatus.data ?? []) {
+    if (decision.targetType !== 'module') continue;
+    if (decision.state !== 'locked') continue;
+    moduleLocks.set(decision.moduleId, decision.blockers);
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -141,6 +151,7 @@ export default function ModulesPage({ params }: { params: Promise<Params> }) {
             quizzesByUnit={quizzesByUnit}
             topicsByUnit={topicsByUnit}
             resourcesByUnit={resourcesByUnit}
+            lockBlockers={moduleLocks.get(mod.id) ?? null}
           />
         ))}
     </div>
@@ -167,6 +178,7 @@ type ModuleCardProps = {
   quizzesByUnit: Map<string, Quiz[]>;
   topicsByUnit: Map<string, DiscussionTopic[]>;
   resourcesByUnit: Map<string, CourseResource[]>;
+  lockBlockers: ModuleReleaseBlocker[] | null;
 };
 
 function ModuleCard({
@@ -178,23 +190,55 @@ function ModuleCard({
   quizzesByUnit,
   topicsByUnit,
   resourcesByUnit,
+  lockBlockers,
 }: ModuleCardProps) {
+  const isLocked = lockBlockers !== null;
   return (
-    <Card>
+    <Card className={isLocked ? 'opacity-90' : undefined}>
       <CardHeader className="flex-row items-center justify-between gap-3 pb-3">
         <div className="flex items-center gap-3">
           <span className="grid size-7 place-items-center rounded-full bg-(--color-surface-muted) text-xs font-medium text-(--color-text-default)">
             {index + 1}
           </span>
           <div>
-            <CardTitle className="text-base">{mod.title}</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              {isLocked ? (
+                <Lock className="size-4 text-(--color-text-muted)" aria-label="Locked" />
+              ) : null}
+              {mod.title}
+            </CardTitle>
             {mod.summary ? <CardDescription>{mod.summary}</CardDescription> : null}
           </div>
         </div>
-        <Badge tone={mod.visibility === 'published' ? 'success' : 'neutral'}>
-          {mod.visibility}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {isLocked ? <Badge tone="warning">Locked</Badge> : null}
+          <Badge tone={mod.visibility === 'published' ? 'success' : 'neutral'}>
+            {mod.visibility}
+          </Badge>
+        </div>
       </CardHeader>
+      {isLocked && lockBlockers.length > 0 ? (
+        <CardContent className="pt-0">
+          <div className="rounded-[var(--radius-md)] border border-(--color-border-subtle) bg-(--color-surface-muted) p-3">
+            <p className="text-xs font-medium uppercase tracking-wider text-(--color-text-muted)">
+              To unlock
+            </p>
+            <ul className="mt-2 flex flex-col gap-1.5">
+              {lockBlockers.map((blocker, blockerIndex) => (
+                <li
+                  key={`${blocker.ruleType}-${blockerIndex}`}
+                  className="text-sm text-(--color-text-default)"
+                >
+                  <span className="font-medium">{blocker.summary}</span>
+                  {blocker.requiredAction ? (
+                    <span className="text-(--color-text-muted)"> — {blocker.requiredAction}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </CardContent>
+      ) : null}
       {units.length > 0 ? (
         <CardContent className="pt-0">
           <ul className="flex flex-col gap-3 border-t border-(--color-border-subtle) pt-3">
