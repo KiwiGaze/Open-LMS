@@ -47,3 +47,16 @@ export const AiUsageByAction = z
   })
   .strict();
 export type AiUsageByAction = z.infer<typeof AiUsageByAction>;
+
+export const AiUsageByActor = z
+  .object({
+    actorUserId: UserId.nullable(),
+    actorName: z.string().min(1).nullable(),
+    actorEmail: z.string().min(1).nullable(),
+    callCount: z.number().int().nonnegative(),
+    totalInputTokens: z.number().int().nonnegative(),
+    totalOutputTokens: z.number().int().nonnegative(),
+    estimatedCostCents: z.number().nonnegative(),
+  })
+  .strict();
+export type AiUsageByActor = z.infer<typeof AiUsageByActor>;

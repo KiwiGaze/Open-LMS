@@ -53,6 +53,7 @@ describe('OpenAPI generation', () => {
       '/api/v1/tenants/{tenantId}/retention-policies',
       '/api/v1/tenants/{tenantId}/retention-policies/{targetType}',
       '/api/v1/tenants/{tenantId}/ai/usage-by-action',
+      '/api/v1/tenants/{tenantId}/ai/usage-by-actor',
       '/api/v1/tenants/{tenantId}/memberships/{membershipId}',
       '/api/v1/me',
       '/api/v1/me/tenant-memberships',

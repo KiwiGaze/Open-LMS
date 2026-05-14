@@ -4,13 +4,16 @@ import {
   type AiGenerationLog as AiGenerationLogContract,
   AiUsageByAction,
   type AiUsageByAction as AiUsageByActionContract,
+  AiUsageByActor,
+  type AiUsageByActor as AiUsageByActorContract,
   AiUsageSummary,
   type AiUsageSummary as AiUsageSummaryContract,
   TenantId,
 } from '@openlms/contracts';
-import { and, asc, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.ts';
 import { aiGenerationLog } from '../db/schema/ai-log.ts';
+import { user } from '../db/schema/auth.ts';
 
 export const saveAiGenerationLog = async (
   db: Database,
@@ -100,6 +103,53 @@ export const getAiUsageByAction = async (
   return rows.map((row) =>
     AiUsageByAction.parse({
       actionIdentifier: row.actionIdentifier,
+      callCount: row.callCount,
+      totalInputTokens: row.totalInputTokens,
+      totalOutputTokens: row.totalOutputTokens,
+      estimatedCostCents: row.estimatedCostCents,
+    }),
+  );
+};
+
+// Per-actor aggregation of AI logs. Rows are ordered by total tokens
+// descending (top consumers first) and include the actor's display name and
+// email when the user row is still present. Anonymous actors (no actorId on
+// the log row) are aggregated into a single null-actor row.
+export const getAiUsageByActor = async (
+  db: Database,
+  input: GetAiUsageSummaryInput,
+): Promise<AiUsageByActorContract[]> => {
+  const rows = await db
+    .select({
+      actorUserId: aiGenerationLog.actorId,
+      actorName: user.name,
+      actorEmail: user.email,
+      callCount: sql<number>`count(*)::int`,
+      totalInputTokens: sql<number>`coalesce(sum(${aiGenerationLog.inputTokens}), 0)::int`,
+      totalOutputTokens: sql<number>`coalesce(sum(${aiGenerationLog.outputTokens}), 0)::int`,
+      estimatedCostCents: sql<number>`coalesce(sum(${aiGenerationLog.estimatedCostCents}), 0)::float8`,
+    })
+    .from(aiGenerationLog)
+    .leftJoin(user, eq(user.id, aiGenerationLog.actorId))
+    .where(
+      and(
+        eq(aiGenerationLog.tenantId, TenantId.parse(input.tenantId)),
+        gte(aiGenerationLog.createdAt, input.from),
+        lte(aiGenerationLog.createdAt, input.to),
+      ),
+    )
+    .groupBy(aiGenerationLog.actorId, user.name, user.email)
+    .orderBy(
+      desc(
+        sql`coalesce(sum(${aiGenerationLog.inputTokens}), 0) + coalesce(sum(${aiGenerationLog.outputTokens}), 0)`,
+      ),
+    );
+
+  return rows.map((row) =>
+    AiUsageByActor.parse({
+      actorUserId: row.actorUserId,
+      actorName: row.actorName,
+      actorEmail: row.actorEmail,
       callCount: row.callCount,
       totalInputTokens: row.totalInputTokens,
       totalOutputTokens: row.totalOutputTokens,

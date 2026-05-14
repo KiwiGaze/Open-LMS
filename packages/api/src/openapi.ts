@@ -77,6 +77,7 @@ const emptyDependencies: ApiDependencies = {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
   listAiUsageByAction: async () => [],
+  listAiUsageByActor: async () => [],
   updateTenantMembership: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },

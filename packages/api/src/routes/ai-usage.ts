@@ -1,11 +1,12 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { AiAction, AiUsageByAction, AiUsageSummary } from '@openlms/contracts';
+import { AiAction, AiUsageByAction, AiUsageByActor, AiUsageSummary } from '@openlms/contracts';
 import { TenantPathParams } from './courses.ts';
 import { badRequestResponse, forbiddenResponse, unauthorizedResponse } from './responses.ts';
 
 export const AiActionResponse = AiAction.openapi('AiAction');
 export const AiUsageSummaryResponse = AiUsageSummary.openapi('AiUsageSummary');
 export const AiUsageByActionResponse = AiUsageByAction.openapi('AiUsageByAction');
+export const AiUsageByActorResponse = AiUsageByActor.openapi('AiUsageByActor');
 
 export const listAiActionsRoute = createRoute({
   method: 'get',
@@ -62,6 +63,32 @@ export const listAiUsageByActionRoute = createRoute({
       content: {
         'application/json': {
           schema: AiUsageByActionResponse.array(),
+        },
+      },
+    },
+    400: badRequestResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+  },
+});
+
+export const listAiUsageByActorRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/ai/usage-by-actor',
+  tags: ['AI'],
+  operationId: 'listAiUsageByActor',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: TenantPathParams,
+    query: AiUsageSummaryQuery,
+  },
+  responses: {
+    200: {
+      description:
+        'AI generation telemetry grouped by actor (top consumers first). Staff-only. Anonymous calls aggregate into a single null-actor row.',
+      content: {
+        'application/json': {
+          schema: AiUsageByActorResponse.array(),
         },
       },
     },

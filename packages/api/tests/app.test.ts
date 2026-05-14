@@ -267,6 +267,7 @@ const dependencies = {
     _from: Date,
     _to: Date,
   ) => [],
+  listAiUsageByActor: async (_actorUserId: string, _tenantId: string, _from: Date, _to: Date) => [],
   listAuditLogs: async (_actorUserId: string, _tenantId: string) => [],
   exportAuditLogsCsv: async (_actorUserId: string, _tenantId: string) => '',
   ingestXapiStatement: async (_actorUserId: string, _tenantId: string, input: unknown) =>
