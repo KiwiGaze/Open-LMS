@@ -2,7 +2,9 @@
 
 import { EmptyState } from '@/components/patterns/empty-state.tsx';
 import { ErrorState } from '@/components/patterns/error-state.tsx';
+import { FormField } from '@/components/patterns/form-field.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
+import { Button } from '@/components/ui/button.tsx';
 import {
   Card,
   CardContent,
@@ -10,19 +12,35 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card.tsx';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
+import { Textarea } from '@/components/ui/textarea.tsx';
+import { useToast } from '@/components/ui/toast.tsx';
+import { ApiHttpError } from '@/lib/api/errors.ts';
 import {
   useAssignmentSubmissionsQuery,
   useSubmissionCommentsQuery,
 } from '@/lib/api/queries/assignments.ts';
-import { useGradebookEntriesQuery } from '@/lib/api/queries/gradebook.ts';
+import {
+  useCreateGradeAppealMutation,
+  useGradebookEntriesQuery,
+} from '@/lib/api/queries/gradebook.ts';
 import { useMeQuery } from '@/lib/api/queries/me.ts';
 import {
   pickLatestPlagiarismReport,
   useSubmissionPlagiarismReportsQuery,
 } from '@/lib/api/queries/plagiarism.ts';
 import { formatDateTime, formatNumber } from '@/lib/format.ts';
-import { ExternalLink, FileText, MessageSquare, ShieldAlert } from 'lucide-react';
+import { ExternalLink, FileText, Flag, MessageSquare, ShieldAlert } from 'lucide-react';
+import { useState } from 'react';
 
 function sanitizeHttpsUrl(raw: string | null): string | null {
   if (!raw) return null;
@@ -61,6 +79,8 @@ export function MySubmissionPanel({
   const plagiarism = useSubmissionPlagiarismReportsQuery(tenantId, latest?.id ?? null);
   const latestPlagiarismReport = pickLatestPlagiarismReport(plagiarism.data);
   const safeReportUrl = sanitizeHttpsUrl(latestPlagiarismReport?.reportUrl ?? null);
+  const canAppeal = myGradebookEntry?.gradeStatus === 'published';
+  const [appealOpen, setAppealOpen] = useState(false);
 
   if (submissions.isLoading || me.isLoading) {
     return <Skeleton className="h-48 w-full rounded-[var(--radius-lg)]" />;
@@ -114,6 +134,14 @@ export function MySubmissionPanel({
                   {formatNumber(myGradebookEntry.score, 1)} /{' '}
                   {formatNumber(myGradebookEntry.maxScore, 1)}
                 </Badge>
+              ) : null}
+              {myGradebookEntry?.gradeStatus === 'appealed' ? (
+                <Badge tone="warning">Appeal pending</Badge>
+              ) : null}
+              {canAppeal && latest ? (
+                <Button intent="secondary" size="sm" onClick={() => setAppealOpen(true)}>
+                  <Flag className="size-3.5" aria-hidden /> Appeal grade
+                </Button>
               ) : null}
             </div>
           </div>
@@ -215,6 +243,90 @@ export function MySubmissionPanel({
           )}
         </CardContent>
       </Card>
+
+      <AppealDialog
+        tenantId={tenantId}
+        courseId={courseId}
+        assignmentId={assignmentId}
+        submissionId={latest.id}
+        open={appealOpen}
+        onOpenChange={setAppealOpen}
+      />
     </div>
+  );
+}
+
+function AppealDialog({
+  tenantId,
+  courseId,
+  assignmentId,
+  submissionId,
+  open,
+  onOpenChange,
+}: {
+  tenantId: string | null;
+  courseId: string;
+  assignmentId: string;
+  submissionId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { publish } = useToast();
+  const create = useCreateGradeAppealMutation(tenantId, courseId, assignmentId, submissionId);
+  const [reason, setReason] = useState('');
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = reason.trim();
+    if (trimmed.length === 0) return;
+    try {
+      await create.mutateAsync(trimmed);
+      publish({ tone: 'success', title: 'Appeal submitted' });
+      setReason('');
+      onOpenChange(false);
+    } catch (error) {
+      const message = error instanceof ApiHttpError ? error.message : 'Could not file appeal.';
+      publish({ tone: 'danger', title: 'Appeal failed', description: message });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Appeal grade</DialogTitle>
+          <DialogDescription>
+            Explain why you believe the grade should be reconsidered. Your instructor will review.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <FormField label="Reason" id="appeal-reason" required>
+            <Textarea
+              id="appeal-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={5}
+              maxLength={4000}
+              placeholder="Describe the discrepancy and what you'd like reviewed."
+              autoFocus
+            />
+          </FormField>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" intent="secondary" disabled={create.isPending}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              type="submit"
+              disabled={!reason.trim() || create.isPending}
+              loading={create.isPending}
+            >
+              Submit appeal
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

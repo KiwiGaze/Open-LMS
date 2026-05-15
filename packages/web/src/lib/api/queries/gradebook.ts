@@ -2,7 +2,13 @@
 
 import { apiFetch } from '@/lib/api/client.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
-import type { CourseMembership, Grade, GradeStatus, GradebookEntry } from '@openlms/contracts';
+import type {
+  CourseMembership,
+  Grade,
+  GradeAppeal,
+  GradeStatus,
+  GradebookEntry,
+} from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useGradebookEntriesQuery(tenantId: string | null, courseId: string | null) {
@@ -64,6 +70,33 @@ export function useImportAssignmentGradesCsv(tenantId: string | null, courseId: 
           body: new Blob([input.csv], { type: 'text/csv' }),
         },
       ),
+    onSuccess: () => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.gradebook(tenantId, courseId),
+        });
+      }
+    },
+  });
+}
+
+export function useCreateGradeAppealMutation(
+  tenantId: string | null,
+  courseId: string | null,
+  assignmentId: string | null,
+  submissionId: string | null,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reason: string) => {
+      if (!tenantId || !courseId || !assignmentId || !submissionId) {
+        return Promise.reject(new Error('No active submission — cannot file appeal.'));
+      }
+      return apiFetch<GradeAppeal>(
+        `/tenants/${tenantId}/courses/${courseId}/assignments/${assignmentId}/submissions/${encodeURIComponent(submissionId)}/grade/appeals`,
+        { method: 'POST', body: { reason } },
+      );
+    },
     onSuccess: () => {
       if (tenantId && courseId) {
         queryClient.invalidateQueries({
