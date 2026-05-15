@@ -69,6 +69,9 @@ export default function QuizDetailPage({ params }: { params: Promise<Params> }) 
             <Button asChild intent="secondary">
               <Link href={`/courses/${courseId}/quizzes/${quizId}/overrides`}>Overrides</Link>
             </Button>
+            <Button asChild intent="secondary">
+              <Link href={`/courses/${courseId}/quizzes/${quizId}/edit`}>Edit</Link>
+            </Button>
             <Button asChild>
               <Link href={`/courses/${courseId}/quizzes/${quizId}/take`}>Start attempt</Link>
             </Button>

@@ -52,6 +52,52 @@ export function useCreateQuiz(tenantId: string | null, courseId: string | null) 
   });
 }
 
+export function useUpdateQuiz(
+  tenantId: string | null,
+  courseId: string | null,
+  quizId: string | null,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateQuizInput) => {
+      if (!tenantId || !courseId || !quizId) {
+        return Promise.reject(new Error('No active quiz — cannot update.'));
+      }
+      return apiFetch<Quiz>(
+        `/tenants/${tenantId}/courses/${courseId}/quizzes/${encodeURIComponent(quizId)}`,
+        { method: 'PUT', body: input },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId && quizId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.courseQuizzes(tenantId, courseId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.quiz(tenantId, courseId, quizId) });
+      }
+    },
+  });
+}
+
+export function useDeleteQuiz(tenantId: string | null, courseId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (quizId: string) => {
+      if (!tenantId || !courseId) {
+        return Promise.reject(new Error('No active course — cannot delete quiz.'));
+      }
+      return apiFetch<void>(
+        `/tenants/${tenantId}/courses/${courseId}/quizzes/${encodeURIComponent(quizId)}`,
+        { method: 'DELETE', responseType: 'void' },
+      );
+    },
+    onSuccess: (_data, quizId) => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.courseQuizzes(tenantId, courseId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.quiz(tenantId, courseId, quizId) });
+      }
+    },
+  });
+}
+
 export function useQuizzesQuery(tenantId: string | null, courseId: string | null) {
   return useQuery({
     queryKey:

@@ -1,5 +1,6 @@
 'use client';
 
+import { ErrorState } from '@/components/patterns/error-state.tsx';
 import { FormField } from '@/components/patterns/form-field.tsx';
 import { PageHeader } from '@/components/patterns/page-header.tsx';
 import { Button } from '@/components/ui/button.tsx';
@@ -18,16 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select.tsx';
+import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { Switch } from '@/components/ui/switch.tsx';
 import { Textarea } from '@/components/ui/textarea.tsx';
 import { useToast } from '@/components/ui/toast.tsx';
 import { ApiHttpError } from '@/lib/api/errors.ts';
-import { useCreateQuiz } from '@/lib/api/queries/quizzes.ts';
+import { useQuizQuery, useUpdateQuiz } from '@/lib/api/queries/quizzes.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { Quiz } from '@openlms/contracts';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { use } from 'react';
+import { use, useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -91,14 +94,37 @@ const FormSchema = z
 
 type FormValues = z.infer<typeof FormSchema>;
 
-type Params = { courseId: string };
+type Params = { courseId: string; quizId: string };
 
-export default function NewQuizPage({ params }: { params: Promise<Params> }) {
-  const { courseId } = use(params);
+function toLocalInput(value: Date | string | null): string {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function defaultsFromQuiz(q: Quiz): FormValues {
+  return {
+    title: q.title,
+    description: q.description ?? '',
+    status: q.status,
+    opensAtLocal: toLocalInput(q.opensAt),
+    closesAtLocal: toLocalInput(q.closesAt),
+    timeLimitMinutes: q.timeLimitMinutes != null ? String(q.timeLimitMinutes) : '',
+    maxAttempts: String(q.maxAttempts),
+    shuffleQuestions: q.shuffleQuestions,
+    accessPassword: '',
+  };
+}
+
+export default function EditQuizPage({ params }: { params: Promise<Params> }) {
+  const { courseId, quizId } = use(params);
   const router = useRouter();
   const { publish } = useToast();
   const tenantId = useSessionStore((s) => s.activeTenantId);
-  const mutation = useCreateQuiz(tenantId, courseId);
+  const quiz = useQuizQuery(tenantId, courseId, quizId);
+  const mutation = useUpdateQuiz(tenantId, courseId, quizId);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -115,12 +141,27 @@ export default function NewQuizPage({ params }: { params: Promise<Params> }) {
     },
   });
 
+  useEffect(() => {
+    if (quiz.data) {
+      form.reset(defaultsFromQuiz(quiz.data));
+    }
+  }, [quiz.data, form]);
+
+  if (quiz.isLoading) {
+    return <Skeleton className="h-64 w-full" />;
+  }
+  if (quiz.error) {
+    return <ErrorState error={quiz.error} onRetry={() => quiz.refetch()} />;
+  }
+  if (!quiz.data) return null;
+
   const onSubmit = form.handleSubmit(async (values) => {
     try {
-      const quiz = await mutation.mutateAsync({
-        moduleId: null,
-        unitId: null,
-        position: null,
+      const trimmedPassword = values.accessPassword.trim();
+      await mutation.mutateAsync({
+        moduleId: quiz.data?.moduleId ?? null,
+        unitId: quiz.data?.unitId ?? null,
+        position: quiz.data?.position ?? null,
         title: values.title.trim(),
         description: values.description.trim() === '' ? null : values.description.trim(),
         status: values.status,
@@ -129,13 +170,15 @@ export default function NewQuizPage({ params }: { params: Promise<Params> }) {
         timeLimitMinutes: values.timeLimitMinutes ? Number(values.timeLimitMinutes) : null,
         shuffleQuestions: values.shuffleQuestions,
         maxAttempts: Number(values.maxAttempts),
-        accessPassword: values.accessPassword.trim() || null,
+        // Omit accessPassword entirely when blank so the existing password is preserved.
+        // Explicit null would clear it.
+        ...(trimmedPassword === '' ? {} : { accessPassword: trimmedPassword }),
       });
-      publish({ tone: 'success', title: 'Quiz created', description: quiz.title });
-      router.push(`/courses/${courseId}/quizzes/${quiz.id}`);
+      publish({ tone: 'success', title: 'Quiz updated' });
+      router.push(`/courses/${courseId}/quizzes/${quizId}`);
     } catch (error) {
       const message = error instanceof ApiHttpError ? error.message : 'Something went wrong.';
-      publish({ tone: 'danger', title: 'Could not create quiz', description: message });
+      publish({ tone: 'danger', title: 'Could not save', description: message });
     }
   });
 
@@ -143,11 +186,11 @@ export default function NewQuizPage({ params }: { params: Promise<Params> }) {
     <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Quiz"
-        title="New quiz"
-        description="Set up the quiz shell. Add questions and access overrides from the quiz detail page once created."
+        title={`Edit · ${quiz.data.title}`}
+        description="Changes apply immediately. Drafts stay hidden from learners."
         actions={
           <Button asChild intent="ghost">
-            <Link href={`/courses/${courseId}/quizzes`}>Back to quizzes</Link>
+            <Link href={`/courses/${courseId}/quizzes/${quizId}`}>Back to quiz</Link>
           </Button>
         }
       />
@@ -155,7 +198,7 @@ export default function NewQuizPage({ params }: { params: Promise<Params> }) {
         <Card>
           <CardHeader>
             <CardTitle>Basics</CardTitle>
-            <CardDescription>The minimum to create a quiz shell.</CardDescription>
+            <CardDescription>Title, description, and publish state.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <FormField
@@ -166,7 +209,6 @@ export default function NewQuizPage({ params }: { params: Promise<Params> }) {
             >
               <Input
                 id="title"
-                placeholder="Midterm: chapters 1–4"
                 maxLength={180}
                 invalid={Boolean(form.formState.errors.title)}
                 {...form.register('title')}
@@ -181,7 +223,6 @@ export default function NewQuizPage({ params }: { params: Promise<Params> }) {
                 id="description"
                 rows={5}
                 maxLength={4000}
-                placeholder="Briefly describe what the quiz covers…"
                 {...form.register('description')}
               />
             </FormField>
@@ -209,9 +250,6 @@ export default function NewQuizPage({ params }: { params: Promise<Params> }) {
         <Card>
           <CardHeader>
             <CardTitle>Availability and attempts</CardTitle>
-            <CardDescription>
-              Opens/closes are optional. Time limit applies to each attempt.
-            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -311,14 +349,14 @@ export default function NewQuizPage({ params }: { params: Promise<Params> }) {
             <FormField
               id="accessPassword"
               label="Access password"
-              description="Optional. Required to start an attempt. Leave blank for no password."
+              description="Optional. Required to start an attempt. Leave blank to keep the current password (the API does not return existing passwords)."
             >
               <Input
                 id="accessPassword"
                 type="text"
                 autoComplete="off"
                 maxLength={256}
-                placeholder="e.g. midterm-2026"
+                placeholder="Leave blank to keep existing"
                 {...form.register('accessPassword')}
               />
             </FormField>
@@ -327,10 +365,10 @@ export default function NewQuizPage({ params }: { params: Promise<Params> }) {
 
         <div className="flex flex-col-reverse items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end">
           <Button asChild intent="ghost">
-            <Link href={`/courses/${courseId}/quizzes`}>Cancel</Link>
+            <Link href={`/courses/${courseId}/quizzes/${quizId}`}>Cancel</Link>
           </Button>
           <Button type="submit" loading={mutation.isPending}>
-            Create quiz
+            Save changes
           </Button>
         </div>
       </form>
