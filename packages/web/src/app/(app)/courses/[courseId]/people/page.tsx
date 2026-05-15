@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/toast.tsx';
 import { ApiHttpError } from '@/lib/api/errors.ts';
 import { useCourseMembershipsQuery } from '@/lib/api/queries/gradebook.ts';
 import {
+  useApproveCourseMembershipMutation,
   useDeleteCourseMembershipMutation,
   useExportCourseRosterCsvMutation,
   useUpdateCourseMembershipMutation,
@@ -23,7 +24,7 @@ import {
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { initialsOf } from '@/lib/format.ts';
 import type { CourseMembership, CourseRole } from '@openlms/contracts';
-import { Download, Search, Trash2, Upload, UserPlus, Users } from 'lucide-react';
+import { Check, Download, Search, Trash2, Upload, UserPlus, Users, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { use } from 'react';
 import { BulkCsvDialog } from './bulk-csv-dialog.tsx';
@@ -52,6 +53,7 @@ export default function CoursePeoplePage({ params }: { params: Promise<Params> }
 
   const memberships = useCourseMembershipsQuery(tenantId, courseId);
   const updateRole = useUpdateCourseMembershipMutation(tenantId, courseId);
+  const approve = useApproveCourseMembershipMutation(tenantId, courseId);
   const remove = useDeleteCourseMembershipMutation(tenantId, courseId);
   const exportRoster = useExportCourseRosterCsvMutation(tenantId, courseId);
 
@@ -74,11 +76,40 @@ export default function CoursePeoplePage({ params }: { params: Promise<Params> }
   const filtered = useMemo(() => {
     const all = memberships.data ?? [];
     return all.filter((m) => {
+      if (m.status === 'pending_approval') return false;
       if (roleFilter !== 'all' && m.role !== roleFilter) return false;
       if (!search.trim()) return true;
       return m.userId.toLowerCase().includes(search.toLowerCase());
     });
   }, [memberships.data, search, roleFilter]);
+
+  const pendingApprovals = useMemo(
+    () => (memberships.data ?? []).filter((m) => m.status === 'pending_approval'),
+    [memberships.data],
+  );
+
+  const handleApprove = async (membership: CourseMembership) => {
+    try {
+      await approve.mutateAsync(membership.id);
+      publish({ tone: 'success', title: 'Enrollment approved' });
+    } catch (error) {
+      const message =
+        error instanceof ApiHttpError ? error.message : 'Could not approve. Try again.';
+      publish({ tone: 'danger', title: 'Approve failed', description: message });
+    }
+  };
+
+  const handleReject = async (membership: CourseMembership) => {
+    if (!window.confirm(`Reject enrollment request from ${membership.userId.slice(-12)}?`)) return;
+    try {
+      await remove.mutateAsync(membership.id);
+      publish({ tone: 'success', title: 'Enrollment rejected' });
+    } catch (error) {
+      const message =
+        error instanceof ApiHttpError ? error.message : 'Could not reject. Try again.';
+      publish({ tone: 'danger', title: 'Reject failed', description: message });
+    }
+  };
 
   const handleRoleChange = async (membership: CourseMembership, role: CourseRole) => {
     if (role === membership.role) return;
@@ -225,6 +256,54 @@ export default function CoursePeoplePage({ params }: { params: Promise<Params> }
           </div>
         ) : null}
       </div>
+
+      {isStaff && pendingApprovals.length > 0 ? (
+        <div className="rounded-[var(--radius-lg)] border border-(--color-border-subtle) bg-(--color-surface-elevated) p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-(--color-text-default)">
+                Pending approvals
+              </h2>
+              <p className="text-xs text-(--color-text-muted)">
+                Students requesting access to this course.
+              </p>
+            </div>
+            <Badge tone="warning">{pendingApprovals.length}</Badge>
+          </div>
+          <ul className="flex flex-col divide-y divide-(--color-border-subtle)">
+            {pendingApprovals.map((m) => (
+              <li key={m.id} className="flex items-center justify-between gap-3 py-2">
+                <div className="flex items-center gap-2">
+                  <Avatar size="sm">
+                    <AvatarFallback>{initialsOf(m.userId.slice(-2))}</AvatarFallback>
+                  </Avatar>
+                  <span className="font-mono text-xs text-(--color-text-default)">
+                    {m.userId.slice(-12)}
+                  </span>
+                  <Badge tone={ROLE_TONE[m.role] ?? 'neutral'}>{m.role.replace(/_/g, ' ')}</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleApprove(m)}
+                    disabled={approve.isPending || remove.isPending}
+                  >
+                    <Check className="size-3.5" aria-hidden /> Approve
+                  </Button>
+                  <Button
+                    intent="secondary"
+                    size="sm"
+                    onClick={() => handleReject(m)}
+                    disabled={approve.isPending || remove.isPending}
+                  >
+                    <X className="size-3.5" aria-hidden /> Reject
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <DataTable
         columns={columns}
