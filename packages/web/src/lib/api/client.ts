@@ -12,6 +12,8 @@ export type ApiRequestOptions = {
   responseType?: 'json' | 'text' | 'blob' | 'void';
   /** Extra headers (e.g. CSV import upload type). */
   headers?: Record<string, string>;
+  /** Pass through to fetch's `keepalive` flag (lets a request survive page unload). */
+  keepalive?: boolean;
 };
 
 let currentToken: string | null = null;
@@ -69,6 +71,7 @@ export async function apiFetch<T>(path: string, options: ApiRequestOptions = {})
     body,
     signal: options.signal,
     credentials: 'include',
+    ...(options.keepalive ? { keepalive: true } : {}),
   });
 
   if (response.status === 204 || options.responseType === 'void') {
