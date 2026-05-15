@@ -126,6 +126,8 @@ export const queryKeys = {
     ['courses', tenantId, courseId, 'gradebook'] as const,
   gradebookCategories: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'gradebook', 'categories'] as const,
+  gradebookAppeals: (tenantId: string, courseId: string) =>
+    ['courses', tenantId, courseId, 'gradebook', 'appeals'] as const,
   coursePeople: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'memberships'] as const,
   messageableUsers: (tenantId: string, courseId: string) =>
