@@ -16,6 +16,9 @@ export const queryKeys = {
   webhookSubscriptions: (tenantId: string) =>
     ['tenants', tenantId, 'webhook-subscriptions'] as const,
   retentionPolicies: (tenantId: string) => ['tenants', tenantId, 'retention-policies'] as const,
+  rubrics: (tenantId: string) => ['tenants', tenantId, 'rubrics'] as const,
+  rubric: (tenantId: string, rubricId: string) =>
+    ['tenants', tenantId, 'rubrics', rubricId] as const,
   userLegalHolds: (tenantId: string, status: string) =>
     ['tenants', tenantId, 'legal-holds', status] as const,
   myPushTokens: (tenantId: string) => ['tenants', tenantId, 'me', 'push-tokens'] as const,
