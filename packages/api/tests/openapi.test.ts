@@ -1081,6 +1081,17 @@ describe('OpenAPI generation', () => {
     expect(document.paths['/api/v1/tenants/{tenantId}/courses']?.get?.security).toEqual([
       { bearerAuth: [] },
     ]);
+    expect(document.paths['/api/v1/tenants/{tenantId}/courses/deleted']?.get?.security).toEqual([
+      { bearerAuth: [] },
+    ]);
+    expect(document.paths['/api/v1/tenants/{tenantId}/courses/deleted']?.get?.operationId).toBe(
+      'listDeletedCourses',
+    );
+    expect(
+      Object.keys(
+        document.paths['/api/v1/tenants/{tenantId}/courses/deleted']?.get?.responses ?? {},
+      ).sort(),
+    ).toEqual(['200', '401', '403']);
     expect(
       document.paths['/api/v1/tenants/{tenantId}/courses/{courseId}/sections']?.get?.security,
     ).toEqual([{ bearerAuth: [] }]);

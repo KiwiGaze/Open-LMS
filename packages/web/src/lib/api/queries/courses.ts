@@ -31,7 +31,7 @@ export type CreateCourseInput = {
 
 export function useDeletedCoursesQuery(tenantId: string | null) {
   return useQuery({
-    queryKey: tenantId ? ['courses', tenantId, 'deleted'] : ['courses', 'deleted', 'inactive'],
+    queryKey: tenantId ? queryKeys.deletedCourses(tenantId) : ['courses', 'deleted', 'inactive'],
     queryFn: () => apiFetch<Course[]>(`/tenants/${tenantId}/courses/deleted`),
     enabled: Boolean(tenantId),
   });
@@ -51,7 +51,7 @@ export function useRestoreDeletedCourseMutation(tenantId: string | null) {
     },
     onSuccess: () => {
       if (tenantId) {
-        queryClient.invalidateQueries({ queryKey: ['courses', tenantId, 'deleted'] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.deletedCourses(tenantId) });
         queryClient.invalidateQueries({ queryKey: queryKeys.courses(tenantId) });
         queryClient.invalidateQueries({ queryKey: queryKeys.catalogCourses(tenantId) });
       }
