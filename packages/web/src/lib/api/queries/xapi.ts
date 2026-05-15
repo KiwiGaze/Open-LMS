@@ -15,6 +15,16 @@ type EmitOptions = {
   context?: Record<string, unknown>;
 };
 
+function actorHomePage(): string {
+  if (typeof globalThis !== 'undefined' && 'location' in globalThis) {
+    return (globalThis as { location: { origin: string } }).location.origin;
+  }
+  // Non-browser fallback (tests, server-rendered pre-hydration). The backend
+  // ignores this field for identity purposes and only uses it to namespace the
+  // account.
+  return 'urn:openlms:account';
+}
+
 function buildStatement(
   user: { id: string; email: string; name: string | null },
   options: EmitOptions,
@@ -22,7 +32,7 @@ function buildStatement(
   return {
     actor: {
       objectType: 'Agent',
-      account: { homePage: 'https://open-lms.local', name: user.id },
+      account: { homePage: actorHomePage(), name: user.id },
       name: user.name ?? user.email,
     },
     verb: options.verb,
@@ -45,6 +55,9 @@ export function useXapiEmitter() {
       return apiFetch<XapiStatement>(`/tenants/${tenantId}/xapi/statements`, {
         method: 'POST',
         body: statement,
+        // Let the statement complete if the user navigates away mid-emit
+        // (especially common for resource opens that target _blank).
+        keepalive: true,
       });
     },
   });
