@@ -3,6 +3,7 @@
 import { apiFetch } from '@/lib/api/client.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
 import type {
+  CourseFinalGrade,
   CourseMembership,
   Grade,
   GradeAppeal,
@@ -145,6 +146,45 @@ export function useCreateGradeAppealMutation(
           queryKey: queryKeys.gradebook(tenantId, courseId),
         });
       }
+    },
+  });
+}
+
+export function useCourseFinalGradesQuery(tenantId: string | null, courseId: string | null) {
+  return useQuery({
+    queryKey:
+      tenantId && courseId
+        ? ([...queryKeys.gradebook(tenantId, courseId), 'final-grades'] as const)
+        : ['gradebook', 'final-grades', 'inactive'],
+    queryFn: () =>
+      apiFetch<CourseFinalGrade[]>(
+        `/tenants/${tenantId}/courses/${courseId}/gradebook/final-grades`,
+      ),
+    enabled: Boolean(tenantId && courseId),
+  });
+}
+
+export function useExportCourseFinalGradesCsvMutation(
+  tenantId: string | null,
+  courseId: string | null,
+) {
+  return useMutation({
+    mutationFn: async (filename: string) => {
+      if (!tenantId || !courseId) {
+        throw new Error('No active course — cannot export final grades.');
+      }
+      const blob = await apiFetch<Blob>(
+        `/tenants/${tenantId}/courses/${courseId}/gradebook/final-grades/export`,
+        { responseType: 'blob' },
+      );
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
     },
   });
 }
