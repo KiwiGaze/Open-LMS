@@ -21,6 +21,7 @@ import {
   useQuizSettingsQuery,
   useStartQuizAttempt,
 } from '@/lib/api/queries/quizzes.ts';
+import { useXapiEmitter } from '@/lib/api/queries/xapi.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import Link from 'next/link';
 import { use, useEffect, useRef } from 'react';
@@ -54,6 +55,20 @@ export default function QuizTakePage({ params }: { params: Promise<Params> }) {
 
   const startMutation = useStartQuizAttempt(tenantId, courseId, quizId);
   const startedRef = useRef(false);
+  const emitXapi = useXapiEmitter();
+
+  const emitAttemptStart = () => {
+    emitXapi({
+      verb: {
+        id: 'http://adlnet.gov/expapi/verbs/attempted',
+        display: { 'en-US': 'attempted' },
+      },
+      object: {
+        id: `urn:openlms:course:${courseId}:quiz:${quizId}`,
+        definition: { type: 'http://adlnet.gov/expapi/activities/assessment' },
+      },
+    });
+  };
 
   const isLoading =
     quizQuery.isLoading || questions.isLoading || attempts.isLoading || settings.isLoading;
@@ -82,6 +97,7 @@ export default function QuizTakePage({ params }: { params: Promise<Params> }) {
       startMutation.mutate(
         { accessPassword: null },
         {
+          onSuccess: () => emitAttemptStart(),
           onError: (error) => {
             startedRef.current = false;
             const message =
@@ -100,6 +116,7 @@ export default function QuizTakePage({ params }: { params: Promise<Params> }) {
     startMutation.mutate(
       { accessPassword: null },
       {
+        onSuccess: () => emitAttemptStart(),
         onError: (error) => {
           startedRef.current = false;
           const message =
