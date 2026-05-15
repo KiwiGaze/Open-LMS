@@ -180,6 +180,9 @@ const emptyDependencies: ApiDependencies = {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
   listAssignments: async () => [],
+  getAssignment: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
   createAssignment: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
@@ -204,6 +207,9 @@ const emptyDependencies: ApiDependencies = {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
   listQuizzes: async () => [],
+  getQuiz: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
   createQuiz: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },

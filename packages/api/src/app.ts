@@ -48,6 +48,7 @@ import {
   createAssignmentRoute,
   deleteAssignmentRoute,
   getAssignmentEffectiveScheduleRoute,
+  getAssignmentRoute,
   listAssignmentsRoute,
   updateAssignmentRoute,
 } from './routes/assignments.ts';
@@ -319,6 +320,7 @@ import {
   deleteQuizRoute,
   exportQuizQtiItemsRoute,
   getQuizEffectiveSettingsRoute,
+  getQuizRoute,
   importQuizQtiItemsRoute,
   listQuestionBankQuestionsRoute,
   listQuestionBanksRoute,
@@ -1674,6 +1676,21 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     return context.json(assignments, 200);
   });
 
+  app.openapi(getAssignmentRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, courseId, assignmentId } = context.req.valid('param');
+    const assignment = await options.dependencies.getAssignment(
+      actorUserId,
+      tenantId,
+      courseId,
+      assignmentId,
+    );
+    return context.json(assignment, 200);
+  });
+
   app.openapi(createAssignmentRoute, async (context) => {
     const actorUserId = await requireAuthenticatedUser(
       options.dependencies,
@@ -1943,6 +1960,16 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     );
 
     return context.json(quizzes, 200);
+  });
+
+  app.openapi(getQuizRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, courseId, quizId } = context.req.valid('param');
+    const quiz = await options.dependencies.getQuiz(actorUserId, tenantId, courseId, quizId);
+    return context.json(quiz, 200);
   });
 
   app.openapi(createQuizRoute, async (context) => {

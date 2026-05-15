@@ -227,6 +227,30 @@ export const AssignmentPathParams = CourseAssignmentPathParams.extend({
   }),
 });
 
+export const getAssignmentRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/courses/{courseId}/assignments/{assignmentId}',
+  tags: ['Assignments'],
+  operationId: 'getAssignment',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: AssignmentPathParams,
+  },
+  responses: {
+    200: {
+      description: 'Assignment visible to the authenticated user.',
+      content: {
+        'application/json': {
+          schema: AssignmentResponse,
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
+});
+
 export const UpdateAssignmentBody = CreateAssignmentBody;
 
 export const updateAssignmentRoute = createRoute({

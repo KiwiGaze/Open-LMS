@@ -16,9 +16,9 @@ import { ApiHttpError } from '@/lib/api/errors.ts';
 import {
   useQuizAttemptResponsesQuery,
   useQuizAttemptsQuery,
+  useQuizQuery,
   useQuizQuestionsQuery,
   useQuizSettingsQuery,
-  useQuizzesQuery,
   useStartQuizAttempt,
 } from '@/lib/api/queries/quizzes.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
@@ -34,12 +34,12 @@ export default function QuizTakePage({ params }: { params: Promise<Params> }) {
   const tenantId = useSessionStore((s) => s.activeTenantId);
   const { publish } = useToast();
 
-  const quizzes = useQuizzesQuery(tenantId, courseId);
+  const quizQuery = useQuizQuery(tenantId, courseId, quizId);
   const questions = useQuizQuestionsQuery(tenantId, courseId, quizId);
   const attempts = useQuizAttemptsQuery(tenantId, courseId, quizId);
   const settings = useQuizSettingsQuery(tenantId, courseId, quizId);
 
-  const quiz = quizzes.data?.find((q) => q.id === quizId);
+  const quiz = quizQuery.data;
 
   const inProgress = attempts.data?.find((a) => a.status === 'in_progress') ?? null;
   const submittedAttempts =
@@ -56,9 +56,9 @@ export default function QuizTakePage({ params }: { params: Promise<Params> }) {
   const startedRef = useRef(false);
 
   const isLoading =
-    quizzes.isLoading || questions.isLoading || attempts.isLoading || settings.isLoading;
+    quizQuery.isLoading || questions.isLoading || attempts.isLoading || settings.isLoading;
   const loadError =
-    quizzes.error || questions.error || attempts.error || settings.error || responses.error;
+    quizQuery.error || questions.error || attempts.error || settings.error || responses.error;
 
   const attemptCount = attempts.data?.length ?? 0;
   const maxAttempts = quiz?.maxAttempts ?? 0;
@@ -141,7 +141,7 @@ export default function QuizTakePage({ params }: { params: Promise<Params> }) {
         <ErrorState
           error={loadError}
           onRetry={() => {
-            quizzes.refetch();
+            quizQuery.refetch();
             questions.refetch();
             attempts.refetch();
             settings.refetch();

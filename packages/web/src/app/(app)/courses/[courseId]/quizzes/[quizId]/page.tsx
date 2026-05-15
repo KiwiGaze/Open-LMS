@@ -19,10 +19,10 @@ import {
 } from '@/components/ui/card.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { apiFetch } from '@/lib/api/client.ts';
-import { useQuizQuestionsQuery } from '@/lib/api/queries/quizzes.ts';
+import { useQuizQuery, useQuizQuestionsQuery } from '@/lib/api/queries/quizzes.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatDateTime } from '@/lib/format.ts';
-import type { Quiz, QuizEffectiveSettings } from '@openlms/contracts';
+import type { QuizEffectiveSettings } from '@openlms/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarClock, ListChecks, Timer } from 'lucide-react';
 import Link from 'next/link';
@@ -34,11 +34,7 @@ export default function QuizDetailPage({ params }: { params: Promise<Params> }) 
   const { courseId, quizId } = use(params);
   const tenantId = useSessionStore((s) => s.activeTenantId);
 
-  const quiz = useQuery({
-    queryKey: ['quiz', tenantId ?? '', courseId, quizId],
-    queryFn: () => apiFetch<Quiz>(`/tenants/${tenantId}/courses/${courseId}/quizzes/${quizId}`),
-    enabled: Boolean(tenantId),
-  });
+  const quiz = useQuizQuery(tenantId, courseId, quizId);
   const questions = useQuizQuestionsQuery(tenantId, courseId, quizId);
   const settings = useQuery({
     queryKey: ['quiz-settings', tenantId ?? '', courseId, quizId],

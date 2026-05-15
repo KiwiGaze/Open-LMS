@@ -347,6 +347,30 @@ export const listQuizzesRoute = createRoute({
   },
 });
 
+export const getQuizRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/courses/{courseId}/quizzes/{quizId}',
+  tags: ['Quizzes'],
+  operationId: 'getQuiz',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: CourseQuizPathParams,
+  },
+  responses: {
+    200: {
+      description: 'Quiz visible to the authenticated user.',
+      content: {
+        'application/json': {
+          schema: QuizResponse,
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
+});
+
 export const listQuizQuestionsRoute = createRoute({
   method: 'get',
   path: '/api/v1/tenants/{tenantId}/courses/{courseId}/quizzes/{quizId}/questions',
