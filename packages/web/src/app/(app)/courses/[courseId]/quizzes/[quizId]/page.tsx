@@ -65,6 +65,9 @@ export default function QuizDetailPage({ params }: { params: Promise<Params> }) 
           <div className="flex items-center gap-2">
             <Badge tone={q.status === 'published' ? 'success' : 'neutral'}>{q.status}</Badge>
             {q.proctoringRequired ? <Badge tone="warning">Proctored</Badge> : null}
+            <Button asChild intent="secondary">
+              <Link href={`/courses/${courseId}/quizzes/${quizId}/overrides`}>Overrides</Link>
+            </Button>
             <Button asChild>
               <Link href={`/courses/${courseId}/quizzes/${quizId}/take`}>Start attempt</Link>
             </Button>
