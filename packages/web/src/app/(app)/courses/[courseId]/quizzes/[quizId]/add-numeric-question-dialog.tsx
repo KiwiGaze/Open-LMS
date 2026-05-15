@@ -83,9 +83,15 @@ function FormContents({
     if (!Number.isInteger(parsedPoints) || parsedPoints < 0) {
       next.points = 'Points must be a non-negative integer.';
     }
-    const parsedAnswer = Number(answer);
-    if (!Number.isFinite(parsedAnswer)) {
-      next.answer = 'Answer must be a finite number.';
+    const trimmedAnswer = answer.trim();
+    let parsedAnswer = Number.NaN;
+    if (trimmedAnswer === '') {
+      next.answer = 'Answer is required.';
+    } else {
+      parsedAnswer = Number(trimmedAnswer);
+      if (!Number.isFinite(parsedAnswer)) {
+        next.answer = 'Answer must be a finite number.';
+      }
     }
     const parsedTolerance = Number(tolerance);
     if (!Number.isFinite(parsedTolerance) || parsedTolerance < 0) {
