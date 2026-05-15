@@ -11,6 +11,7 @@ import {
   Inbox,
   LayoutDashboard,
   Library,
+  ListChecks,
   MessagesSquare,
   Settings,
   Shield,
@@ -49,6 +50,7 @@ export const ADMIN_NAV: AppNavItem[] = [
   { href: '/admin/webhooks', label: 'Webhooks', icon: Webhook, staffOnly: true },
   { href: '/admin/retention', label: 'Retention', icon: Archive, staffOnly: true },
   { href: '/admin/courses/deleted', label: 'Deleted courses', icon: Trash2, staffOnly: true },
+  { href: '/admin/rubrics', label: 'Rubrics', icon: ListChecks, staffOnly: true },
   { href: '/admin/legal-holds', label: 'Legal holds', icon: ShieldAlert, staffOnly: true },
   { href: '/admin/audit-logs', label: 'Audit logs', icon: Shield, staffOnly: true },
 ];
