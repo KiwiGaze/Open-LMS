@@ -480,6 +480,7 @@ import {
   listCredentialAwardsForCredential,
   listCredentialAwardsForStudent,
   listCredentialsForCourse,
+  listDeletedCoursesForTenant,
   listDiscussionGradebookEntriesForCourse,
   listDiscussionPostGradesForTopic,
   listDiscussionPostsForTopic,
@@ -783,6 +784,7 @@ export type ApiDependencies = {
     input: UpdateTenantMembershipApiInput,
   ) => Promise<TenantMembership>;
   listCourses: (actorUserId: string, tenantId: string) => Promise<Course[]>;
+  listDeletedCourses: (actorUserId: string, tenantId: string) => Promise<Course[]>;
   listCatalogCourses: (
     tenantId: string,
     options?: { isBlueprint?: boolean; catalogCategory?: string; academicTerm?: string },
@@ -6661,6 +6663,19 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
       await assertTenantMembership(actorUserId, tenantId);
 
       return listCourses(dbHandle.db, tenantId);
+    },
+    listDeletedCourses: async (actorUserId, tenantId) => {
+      const tenantMemberships = await listUserTenantMemberships(dbHandle.db, actorUserId);
+      const hasTenantStaffAccess = tenantMemberships.some(
+        (membership) =>
+          membership.tenantId === tenantId && tenantStaffRoles.includes(membership.role),
+      );
+
+      if (!hasTenantStaffAccess) {
+        throw new ApiError('forbidden', courseRestoreTenantStaffOnlyMessage);
+      }
+
+      return listDeletedCoursesForTenant(dbHandle.db, tenantId);
     },
     listCatalogCourses: async (tenantId, options) => {
       return listCatalogCoursesForTenant(dbHandle.db, {

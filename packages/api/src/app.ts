@@ -154,6 +154,7 @@ import {
   createCourseRoute,
   deleteCourseRoute,
   listCoursesRoute,
+  listDeletedCoursesRoute,
   restoreDeletedCourseRoute,
   updateCourseCatalogSettingsRoute,
   updateCourseRoute,
@@ -1074,6 +1075,16 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     );
     const { tenantId } = context.req.valid('param');
     const courses = await options.dependencies.listCourses(actorUserId, tenantId);
+    return context.json(courses, 200);
+  });
+
+  app.openapi(listDeletedCoursesRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId } = context.req.valid('param');
+    const courses = await options.dependencies.listDeletedCourses(actorUserId, tenantId);
     return context.json(courses, 200);
   });
 

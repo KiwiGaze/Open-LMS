@@ -50,6 +50,29 @@ export const listCoursesRoute = createRoute({
   },
 });
 
+export const listDeletedCoursesRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/courses/deleted',
+  tags: ['Courses'],
+  operationId: 'listDeletedCourses',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: TenantPathParams,
+  },
+  responses: {
+    200: {
+      description: 'Soft-deleted courses in the tenant. Tenant staff only.',
+      content: {
+        'application/json': {
+          schema: CourseResponse.array(),
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+  },
+});
+
 export const CreateCourseBody = z
   .object({
     code: z.string().min(1).max(32).openapi({

@@ -31,6 +31,7 @@ export const queryKeys = {
     ['courses', tenantId, courseId, 'surveys', surveyId, 'questions'] as const,
 
   courses: (tenantId: string) => ['courses', tenantId, 'list'] as const,
+  deletedCourses: (tenantId: string) => ['courses', tenantId, 'deleted'] as const,
   course: (tenantId: string, courseId: string) => ['courses', tenantId, courseId] as const,
   catalogCourses: (tenantId: string) => ['catalog', tenantId, 'courses'] as const,
   courseFavorites: (tenantId: string) => ['catalog', tenantId, 'favorites'] as const,

@@ -29,6 +29,36 @@ export type CreateCourseInput = {
   isBlueprint?: boolean;
 };
 
+export function useDeletedCoursesQuery(tenantId: string | null) {
+  return useQuery({
+    queryKey: tenantId ? queryKeys.deletedCourses(tenantId) : ['courses', 'deleted', 'inactive'],
+    queryFn: () => apiFetch<Course[]>(`/tenants/${tenantId}/courses/deleted`),
+    enabled: Boolean(tenantId),
+  });
+}
+
+export function useRestoreDeletedCourseMutation(tenantId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (courseId: string) => {
+      if (!tenantId) {
+        return Promise.reject(new Error('No active tenant — cannot restore course.'));
+      }
+      return apiFetch<Course>(
+        `/tenants/${tenantId}/courses/${encodeURIComponent(courseId)}/restore-deleted`,
+        { method: 'POST' },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.deletedCourses(tenantId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.courses(tenantId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.catalogCourses(tenantId) });
+      }
+    },
+  });
+}
+
 export function useCoursesQuery(tenantId: string | null, enabled = true) {
   return useQuery({
     queryKey: tenantId ? queryKeys.courses(tenantId) : ['courses', 'inactive'],

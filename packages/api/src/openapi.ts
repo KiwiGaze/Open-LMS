@@ -157,6 +157,7 @@ const emptyDependencies: ApiDependencies = {
   },
   listCourseAnnouncements: async () => [],
   listAnnouncementsForActor: async () => [],
+  listDeletedCourses: async () => [],
   createCourseAnnouncement: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
