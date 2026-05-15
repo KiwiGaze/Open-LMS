@@ -6678,7 +6678,7 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
       return listCourses(dbHandle.db, tenantId);
     },
     getCourse: async (actorUserId, tenantId, courseId) => {
-      await readCourseAccessContext(actorUserId, tenantId, courseId);
+      await assertTenantMembership(actorUserId, tenantId);
       const course = await getCourseById(dbHandle.db, tenantId, courseId);
       if (!course) {
         throw new ApiError('not_found', courseNotFoundForTenantMessage);
