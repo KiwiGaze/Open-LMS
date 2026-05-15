@@ -86,6 +86,7 @@ export function useCreateGradeAppealMutation(
   assignmentId: string | null,
   submissionId: string | null,
 ) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (reason: string) => {
       if (!tenantId || !courseId || !assignmentId || !submissionId) {
@@ -95,6 +96,13 @@ export function useCreateGradeAppealMutation(
         `/tenants/${tenantId}/courses/${courseId}/assignments/${assignmentId}/submissions/${encodeURIComponent(submissionId)}/grade/appeals`,
         { method: 'POST', body: { reason } },
       );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.gradebook(tenantId, courseId),
+        });
+      }
     },
   });
 }
