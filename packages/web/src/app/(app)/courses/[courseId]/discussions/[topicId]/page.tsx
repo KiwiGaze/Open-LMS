@@ -27,7 +27,8 @@ import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatRelative, initialsOf } from '@/lib/format.ts';
 import type { DiscussionPost, DiscussionTopic } from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, BellOff, MessagesSquare, Send } from 'lucide-react';
+import { Bell, BellOff, MessagesSquare, Pencil, Send } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 import { use } from 'react';
 import { InstructorGradingPanel } from './instructor-grading-panel.tsx';
@@ -80,7 +81,9 @@ export default function DiscussionTopicPage({ params }: { params: Promise<Params
   };
 
   const topic = useQuery({
-    queryKey: ['discussion-topic', tenantId ?? '', courseId, topicId],
+    queryKey: tenantId
+      ? queryKeys.discussionTopic(tenantId, courseId, topicId)
+      : ['discussion-topic', 'inactive'],
     queryFn: () =>
       apiFetch<DiscussionTopic>(
         `/tenants/${tenantId}/courses/${courseId}/discussion-topics/${topicId}`,
@@ -144,6 +147,13 @@ export default function DiscussionTopicPage({ params }: { params: Promise<Params
               ) : null}
               {t.requirePostBeforeSeeingOthers ? (
                 <Badge tone="warning">Post before viewing replies</Badge>
+              ) : null}
+              {isStaff ? (
+                <Button asChild intent="secondary" size="sm">
+                  <Link href={`/courses/${courseId}/discussions/${topicId}/edit`}>
+                    <Pencil className="size-3.5" aria-hidden /> Edit topic
+                  </Link>
+                </Button>
               ) : null}
               {subscribed === true ? (
                 <Button

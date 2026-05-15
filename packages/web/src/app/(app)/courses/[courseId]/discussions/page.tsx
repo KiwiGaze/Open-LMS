@@ -20,7 +20,7 @@ import { useMyCourseMembershipsQuery } from '@/lib/api/queries/me.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import type { DiscussionTopic } from '@openlms/contracts';
 import { useQuery } from '@tanstack/react-query';
-import { MessagesSquare, Plus, Trash2 } from 'lucide-react';
+import { MessagesSquare, Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { use } from 'react';
 
@@ -106,7 +106,7 @@ export default function DiscussionsPage({ params }: { params: Promise<Params> })
                       <CardTitle className="text-base group-hover:text-(--color-text-link)">
                         {topic.title}
                       </CardTitle>
-                      <div className="flex items-center gap-2 pr-10">
+                      <div className="flex items-center gap-2 pr-16">
                         <Badge tone={topic.visibility === 'published' ? 'success' : 'neutral'}>
                           {topic.visibility}
                         </Badge>
@@ -128,16 +128,27 @@ export default function DiscussionsPage({ params }: { params: Promise<Params> })
                 </Card>
               </Link>
               {isStaff ? (
-                <Button
-                  intent="ghost"
-                  size="icon-sm"
-                  aria-label={`Delete topic ${topic.title}`}
-                  onClick={(e) => handleDelete(e, topic.id, topic.title)}
-                  disabled={deleteTopic.isPending}
-                  className="absolute right-3 top-3"
-                >
-                  <Trash2 className="size-4" aria-hidden />
-                </Button>
+                <div className="absolute right-3 top-3 flex items-center gap-1">
+                  <Button
+                    asChild
+                    intent="ghost"
+                    size="icon-sm"
+                    aria-label={`Edit topic ${topic.title}`}
+                  >
+                    <Link href={`/courses/${courseId}/discussions/${topic.id}/edit`}>
+                      <Pencil className="size-4" aria-hidden />
+                    </Link>
+                  </Button>
+                  <Button
+                    intent="ghost"
+                    size="icon-sm"
+                    aria-label={`Delete topic ${topic.title}`}
+                    onClick={(e) => handleDelete(e, topic.id, topic.title)}
+                    disabled={deleteTopic.isPending}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                  </Button>
+                </div>
               ) : null}
             </div>
           ))}
