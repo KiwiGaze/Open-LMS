@@ -183,7 +183,9 @@ function FormContents({
         <div>
           <Label>Accepted answers</Label>
           {errors.answers ? (
-            <p className="mt-1 text-xs text-(--color-danger-700)">{errors.answers}</p>
+            <p id="sa-answers-error" className="mt-1 text-xs text-(--color-danger-700)">
+              {errors.answers}
+            </p>
           ) : null}
           <ul className="mt-2 flex flex-col gap-2">
             {acceptedAnswers.map((answer, index) => (
@@ -191,6 +193,8 @@ function FormContents({
                 <Input
                   value={answer}
                   placeholder={`Accepted answer ${index + 1}`}
+                  aria-invalid={Boolean(errors.answers)}
+                  aria-describedby={errors.answers ? 'sa-answers-error' : undefined}
                   onChange={(e) => updateAnswer(index, e.target.value)}
                 />
                 <Button
