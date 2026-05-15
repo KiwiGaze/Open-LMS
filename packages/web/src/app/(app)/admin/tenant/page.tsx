@@ -34,7 +34,7 @@ import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatDate } from '@/lib/format.ts';
 import type { Tenant, TenantRole } from '@openlms/contracts';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, Settings, Users } from 'lucide-react';
+import { Building2, Check, Copy, Settings, Users } from 'lucide-react';
 import Link from 'next/link';
 import { use, useEffect, useState } from 'react';
 
@@ -192,8 +192,106 @@ export default function TenantAdminPage() {
           </Card>
 
           <FileStorageQuotasCard tenantId={tenantId} tenant={active} />
+
+          <LtiRegistrationCard tenantId={active.id} />
         </div>
       )}
+    </div>
+  );
+}
+
+function LtiRegistrationCard({ tenantId }: { tenantId: string }) {
+  const [origin, setOrigin] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
+  }, []);
+
+  const base = origin ?? '';
+  const urls: { label: string; description: string; url: string }[] = [
+    {
+      label: 'Issuer',
+      description: 'Platform identifier used in OIDC claims.',
+      url: base,
+    },
+    {
+      label: 'OIDC login / authorize',
+      description: 'Tool consumers redirect here to begin the LTI 1.3 launch handshake.',
+      url: `${base}/api/v1/lti-1p3/authorize`,
+    },
+    {
+      label: 'JWKS',
+      description: 'Public keys for verifying platform-signed tokens.',
+      url: `${base}/api/v1/tenants/${tenantId}/lti-1p3/jwks`,
+    },
+    {
+      label: 'Access-token URL',
+      description: 'OAuth2 client-credentials endpoint for tool-to-platform calls.',
+      url: `${base}/api/v1/tenants/${tenantId}/lti-1p3/token`,
+    },
+    {
+      label: 'Deep-linking return URL',
+      description: 'Where deep-linking responses from tools are posted back.',
+      url: `${base}/api/v1/lti-1p3/deep-linking/return`,
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>LTI 1.3 tool registration</CardTitle>
+        <CardDescription>
+          Share these URLs with an external tool provider when registering this LMS as a platform.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {urls.map((row) => (
+          <div key={row.label} className="flex flex-col gap-1">
+            <p className="text-sm font-medium text-(--color-text-default)">{row.label}</p>
+            <p className="text-xs text-(--color-text-muted)">{row.description}</p>
+            <CopyableUrl url={row.url} disabled={!origin} />
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CopyableUrl({ url, disabled }: { url: string; disabled: boolean }) {
+  const [copied, setCopied] = useState(false);
+
+  const onCopy = async () => {
+    if (disabled) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard API unavailable; leave the URL visible for manual copy.
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2 rounded-[var(--radius-md)] border border-(--color-border-subtle) bg-(--color-surface-base) px-3 py-2">
+      <code className="flex-1 truncate font-mono text-xs text-(--color-text-default)">
+        {disabled ? '…' : url}
+      </code>
+      <Button
+        intent="ghost"
+        size="icon-sm"
+        type="button"
+        onClick={onCopy}
+        disabled={disabled}
+        aria-label={`Copy ${url}`}
+      >
+        {copied ? (
+          <Check className="size-4 text-(--color-success-fg)" aria-hidden />
+        ) : (
+          <Copy className="size-4" aria-hidden />
+        )}
+      </Button>
     </div>
   );
 }
