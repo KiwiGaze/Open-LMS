@@ -69,6 +69,7 @@ export const COURSE_NAV: CourseNavItem[] = [
   { segment: 'people', label: 'People', icon: Users },
   { segment: 'attendance', label: 'Attendance', icon: CalendarCheck, staffOnly: true },
   { segment: 'pages', label: 'Pages', icon: BookOpen },
+  { segment: 'wiki', label: 'Wiki', icon: BookOpen },
   { segment: 'files', label: 'Files', icon: BookOpen },
   { segment: 'glossary', label: 'Glossary', icon: Library },
   { segment: 'meetings', label: 'Meetings', icon: Video },

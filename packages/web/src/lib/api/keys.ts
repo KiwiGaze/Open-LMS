@@ -19,6 +19,10 @@ export const queryKeys = {
   userLegalHolds: (tenantId: string, status: string) =>
     ['tenants', tenantId, 'legal-holds', status] as const,
   myPushTokens: (tenantId: string) => ['tenants', tenantId, 'me', 'push-tokens'] as const,
+  wikiPages: (tenantId: string, courseId: string) =>
+    ['courses', tenantId, courseId, 'wiki-pages'] as const,
+  wikiPage: (tenantId: string, courseId: string, wikiPageId: string) =>
+    ['courses', tenantId, courseId, 'wiki-pages', wikiPageId] as const,
 
   courses: (tenantId: string) => ['courses', tenantId, 'list'] as const,
   course: (tenantId: string, courseId: string) => ['courses', tenantId, courseId] as const,
