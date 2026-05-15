@@ -115,12 +115,12 @@ export default function EditSyllabusPage({ params }: { params: Promise<Params> }
             />
           </label>
           <div className="flex max-w-xs flex-col gap-1 text-sm font-medium text-(--color-text-default)">
-            <span>Visibility</span>
+            <span id="syllabus-visibility-label">Visibility</span>
             <Select
               value={visibility}
               onValueChange={(value) => setVisibility(value as CourseSyllabusVisibility)}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-labelledby="syllabus-visibility-label">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
