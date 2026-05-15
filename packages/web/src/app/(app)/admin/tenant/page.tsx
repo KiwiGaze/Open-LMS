@@ -36,7 +36,7 @@ import type { Tenant, TenantRole } from '@openlms/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, Check, Copy, Settings, Users } from 'lucide-react';
 import Link from 'next/link';
-import { use, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const TENANT_ROLES: TenantRole[] = [
   'student',
