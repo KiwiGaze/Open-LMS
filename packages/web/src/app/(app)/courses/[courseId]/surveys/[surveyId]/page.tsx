@@ -22,14 +22,14 @@ export default function SurveyDetail({ params }: { params: Promise<Params> }) {
   const surveys = useSurveysQuery(tenantId, courseId);
   const questions = useSurveyQuestionsQuery(tenantId, courseId, surveyId);
 
-  if (surveys.isLoading || questions.isLoading) {
-    return <Skeleton className="h-72 w-full" />;
-  }
   if (surveys.error) {
     return <ErrorState error={surveys.error} onRetry={() => surveys.refetch()} />;
   }
   if (questions.error) {
     return <ErrorState error={questions.error} onRetry={() => questions.refetch()} />;
+  }
+  if (surveys.isLoading || questions.isLoading) {
+    return <Skeleton className="h-72 w-full" />;
   }
 
   const survey = surveys.data?.find((entry) => entry.id === surveyId);
