@@ -21,6 +21,7 @@ import {
 } from '@/lib/api/queries/modules.ts';
 import { useQuizzesQuery } from '@/lib/api/queries/quizzes.ts';
 import { useRecordResourceViewMutation } from '@/lib/api/queries/resource-views.ts';
+import { useXapiEmitter } from '@/lib/api/queries/xapi.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatDate, formatDateTime } from '@/lib/format.ts';
 import type {
@@ -465,6 +466,7 @@ function TopicItem({ courseId, topic }: { courseId: string; topic: DiscussionTop
 function ResourceItem({ resource, courseId }: { resource: CourseResource; courseId: string }) {
   const tenantId = useSessionStore((s) => s.activeTenantId);
   const recordView = useRecordResourceViewMutation(tenantId, courseId);
+  const emitXapi = useXapiEmitter();
   const icon =
     resource.resourceType === 'file'
       ? Paperclip
@@ -484,7 +486,19 @@ function ResourceItem({ resource, courseId }: { resource: CourseResource; course
               href={resource.sourceUri}
               target={resource.resourceType === 'external_link' ? '_blank' : undefined}
               rel={resource.resourceType === 'external_link' ? 'noreferrer noopener' : undefined}
-              onClick={() => recordView.mutate(resource.id)}
+              onClick={() => {
+                recordView.mutate(resource.id);
+                emitXapi({
+                  verb: {
+                    id: 'http://adlnet.gov/expapi/verbs/experienced',
+                    display: { 'en-US': 'experienced' },
+                  },
+                  object: {
+                    id: `urn:openlms:course:${courseId}:resource:${resource.id}`,
+                    definition: { type: 'http://id.tincanapi.com/activitytype/resource' },
+                  },
+                });
+              }}
               className="inline-flex items-center gap-1 text-xs font-medium text-(--color-text-link) hover:text-(--color-text-link-hover)"
             >
               {resource.resourceType === 'external_link' ? 'Open external link' : 'Open source'}{' '}
