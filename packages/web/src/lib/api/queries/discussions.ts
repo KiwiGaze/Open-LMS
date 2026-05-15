@@ -2,7 +2,11 @@
 
 import { apiFetch } from '@/lib/api/client.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
-import type { DiscussionPostGrade, DiscussionTopic } from '@openlms/contracts';
+import type {
+  DiscussionPostGrade,
+  DiscussionTopic,
+  DiscussionTopicSubscription,
+} from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useDiscussionTopicsQuery(tenantId: string | null, courseId: string | null) {
@@ -43,6 +47,42 @@ export function useCreateDiscussionTopic(tenantId: string | null, courseId: stri
           queryKey: queryKeys.courseDiscussions(tenantId, courseId),
         });
       }
+    },
+  });
+}
+
+export function useSubscribeDiscussionTopic(
+  tenantId: string | null,
+  courseId: string | null,
+  topicId: string | null,
+) {
+  return useMutation({
+    mutationFn: () => {
+      if (!tenantId || !courseId || !topicId) {
+        return Promise.reject(new Error('No active topic — cannot subscribe.'));
+      }
+      return apiFetch<DiscussionTopicSubscription>(
+        `/tenants/${tenantId}/courses/${courseId}/discussion-topics/${encodeURIComponent(topicId)}/subscription`,
+        { method: 'PUT' },
+      );
+    },
+  });
+}
+
+export function useUnsubscribeDiscussionTopic(
+  tenantId: string | null,
+  courseId: string | null,
+  topicId: string | null,
+) {
+  return useMutation({
+    mutationFn: () => {
+      if (!tenantId || !courseId || !topicId) {
+        return Promise.reject(new Error('No active topic — cannot unsubscribe.'));
+      }
+      return apiFetch<void>(
+        `/tenants/${tenantId}/courses/${courseId}/discussion-topics/${encodeURIComponent(topicId)}/subscription`,
+        { method: 'DELETE', responseType: 'void' },
+      );
     },
   });
 }
