@@ -48,9 +48,8 @@ export default function QuestionBanksPage({ params }: { params: Promise<Params> 
   const { publish } = useToast();
   const myCourseMemberships = useMyCourseMembershipsQuery();
   const isStaff =
-    myCourseMemberships.data?.some(
-      (m) => m.courseId === courseId && STAFF_ROLES.has(m.role),
-    ) ?? false;
+    myCourseMemberships.data?.some((m) => m.courseId === courseId && STAFF_ROLES.has(m.role)) ??
+    false;
 
   const banks = useQuestionBanksQuery(tenantId, courseId);
   const createBank = useCreateQuestionBankMutation(tenantId, courseId);
