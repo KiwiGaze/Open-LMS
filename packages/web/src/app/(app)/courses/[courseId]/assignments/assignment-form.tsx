@@ -26,6 +26,7 @@ import {
   useCreateAssignment,
   useUpdateAssignment,
 } from '@/lib/api/queries/assignments.ts';
+import { useRubricsQuery } from '@/lib/api/queries/rubrics.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { Assignment } from '@openlms/contracts';
@@ -396,24 +397,21 @@ export function AssignmentForm(props: AssignmentFormProps) {
         <CardHeader>
           <CardTitle>Rubric</CardTitle>
           <CardDescription>
-            Attach a rubric so feedback aligns with the criteria learners see. A rubric library
-            picker ships in a later iteration — paste the rubric ULID for now.
+            Attach a rubric so feedback aligns with the criteria learners see. Create rubrics in
+            Admin → Rubrics.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <FormField
             id="activeRubricId"
-            label="Rubric ULID"
-            description="26-character ULID. Leave blank for no rubric."
+            label="Rubric"
+            description="Leave blank for no rubric."
             error={form.formState.errors.activeRubricId?.message}
           >
-            <Input
-              id="activeRubricId"
-              placeholder="01J9QW7B6N5W2YH3D3A1V0KE3C"
-              autoComplete="off"
-              spellCheck={false}
-              invalid={Boolean(form.formState.errors.activeRubricId)}
-              {...form.register('activeRubricId')}
+            <Controller
+              control={form.control}
+              name="activeRubricId"
+              render={({ field }) => <RubricPicker value={field.value} onChange={field.onChange} />}
             />
           </FormField>
         </CardContent>
@@ -534,6 +532,48 @@ type SwitchRowProps = {
     | 'anonymousGradingEnabled'
     | 'groupSubmissionEnabled';
 };
+
+function RubricPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const tenantId = useSessionStore((s) => s.activeTenantId);
+  const rubrics = useRubricsQuery(tenantId);
+  const noneSentinel = '__none__';
+  const ready = !rubrics.isLoading && !rubrics.error;
+  const selected = value.trim() === '' ? (ready ? noneSentinel : undefined) : value;
+
+  return (
+    <Select
+      value={selected}
+      onValueChange={(next) => onChange(next === noneSentinel ? '' : next)}
+      disabled={rubrics.isLoading}
+    >
+      <SelectTrigger id="activeRubricId">
+        <SelectValue
+          placeholder={
+            rubrics.isLoading
+              ? 'Loading rubrics…'
+              : rubrics.error
+                ? 'Could not load rubrics'
+                : 'No rubric'
+          }
+        />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={noneSentinel}>No rubric</SelectItem>
+        {(rubrics.data ?? []).map((rubric) => (
+          <SelectItem key={rubric.id} value={rubric.id}>
+            {rubric.title} ({rubric.criteria.length} criteria)
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 function SwitchRow({ id, label, description, control, name }: SwitchRowProps) {
   return (
