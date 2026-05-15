@@ -79,6 +79,7 @@ describe('OpenAPI generation', () => {
       '/api/v1/tenants/{tenantId}/courses/{courseId}/sections',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/sections/{courseSectionId}',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/announcements',
+      '/api/v1/tenants/{tenantId}/announcements',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/announcements/{announcementId}',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/memberships',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/messageable-users',
@@ -1085,6 +1086,17 @@ describe('OpenAPI generation', () => {
     expect(
       document.paths['/api/v1/tenants/{tenantId}/courses/{courseId}/announcements']?.get?.security,
     ).toEqual([{ bearerAuth: [] }]);
+    expect(document.paths['/api/v1/tenants/{tenantId}/announcements']?.get?.security).toEqual([
+      { bearerAuth: [] },
+    ]);
+    expect(document.paths['/api/v1/tenants/{tenantId}/announcements']?.get?.operationId).toEqual(
+      'listAnnouncementsForActor',
+    );
+    expect(
+      Object.keys(
+        document.paths['/api/v1/tenants/{tenantId}/announcements']?.get?.responses ?? {},
+      ).sort(),
+    ).toEqual(['200', '401', '403']);
     expect(
       document.paths['/api/v1/tenants/{tenantId}/courses/{courseId}/memberships']?.get?.security,
     ).toEqual([{ bearerAuth: [] }]);

@@ -24,6 +24,16 @@ export function useCourseAnnouncementsQuery(tenantId: string | null, courseId: s
   });
 }
 
+export function useTenantAnnouncementsQuery(tenantId: string | null) {
+  return useQuery({
+    queryKey: tenantId
+      ? queryKeys.tenantAnnouncements(tenantId)
+      : ['announcements', 'tenant', 'inactive'],
+    queryFn: () => apiFetch<CourseAnnouncement[]>(`/tenants/${tenantId}/announcements`),
+    enabled: Boolean(tenantId),
+  });
+}
+
 export function useCreateCourseAnnouncementMutation(
   tenantId: string | null,
   courseId: string | null,

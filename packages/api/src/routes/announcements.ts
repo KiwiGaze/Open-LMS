@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { CourseAnnouncement, CourseAnnouncementId } from '@openlms/contracts';
+import { CourseAnnouncement, CourseAnnouncementId, TenantId } from '@openlms/contracts';
 import { CourseAssignmentPathParams } from './assignments.ts';
 import {
   badRequestResponse,
@@ -9,6 +9,37 @@ import {
 } from './responses.ts';
 
 export const CourseAnnouncementResponse = CourseAnnouncement.openapi('CourseAnnouncement');
+
+export const TenantAnnouncementsPathParams = z.object({
+  tenantId: TenantId.openapi({
+    param: { name: 'tenantId', in: 'path', description: 'Tenant identifier.' },
+    example: '01J9QW7B6N5W2YH3D3A1V0KE2X',
+  }),
+});
+
+export const listAnnouncementsForActorRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/announcements',
+  tags: ['Announcements'],
+  operationId: 'listAnnouncementsForActor',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: TenantAnnouncementsPathParams,
+  },
+  responses: {
+    200: {
+      description:
+        'Published announcements across every course the authenticated user is enrolled in.',
+      content: {
+        'application/json': {
+          schema: CourseAnnouncementResponse.array(),
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+  },
+});
 export const CreateCourseAnnouncementBody = z
   .object({
     title: z.string().min(1).max(180).openapi({

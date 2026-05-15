@@ -55,6 +55,38 @@ export const listCourseAnnouncementsForCourse = async (
   return rows.map((row) => CourseAnnouncement.parse(row));
 };
 
+export type ListAnnouncementsForCoursesInput = {
+  tenantId: string;
+  courseIds: string[];
+  statuses: CourseAnnouncementStatus[];
+};
+
+export const listAnnouncementsForCourses = async (
+  db: Database,
+  input: ListAnnouncementsForCoursesInput,
+): Promise<CourseAnnouncementContract[]> => {
+  if (input.courseIds.length === 0 || input.statuses.length === 0) return [];
+
+  const rows = await db
+    .select()
+    .from(courseAnnouncement)
+    .where(
+      and(
+        eq(courseAnnouncement.tenantId, input.tenantId),
+        inArray(courseAnnouncement.courseId, input.courseIds),
+        inArray(courseAnnouncement.status, input.statuses),
+      ),
+    )
+    .orderBy(
+      desc(courseAnnouncement.pinned),
+      sql`${courseAnnouncement.postedAt} desc nulls last`,
+      desc(courseAnnouncement.createdAt),
+      desc(courseAnnouncement.id),
+    );
+
+  return rows.map((row) => CourseAnnouncement.parse(row));
+};
+
 export const createCourseAnnouncement = async (
   db: DatabaseExecutor,
   input: CreateCourseAnnouncementInput,

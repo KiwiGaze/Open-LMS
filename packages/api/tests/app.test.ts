@@ -593,6 +593,7 @@ const dependencies = {
     _courseSectionId: string,
   ) => undefined,
   listCourseAnnouncements: async (_actorUserId: string, _tenantId: string, _courseId: string) => [],
+  listAnnouncementsForActor: async (_actorUserId: string, _tenantId: string) => [],
   createCourseAnnouncement: async (
     _actorUserId: string,
     _tenantId: string,
