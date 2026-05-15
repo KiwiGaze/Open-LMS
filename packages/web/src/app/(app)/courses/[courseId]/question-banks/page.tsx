@@ -36,6 +36,7 @@ import {
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatDateTime } from '@/lib/format.ts';
 import { Library, Plus, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import { use, useState } from 'react';
 
 const STAFF_ROLES = new Set(['instructor', 'teaching_assistant', 'course_admin']);
@@ -135,10 +136,15 @@ export default function QuestionBanksPage({ params }: { params: Promise<Params> 
               <Card>
                 <CardHeader>
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <CardTitle className="text-base">{bank.title}</CardTitle>
+                    <Link
+                      href={`/courses/${courseId}/question-banks/${bank.id}`}
+                      className="min-w-0 flex-1"
+                    >
+                      <CardTitle className="text-base hover:text-(--color-text-link)">
+                        {bank.title}
+                      </CardTitle>
                       <CardDescription>Updated {formatDateTime(bank.updatedAt)}</CardDescription>
-                    </div>
+                    </Link>
                     <div className="flex items-center gap-2">
                       <Badge tone={bank.status === 'active' ? 'success' : 'outline'}>
                         {bank.status}
