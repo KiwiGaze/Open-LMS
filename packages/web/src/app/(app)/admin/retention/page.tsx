@@ -102,7 +102,8 @@ function RetentionPolicyCard({
     }
     setError(null);
     try {
-      await onSave(parsed);
+      const saved = await onSave(parsed);
+      setValue(String(saved.retainDays));
       publish({ tone: 'success', title: 'Retention policy saved' });
     } catch (e) {
       publish({
