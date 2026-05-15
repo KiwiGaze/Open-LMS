@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/patterns/empty-state.tsx';
 import { ErrorState } from '@/components/patterns/error-state.tsx';
 import { PageHeader } from '@/components/patterns/page-header.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
@@ -26,7 +27,15 @@ export default function WikiPageDetail({ params }: { params: Promise<Params> }) 
   if (page.error) {
     return <ErrorState error={page.error} onRetry={() => page.refetch()} />;
   }
-  if (!page.data) return null;
+  if (!page.data) {
+    return (
+      <EmptyState
+        icon={BookOpen}
+        title="Wiki page not found"
+        description="This page may have been moved or deleted."
+      />
+    );
+  }
 
   const wikiPage = page.data;
 
