@@ -13,13 +13,12 @@ import {
 } from '@/components/ui/card.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { apiFetch } from '@/lib/api/client.ts';
-import { ApiHttpError } from '@/lib/api/errors.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
-import { useCourseAnalyticsQuery } from '@/lib/api/queries/courses.ts';
+import { useCourseAnalyticsQuery, useCourseSyllabusQuery } from '@/lib/api/queries/courses.ts';
 import { useMyCourseMembershipsQuery } from '@/lib/api/queries/me.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatRelative } from '@/lib/format.ts';
-import type { CourseAnnouncement, CourseSyllabus } from '@openlms/contracts';
+import type { CourseAnnouncement } from '@openlms/contracts';
 import { useQuery } from '@tanstack/react-query';
 import {
   Bell,
@@ -49,18 +48,7 @@ export default function CourseHomePage({ params }: { params: Promise<Params> }) 
     ) ?? false;
   const analytics = useCourseAnalyticsQuery(tenantId, courseId, isStaff);
 
-  const syllabus = useQuery<CourseSyllabus | null>({
-    queryKey: ['courses', tenantId ?? '', courseId, 'syllabus'],
-    queryFn: async () => {
-      try {
-        return await apiFetch<CourseSyllabus>(`/tenants/${tenantId}/courses/${courseId}/syllabus`);
-      } catch (e) {
-        if (e instanceof ApiHttpError && e.status === 404) return null;
-        throw e;
-      }
-    },
-    enabled: Boolean(tenantId),
-  });
+  const syllabus = useCourseSyllabusQuery(tenantId, courseId);
 
   const announcements = useQuery({
     queryKey: tenantId
@@ -110,9 +98,16 @@ export default function CourseHomePage({ params }: { params: Promise<Params> }) 
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Syllabus</CardTitle>
-            <CardDescription>Course overview and policies.</CardDescription>
+          <CardHeader className="flex-row items-start justify-between gap-3">
+            <div>
+              <CardTitle>Syllabus</CardTitle>
+              <CardDescription>Course overview and policies.</CardDescription>
+            </div>
+            {isStaff ? (
+              <Button asChild intent="secondary" size="sm">
+                <Link href={`/courses/${courseId}/syllabus/edit`}>Edit syllabus</Link>
+              </Button>
+            ) : null}
           </CardHeader>
           <CardContent>
             {syllabus.isLoading ? (
