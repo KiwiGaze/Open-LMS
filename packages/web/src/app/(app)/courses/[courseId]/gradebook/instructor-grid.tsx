@@ -23,6 +23,7 @@ import type {
 } from '@openlms/contracts';
 import { ClipboardList, Download, EyeOff, Lock, Search, ShieldAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { AppealsPanel } from './appeals-panel.tsx';
 import { CsvImportDialog } from './csv-import-dialog.tsx';
 
 export type InstructorGradebookGridProps = {
@@ -171,6 +172,8 @@ export function InstructorGradebookGrid({
           <CsvImportDialog tenantId={tenantId} courseId={courseId} assignments={items} />
         </div>
       </div>
+
+      <AppealsPanel tenantId={tenantId} courseId={courseId} />
 
       {items.length === 0 ? (
         <EmptyState

@@ -6,6 +6,7 @@ import type {
   CourseMembership,
   Grade,
   GradeAppeal,
+  GradeAppealStatus,
   GradeStatus,
   GradebookEntry,
 } from '@openlms/contracts';
@@ -72,6 +73,47 @@ export function useImportAssignmentGradesCsv(tenantId: string | null, courseId: 
       ),
     onSuccess: () => {
       if (tenantId && courseId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.gradebook(tenantId, courseId),
+        });
+      }
+    },
+  });
+}
+
+export function useGradeAppealsQuery(tenantId: string | null, courseId: string | null) {
+  return useQuery({
+    queryKey:
+      tenantId && courseId
+        ? queryKeys.gradebookAppeals(tenantId, courseId)
+        : ['gradebook', 'appeals', 'inactive'],
+    queryFn: () =>
+      apiFetch<GradeAppeal[]>(`/tenants/${tenantId}/courses/${courseId}/gradebook/appeals`),
+    enabled: Boolean(tenantId && courseId),
+  });
+}
+
+export function useUpdateGradeAppealMutation(tenantId: string | null, courseId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      gradeAppealId: string;
+      status: GradeAppealStatus;
+      resolution: string | null;
+    }) => {
+      if (!tenantId || !courseId) {
+        return Promise.reject(new Error('No active course — cannot update appeal.'));
+      }
+      return apiFetch<GradeAppeal>(
+        `/tenants/${tenantId}/courses/${courseId}/gradebook/appeals/${encodeURIComponent(input.gradeAppealId)}`,
+        { method: 'PUT', body: { status: input.status, resolution: input.resolution } },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.gradebookAppeals(tenantId, courseId),
+        });
         queryClient.invalidateQueries({
           queryKey: queryKeys.gradebook(tenantId, courseId),
         });
