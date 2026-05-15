@@ -2,7 +2,7 @@
 
 import { apiFetch } from '@/lib/api/client.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
-import type { TenantMembership, TenantRole } from '@openlms/contracts';
+import type { Tenant, TenantMembership, TenantRole } from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useTenantMembersQuery(tenantId: string | null) {
@@ -29,6 +29,29 @@ export function useUpdateTenantMembershipMutation(tenantId: string | null) {
       if (tenantId) {
         queryClient.invalidateQueries({ queryKey: queryKeys.tenantMembers(tenantId) });
       }
+    },
+  });
+}
+
+export type UpdateTenantFileStorageQuotasInput = {
+  storageByteLimit: number | null;
+  defaultUserStorageByteLimit: number | null;
+};
+
+export function useUpdateTenantFileStorageQuotasMutation(tenantId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateTenantFileStorageQuotasInput) => {
+      if (!tenantId) {
+        return Promise.reject(new Error('No active tenant — cannot update quotas.'));
+      }
+      return apiFetch<Tenant>(`/tenants/${tenantId}/file-storage-quotas`, {
+        method: 'PUT',
+        body: input,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tenants() });
     },
   });
 }
