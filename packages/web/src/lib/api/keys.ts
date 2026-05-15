@@ -15,6 +15,7 @@ export const queryKeys = {
   tenantFeatureFlags: (tenantId: string) => ['tenants', tenantId, 'feature-flags'] as const,
   webhookSubscriptions: (tenantId: string) =>
     ['tenants', tenantId, 'webhook-subscriptions'] as const,
+  retentionPolicies: (tenantId: string) => ['tenants', tenantId, 'retention-policies'] as const,
 
   courses: (tenantId: string) => ['courses', tenantId, 'list'] as const,
   course: (tenantId: string, courseId: string) => ['courses', tenantId, courseId] as const,

@@ -1,4 +1,5 @@
 import {
+  Archive,
   Bell,
   BookOpen,
   Calendar,
@@ -44,6 +45,7 @@ export const ADMIN_NAV: AppNavItem[] = [
   { href: '/admin/ai-usage', label: 'AI usage', icon: Sparkles, staffOnly: true },
   { href: '/admin/feature-flags', label: 'Feature flags', icon: Flag, staffOnly: true },
   { href: '/admin/webhooks', label: 'Webhooks', icon: Webhook, staffOnly: true },
+  { href: '/admin/retention', label: 'Retention', icon: Archive, staffOnly: true },
   { href: '/admin/audit-logs', label: 'Audit logs', icon: Shield, staffOnly: true },
 ];
 
