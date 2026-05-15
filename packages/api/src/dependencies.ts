@@ -985,6 +985,12 @@ export type ApiDependencies = {
     moduleId: string | undefined,
     unitId: string | undefined,
   ) => Promise<Assignment[]>;
+  getAssignment: (
+    actorUserId: string,
+    tenantId: string,
+    courseId: string,
+    assignmentId: string,
+  ) => Promise<Assignment>;
   createAssignment: (
     actorUserId: string,
     tenantId: string,
@@ -1051,6 +1057,12 @@ export type ApiDependencies = {
     moduleId: string | undefined,
     unitId: string | undefined,
   ) => Promise<Quiz[]>;
+  getQuiz: (
+    actorUserId: string,
+    tenantId: string,
+    courseId: string,
+    quizId: string,
+  ) => Promise<Quiz>;
   createQuiz: (
     actorUserId: string,
     tenantId: string,
@@ -7762,6 +7774,32 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
           canAccessReleasedModuleItem(assignment, 'assignment', releaseVisibility),
       );
     },
+    getAssignment: async (actorUserId, tenantId, courseId, assignmentId) => {
+      const { hasTenantStaffAccess, hasCourseStaffAccess } = await readCourseAccessContext(
+        actorUserId,
+        tenantId,
+        courseId,
+      );
+      const canViewAllContent = hasTenantStaffAccess || hasCourseStaffAccess;
+      const assignment = await getAssignmentById(dbHandle.db, tenantId, assignmentId);
+
+      if (
+        !assignment ||
+        assignment.courseId !== courseId ||
+        !canViewAssignment(assignment, canViewAllContent)
+      ) {
+        throw new ApiError('not_found', assignmentNotFoundMessage);
+      }
+      await assertReleasedAssignmentAccess(
+        actorUserId,
+        tenantId,
+        courseId,
+        assignment,
+        canViewAllContent,
+      );
+
+      return assignment;
+    },
     createAssignment: async (actorUserId, tenantId, courseId, input) => {
       const access = await readCourseAccessContext(actorUserId, tenantId, courseId);
 
@@ -8153,6 +8191,21 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
       });
 
       return quizzes.filter((quiz) => canViewQuiz(quiz, canViewAllContent));
+    },
+    getQuiz: async (actorUserId, tenantId, courseId, quizId) => {
+      const { hasTenantStaffAccess, hasCourseStaffAccess } = await readCourseAccessContext(
+        actorUserId,
+        tenantId,
+        courseId,
+      );
+      const canViewAllContent = hasTenantStaffAccess || hasCourseStaffAccess;
+      const quiz = await getQuizForCourse(dbHandle.db, tenantId, courseId, quizId);
+
+      if (!quiz || !canViewQuiz(quiz, canViewAllContent)) {
+        throw new ApiError('not_found', quizNotFoundMessage);
+      }
+
+      return quiz;
     },
     createQuiz: async (actorUserId, tenantId, courseId, input) => {
       const access = await readCourseAccessContext(actorUserId, tenantId, courseId);

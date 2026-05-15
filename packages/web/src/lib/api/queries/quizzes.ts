@@ -58,6 +58,24 @@ export function useQuizzesQuery(tenantId: string | null, courseId: string | null
   });
 }
 
+export function useQuizQuery(
+  tenantId: string | null,
+  courseId: string | null,
+  quizId: string | null,
+) {
+  return useQuery({
+    queryKey:
+      tenantId && courseId && quizId
+        ? queryKeys.quiz(tenantId, courseId, quizId)
+        : ['quiz', 'inactive'],
+    queryFn: () =>
+      apiFetch<Quiz>(
+        `/tenants/${tenantId}/courses/${courseId}/quizzes/${encodeURIComponent(quizId ?? '')}`,
+      ),
+    enabled: Boolean(tenantId && courseId && quizId),
+  });
+}
+
 export function useQuizQuestionsQuery(
   tenantId: string | null,
   courseId: string | null,

@@ -712,6 +712,14 @@ const dependencies = {
     _moduleId?: string,
     _unitId?: string,
   ) => [],
+  getAssignment: async (
+    _actorUserId: string,
+    _tenantId: string,
+    _courseId: string,
+    _assignmentId: string,
+  ) => {
+    throw new Error('not implemented in stub');
+  },
   createAssignment: async (
     _actorUserId: string,
     _tenantId: string,
@@ -968,6 +976,9 @@ const dependencies = {
     }),
   deleteRubric: async (_actorUserId: string, _tenantId: string, _rubricId: string) => undefined,
   listQuizzes: async (_actorUserId: string, _tenantId: string, _courseId: string) => [],
+  getQuiz: async (_actorUserId: string, _tenantId: string, _courseId: string, _quizId: string) => {
+    throw new Error('not implemented in stub');
+  },
   createQuiz: async (_actorUserId: string, _tenantId: string, _courseId: string, _input: unknown) =>
     Quiz.parse({
       id: quizId,
