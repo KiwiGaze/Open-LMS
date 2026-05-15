@@ -53,6 +53,13 @@ export function QtiTools({ tenantId, courseId, quizId }: Props) {
             items.push({ xml: entry.xml });
           }
         } else {
+          const trimmed = text.trim();
+          if (trimmed.length === 0) {
+            throw new Error(`${file.name} is empty.`);
+          }
+          if (!trimmed.startsWith('<')) {
+            throw new Error(`${file.name} does not look like a QTI XML document.`);
+          }
           items.push({ xml: text });
         }
       }
