@@ -1089,9 +1089,9 @@ describe('OpenAPI generation', () => {
     expect(document.paths['/api/v1/tenants/{tenantId}/announcements']?.get?.security).toEqual([
       { bearerAuth: [] },
     ]);
-    expect(
-      document.paths['/api/v1/tenants/{tenantId}/announcements']?.get?.operationId,
-    ).toEqual('listAnnouncementsForActor');
+    expect(document.paths['/api/v1/tenants/{tenantId}/announcements']?.get?.operationId).toEqual(
+      'listAnnouncementsForActor',
+    );
     expect(
       Object.keys(
         document.paths['/api/v1/tenants/{tenantId}/announcements']?.get?.responses ?? {},
