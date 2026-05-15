@@ -51,6 +51,54 @@ export function useCreateDiscussionTopic(tenantId: string | null, courseId: stri
   });
 }
 
+export function useUpdateDiscussionTopic(
+  tenantId: string | null,
+  courseId: string | null,
+  topicId: string | null,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateDiscussionTopicInput) => {
+      if (!tenantId || !courseId || !topicId) {
+        return Promise.reject(new Error('No active topic — cannot update.'));
+      }
+      return apiFetch<DiscussionTopic>(
+        `/tenants/${tenantId}/courses/${courseId}/discussion-topics/${encodeURIComponent(topicId)}`,
+        { method: 'PUT', body: input },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.courseDiscussions(tenantId, courseId),
+        });
+      }
+    },
+  });
+}
+
+export function useDeleteDiscussionTopic(tenantId: string | null, courseId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (topicId: string) => {
+      if (!tenantId || !courseId) {
+        return Promise.reject(new Error('No active course — cannot delete topic.'));
+      }
+      return apiFetch<void>(
+        `/tenants/${tenantId}/courses/${courseId}/discussion-topics/${encodeURIComponent(topicId)}`,
+        { method: 'DELETE', responseType: 'void' },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.courseDiscussions(tenantId, courseId),
+        });
+      }
+    },
+  });
+}
+
 export function useSubscribeDiscussionTopic(
   tenantId: string | null,
   courseId: string | null,
