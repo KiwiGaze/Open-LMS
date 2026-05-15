@@ -22,27 +22,50 @@ import {
 } from '@/components/ui/select.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useCoursesQuery } from '@/lib/api/queries/courses.ts';
+import {
+  useCourseFavoritesQuery,
+  useFavoriteCourseMutation,
+  useUnfavoriteCourseMutation,
+} from '@/lib/api/queries/favorites.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { cn } from '@/lib/cn';
-import { BookOpen, Filter, Search } from 'lucide-react';
+import { BookOpen, Filter, Search, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 export default function CoursesPage() {
   const tenantId = useSessionStore((s) => s.activeTenantId);
   const courses = useCoursesQuery(tenantId);
+  const favorites = useCourseFavoritesQuery(tenantId);
+  const favorite = useFavoriteCourseMutation(tenantId);
+  const unfavorite = useUnfavoriteCourseMutation(tenantId);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | 'active' | 'draft' | 'archived'>('all');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+
+  const favoriteIds = useMemo(
+    () => new Set<string>((favorites.data ?? []).map((f) => f.courseId)),
+    [favorites.data],
+  );
 
   const filtered = useMemo(() => {
     const all = courses.data ?? [];
     return all.filter((c) => {
+      if (favoritesOnly && !favoriteIds.has(c.id)) return false;
       if (status !== 'all' && c.status !== status) return false;
       if (search.trim() === '') return true;
       const hay = `${c.title} ${c.code} ${c.academicTerm ?? ''}`.toLowerCase();
       return hay.includes(search.toLowerCase());
     });
-  }, [courses.data, search, status]);
+  }, [courses.data, favoriteIds, favoritesOnly, search, status]);
+
+  const toggleFavorite = (courseId: string) => {
+    if (favoriteIds.has(courseId)) {
+      unfavorite.mutate(courseId);
+    } else {
+      favorite.mutate(courseId);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -71,6 +94,14 @@ export default function CoursesPage() {
           />
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            intent={favoritesOnly ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => setFavoritesOnly((v) => !v)}
+          >
+            <Star className={cn('size-3.5', favoritesOnly ? 'fill-current' : '')} aria-hidden />{' '}
+            Favorites
+          </Button>
           <Filter className="size-4 text-(--color-text-muted)" aria-hidden />
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
             <SelectTrigger className="w-40">
@@ -116,45 +147,69 @@ export default function CoursesPage() {
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((course) => (
-            <Link key={course.id} href={`/courses/${course.id}`} className="group">
-              <Card
-                className={cn(
-                  'h-full overflow-hidden transition-shadow hover:shadow-(--shadow-sm)',
-                  'group-focus-visible:[box-shadow:var(--shadow-focus)]',
-                )}
-              >
-                <div className="h-20 bg-gradient-to-br from-(--color-brand-200) to-(--color-brand-500)" />
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-(--color-text-muted)">
-                      {course.code}
-                    </span>
-                    <Badge
-                      tone={
-                        course.status === 'active'
-                          ? 'success'
-                          : course.status === 'archived'
-                            ? 'outline'
-                            : 'neutral'
-                      }
-                    >
-                      {course.status}
-                    </Badge>
-                  </div>
-                  <CardTitle className="line-clamp-2 group-hover:text-(--color-text-link)">
-                    {course.title}
-                  </CardTitle>
-                  {course.academicTerm ? (
-                    <CardDescription>{course.academicTerm}</CardDescription>
-                  ) : null}
-                </CardHeader>
-                <CardContent className="text-xs text-(--color-text-muted)">
-                  {course.catalogCategory ? <span>{course.catalogCategory}</span> : <span>—</span>}
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+          {filtered.map((course) => {
+            const isFavorite = favoriteIds.has(course.id);
+            return (
+              <div key={course.id} className="relative">
+                <Link href={`/courses/${course.id}`} className="group">
+                  <Card
+                    className={cn(
+                      'h-full overflow-hidden transition-shadow hover:shadow-(--shadow-sm)',
+                      'group-focus-visible:[box-shadow:var(--shadow-focus)]',
+                    )}
+                  >
+                    <div className="h-20 bg-gradient-to-br from-(--color-brand-200) to-(--color-brand-500)" />
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-(--color-text-muted)">
+                          {course.code}
+                        </span>
+                        <Badge
+                          tone={
+                            course.status === 'active'
+                              ? 'success'
+                              : course.status === 'archived'
+                                ? 'outline'
+                                : 'neutral'
+                          }
+                        >
+                          {course.status}
+                        </Badge>
+                      </div>
+                      <CardTitle className="line-clamp-2 group-hover:text-(--color-text-link)">
+                        {course.title}
+                      </CardTitle>
+                      {course.academicTerm ? (
+                        <CardDescription>{course.academicTerm}</CardDescription>
+                      ) : null}
+                    </CardHeader>
+                    <CardContent className="text-xs text-(--color-text-muted)">
+                      {course.catalogCategory ? (
+                        <span>{course.catalogCategory}</span>
+                      ) : (
+                        <span>—</span>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => toggleFavorite(course.id)}
+                  aria-label={isFavorite ? 'Unfavorite course' : 'Favorite course'}
+                  aria-pressed={isFavorite}
+                  className="absolute right-3 top-3 grid size-8 place-items-center rounded-full bg-(--color-surface-base)/90 text-(--color-text-default) shadow-(--shadow-sm) hover:bg-(--color-surface-base)"
+                >
+                  <Star
+                    className={cn(
+                      'size-4',
+                      isFavorite ? 'fill-(--color-brand-500) text-(--color-brand-500)' : '',
+                    )}
+                    aria-hidden
+                  />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
