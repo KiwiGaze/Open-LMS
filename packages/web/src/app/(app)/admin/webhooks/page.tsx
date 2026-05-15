@@ -57,8 +57,14 @@ const validate = (
 ): { errors: FormErrors; topicList: string[] } => {
   const errors: FormErrors = {};
   if (state.name.trim() === '') errors.name = 'Required.';
-  if (!/^https:\/\//.test(state.endpointUrl.trim()))
-    errors.endpointUrl = 'Must start with https://.';
+  try {
+    const parsed = new URL(state.endpointUrl.trim());
+    if (parsed.protocol !== 'https:') {
+      errors.endpointUrl = 'Must use HTTPS.';
+    }
+  } catch {
+    errors.endpointUrl = 'Must be a valid HTTPS URL.';
+  }
   const topicList = state.topics
     .split(',')
     .map((topic) => topic.trim())
@@ -425,7 +431,16 @@ function WebhookFormDialog({
           Enabled
         </label>
         <div className="flex items-center justify-end gap-2">
-          <Button intent="secondary" size="sm" onClick={onCancel} disabled={busy}>
+          <Button
+            intent="secondary"
+            size="sm"
+            onClick={() => {
+              setState(initialState);
+              setErrors({});
+              onCancel();
+            }}
+            disabled={busy}
+          >
             Cancel
           </Button>
           <Button intent="primary" size="sm" onClick={submit} disabled={busy}>
