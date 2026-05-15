@@ -2,7 +2,12 @@
 
 import { apiFetch } from '@/lib/api/client.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
-import type { CourseSection, CourseSectionMember, CourseSectionStatus } from '@openlms/contracts';
+import type {
+  CourseSection,
+  CourseSectionInstructor,
+  CourseSectionMember,
+  CourseSectionStatus,
+} from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export type CourseSectionInput = {
@@ -120,6 +125,76 @@ export function useRemoveSectionMemberMutation(
       if (tenantId && courseId && sectionId) {
         queryClient.invalidateQueries({
           queryKey: queryKeys.sectionMembers(tenantId, courseId, sectionId),
+        });
+      }
+    },
+  });
+}
+
+export function useSectionInstructorsQuery(
+  tenantId: string | null,
+  courseId: string | null,
+  sectionId: string | null,
+) {
+  return useQuery({
+    queryKey:
+      tenantId && courseId && sectionId
+        ? queryKeys.sectionInstructors(tenantId, courseId, sectionId)
+        : ['section-instructors', 'inactive'],
+    queryFn: () =>
+      apiFetch<CourseSectionInstructor[]>(
+        `/tenants/${tenantId}/courses/${courseId}/sections/${encodeURIComponent(sectionId ?? '')}/instructors`,
+      ),
+    enabled: Boolean(tenantId && courseId && sectionId),
+  });
+}
+
+export function useAssignSectionInstructorMutation(
+  tenantId: string | null,
+  courseId: string | null,
+  sectionId: string | null,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (instructorId: string) => {
+      if (!tenantId || !courseId || !sectionId) {
+        return Promise.reject(new Error('No active section — cannot assign instructor.'));
+      }
+      return apiFetch<CourseSectionInstructor>(
+        `/tenants/${tenantId}/courses/${courseId}/sections/${encodeURIComponent(sectionId)}/instructors`,
+        { method: 'POST', body: { instructorId } },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId && sectionId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.sectionInstructors(tenantId, courseId, sectionId),
+        });
+      }
+    },
+  });
+}
+
+export function useRemoveSectionInstructorMutation(
+  tenantId: string | null,
+  courseId: string | null,
+  sectionId: string | null,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (instructorId: string) => {
+      if (!tenantId || !courseId || !sectionId) {
+        return Promise.reject(new Error('No active section — cannot remove instructor.'));
+      }
+      return apiFetch<void>(
+        `/tenants/${tenantId}/courses/${courseId}/sections/${encodeURIComponent(sectionId)}/instructors/${encodeURIComponent(instructorId)}`,
+        { method: 'DELETE', responseType: 'void' },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId && sectionId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.sectionInstructors(tenantId, courseId, sectionId),
         });
       }
     },

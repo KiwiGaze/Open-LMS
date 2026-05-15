@@ -128,6 +128,8 @@ export const queryKeys = {
     ['courses', tenantId, courseId, 'sections'] as const,
   sectionMembers: (tenantId: string, courseId: string, sectionId: string) =>
     ['courses', tenantId, courseId, 'sections', sectionId, 'members'] as const,
+  sectionInstructors: (tenantId: string, courseId: string, sectionId: string) =>
+    ['courses', tenantId, courseId, 'sections', sectionId, 'instructors'] as const,
   courseGroupSets: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'group-sets'] as const,
   courseGroups: (tenantId: string, courseId: string) =>

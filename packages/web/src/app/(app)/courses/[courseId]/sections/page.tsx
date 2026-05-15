@@ -21,11 +21,14 @@ import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useToast } from '@/components/ui/toast.tsx';
 import { ApiHttpError } from '@/lib/api/errors.ts';
 import {
+  useAssignSectionInstructorMutation,
   useAssignSectionMemberMutation,
   useCourseSectionsQuery,
   useCreateCourseSectionMutation,
   useDeleteCourseSectionMutation,
+  useRemoveSectionInstructorMutation,
   useRemoveSectionMemberMutation,
+  useSectionInstructorsQuery,
   useSectionMembersQuery,
 } from '@/lib/api/queries/sections.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
@@ -154,7 +157,18 @@ export default function CourseSectionsPage({ params }: { params: Promise<Params>
           </div>
 
           {activeSection ? (
-            <SectionMembersPanel tenantId={tenantId} courseId={courseId} section={activeSection} />
+            <div className="flex flex-col gap-4">
+              <SectionMembersPanel
+                tenantId={tenantId}
+                courseId={courseId}
+                section={activeSection}
+              />
+              <SectionInstructorsPanel
+                tenantId={tenantId}
+                courseId={courseId}
+                section={activeSection}
+              />
+            </div>
           ) : (
             <Card>
               <CardContent className="p-6 text-sm text-(--color-text-muted)">
@@ -289,6 +303,109 @@ function SectionMembersPanel({
                   size="icon-sm"
                   aria-label="Remove student"
                   onClick={() => handleRemove(m.studentId)}
+                  disabled={remove.isPending}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function SectionInstructorsPanel({
+  tenantId,
+  courseId,
+  section,
+}: {
+  tenantId: string | null;
+  courseId: string;
+  section: CourseSection;
+}) {
+  const { publish } = useToast();
+  const instructors = useSectionInstructorsQuery(tenantId, courseId, section.id);
+  const assign = useAssignSectionInstructorMutation(tenantId, courseId, section.id);
+  const remove = useRemoveSectionInstructorMutation(tenantId, courseId, section.id);
+  const [instructorId, setInstructorId] = useState('');
+  const [instructorIdError, setInstructorIdError] = useState<string | null>(null);
+
+  const handleAdd = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setInstructorIdError(null);
+    const trimmed = instructorId.trim();
+    if (!ULID_RE.test(trimmed)) {
+      setInstructorIdError('Instructor ID must be a 26-character ULID.');
+      return;
+    }
+    try {
+      await assign.mutateAsync(trimmed);
+      publish({ tone: 'success', title: 'Instructor assigned' });
+      setInstructorId('');
+    } catch (error) {
+      const message =
+        error instanceof ApiHttpError ? error.message : 'Could not assign. Try again.';
+      publish({ tone: 'danger', title: 'Assign failed', description: message });
+    }
+  };
+
+  const handleRemove = async (id: string) => {
+    if (!window.confirm(`Remove ${id.slice(-12)} from this section?`)) return;
+    try {
+      await remove.mutateAsync(id);
+      publish({ tone: 'success', title: 'Instructor removed' });
+    } catch (error) {
+      const message =
+        error instanceof ApiHttpError ? error.message : 'Could not remove. Try again.';
+      publish({ tone: 'danger', title: 'Remove failed', description: message });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Instructors of "{section.name}"</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <form onSubmit={handleAdd} className="flex items-end gap-2">
+          <FormField
+            label="Instructor ID"
+            id={`add-instructor-${section.id}`}
+            error={instructorIdError}
+            className="flex-1"
+          >
+            <Input
+              id={`add-instructor-${section.id}`}
+              value={instructorId}
+              onChange={(e) => setInstructorId(e.target.value)}
+              placeholder="01J9QW7B6N5W2YH3D3A1V0KE8M"
+            />
+          </FormField>
+          <Button type="submit" disabled={assign.isPending} loading={assign.isPending}>
+            <UserPlus className="size-4" aria-hidden /> Assign
+          </Button>
+        </form>
+
+        {instructors.isLoading ? (
+          <Skeleton className="h-16 w-full" />
+        ) : instructors.error ? (
+          <ErrorState error={instructors.error} onRetry={() => instructors.refetch()} />
+        ) : (instructors.data?.length ?? 0) === 0 ? (
+          <p className="text-sm text-(--color-text-muted)">No instructors assigned yet.</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-(--color-border-subtle) overflow-hidden rounded-[var(--radius-md)] border border-(--color-border-subtle)">
+            {instructors.data?.map((i) => (
+              <li key={i.id} className="flex items-center gap-2 px-3 py-2">
+                <span className="flex-1 font-mono text-xs text-(--color-text-default)">
+                  {i.instructorId.slice(-12)}
+                </span>
+                <Button
+                  intent="ghost"
+                  size="icon-sm"
+                  aria-label="Remove instructor"
+                  onClick={() => handleRemove(i.instructorId)}
                   disabled={remove.isPending}
                 >
                   <Trash2 className="size-4" aria-hidden />
