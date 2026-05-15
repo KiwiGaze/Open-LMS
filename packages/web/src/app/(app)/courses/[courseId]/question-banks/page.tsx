@@ -27,6 +27,7 @@ import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { Textarea } from '@/components/ui/textarea.tsx';
 import { useToast } from '@/components/ui/toast.tsx';
 import { ApiHttpError } from '@/lib/api/errors.ts';
+import { useMyCourseMembershipsQuery } from '@/lib/api/queries/me.ts';
 import {
   useCreateQuestionBankMutation,
   useDeleteQuestionBankMutation,
@@ -37,12 +38,19 @@ import { formatDateTime } from '@/lib/format.ts';
 import { Library, Plus, Trash2 } from 'lucide-react';
 import { use, useState } from 'react';
 
+const STAFF_ROLES = new Set(['instructor', 'teaching_assistant', 'course_admin']);
+
 type Params = { courseId: string };
 
 export default function QuestionBanksPage({ params }: { params: Promise<Params> }) {
   const { courseId } = use(params);
   const tenantId = useSessionStore((s) => s.activeTenantId);
   const { publish } = useToast();
+  const myCourseMemberships = useMyCourseMembershipsQuery();
+  const isStaff =
+    myCourseMemberships.data?.some(
+      (m) => m.courseId === courseId && STAFF_ROLES.has(m.role),
+    ) ?? false;
 
   const banks = useQuestionBanksQuery(tenantId, courseId);
   const createBank = useCreateQuestionBankMutation(tenantId, courseId);
@@ -96,9 +104,11 @@ export default function QuestionBanksPage({ params }: { params: Promise<Params> 
         title="Question banks"
         description="Reusable pools of questions you can pull into any quiz in this course."
         actions={
-          <Button onClick={() => setOpen(true)}>
-            <Plus className="size-4" aria-hidden /> New bank
-          </Button>
+          isStaff ? (
+            <Button onClick={() => setOpen(true)}>
+              <Plus className="size-4" aria-hidden /> New bank
+            </Button>
+          ) : null
         }
       />
 
@@ -112,9 +122,11 @@ export default function QuestionBanksPage({ params }: { params: Promise<Params> 
           title="No question banks yet"
           description="Create a bank to build a reusable question pool."
           action={
-            <Button onClick={() => setOpen(true)}>
-              <Plus className="size-4" aria-hidden /> New bank
-            </Button>
+            isStaff ? (
+              <Button onClick={() => setOpen(true)}>
+                <Plus className="size-4" aria-hidden /> New bank
+              </Button>
+            ) : null
           }
         />
       ) : (
@@ -132,15 +144,17 @@ export default function QuestionBanksPage({ params }: { params: Promise<Params> 
                       <Badge tone={bank.status === 'active' ? 'success' : 'outline'}>
                         {bank.status}
                       </Badge>
-                      <Button
-                        intent="ghost"
-                        size="icon-sm"
-                        aria-label={`Delete bank ${bank.title}`}
-                        onClick={() => handleDelete(bank.id, bank.title)}
-                        disabled={deleteBank.isPending}
-                      >
-                        <Trash2 className="size-4" aria-hidden />
-                      </Button>
+                      {isStaff ? (
+                        <Button
+                          intent="ghost"
+                          size="icon-sm"
+                          aria-label={`Delete bank ${bank.title}`}
+                          onClick={() => handleDelete(bank.id, bank.title)}
+                          disabled={deleteBank.isPending}
+                        >
+                          <Trash2 className="size-4" aria-hidden />
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                 </CardHeader>
