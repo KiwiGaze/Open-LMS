@@ -36,7 +36,7 @@ import type { Tenant, TenantRole } from '@openlms/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, Check, Copy, Settings, Users } from 'lucide-react';
 import Link from 'next/link';
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 
 const TENANT_ROLES: TenantRole[] = [
   'student',
@@ -261,13 +261,22 @@ function LtiRegistrationCard({ tenantId }: { tenantId: string }) {
 
 function CopyableUrl({ url, disabled }: { url: string; disabled: boolean }) {
   const [copied, setCopied] = useState(false);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+    },
+    [],
+  );
 
   const onCopy = async () => {
     if (disabled) return;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+      resetTimer.current = setTimeout(() => setCopied(false), 1500);
     } catch {
       // Clipboard API unavailable; leave the URL visible for manual copy.
     }
