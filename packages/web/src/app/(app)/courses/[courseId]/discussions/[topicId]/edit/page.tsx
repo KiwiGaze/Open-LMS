@@ -25,7 +25,9 @@ import { Textarea } from '@/components/ui/textarea.tsx';
 import { useToast } from '@/components/ui/toast.tsx';
 import { apiFetch } from '@/lib/api/client.ts';
 import { ApiHttpError } from '@/lib/api/errors.ts';
+import { queryKeys } from '@/lib/api/keys.ts';
 import { useUpdateDiscussionTopic } from '@/lib/api/queries/discussions.ts';
+import { useMyCourseMembershipsQuery } from '@/lib/api/queries/me.ts';
 import { useRubricsQuery } from '@/lib/api/queries/rubrics.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -83,20 +85,28 @@ type FormValues = z.infer<typeof FormSchema>;
 
 type Params = { courseId: string; topicId: string };
 
+const STAFF_ROLES = new Set(['instructor', 'teaching_assistant', 'course_admin']);
+
 export default function EditDiscussionTopicPage({ params }: { params: Promise<Params> }) {
   const { courseId, topicId } = use(params);
   const router = useRouter();
   const { publish } = useToast();
   const tenantId = useSessionStore((s) => s.activeTenantId);
   const mutation = useUpdateDiscussionTopic(tenantId, courseId, topicId);
+  const myCourseMemberships = useMyCourseMembershipsQuery();
+  const isStaff =
+    myCourseMemberships.data?.some((m) => m.courseId === courseId && STAFF_ROLES.has(m.role)) ??
+    false;
 
   const topic = useQuery({
-    queryKey: ['discussion-topic', tenantId ?? '', courseId, topicId],
+    queryKey: tenantId
+      ? queryKeys.discussionTopic(tenantId, courseId, topicId)
+      : ['discussion-topic', 'inactive'],
     queryFn: () =>
       apiFetch<DiscussionTopic>(
         `/tenants/${tenantId}/courses/${courseId}/discussion-topics/${topicId}`,
       ),
-    enabled: Boolean(tenantId),
+    enabled: Boolean(tenantId) && isStaff,
   });
 
   const form = useForm<FormValues>({
@@ -149,6 +159,16 @@ export default function EditDiscussionTopicPage({ params }: { params: Promise<Pa
     }
   });
 
+  if (myCourseMemberships.isLoading) {
+    return <Skeleton className="h-96 w-full rounded-[var(--radius-lg)]" />;
+  }
+  if (!isStaff) {
+    return (
+      <div className="rounded-[var(--radius-lg)] border border-(--color-border-subtle) bg-(--color-surface-elevated) p-6 text-sm text-(--color-text-muted)">
+        You need course staff access to edit this discussion topic.
+      </div>
+    );
+  }
   if (topic.isLoading) {
     return <Skeleton className="h-96 w-full rounded-[var(--radius-lg)]" />;
   }

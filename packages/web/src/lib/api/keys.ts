@@ -102,6 +102,8 @@ export const queryKeys = {
   myCredentialAwards: (tenantId: string) => ['tenants', tenantId, 'me', 'credentials'] as const,
   courseDiscussions: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'discussion-topics'] as const,
+  discussionTopic: (tenantId: string, courseId: string, topicId: string) =>
+    ['courses', tenantId, courseId, 'discussion-topics', topicId] as const,
   discussionPosts: (tenantId: string, courseId: string, topicId: string) =>
     ['courses', tenantId, courseId, 'discussion-topics', topicId, 'posts'] as const,
   discussionGrades: (tenantId: string, courseId: string, topicId: string) =>

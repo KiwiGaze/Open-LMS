@@ -106,7 +106,7 @@ export default function DiscussionsPage({ params }: { params: Promise<Params> })
                       <CardTitle className="text-base group-hover:text-(--color-text-link)">
                         {topic.title}
                       </CardTitle>
-                      <div className="flex items-center gap-2 pr-10">
+                      <div className="flex items-center gap-2 pr-16">
                         <Badge tone={topic.visibility === 'published' ? 'success' : 'neutral'}>
                           {topic.visibility}
                         </Badge>

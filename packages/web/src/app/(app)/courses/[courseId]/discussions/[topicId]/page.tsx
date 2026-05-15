@@ -81,7 +81,9 @@ export default function DiscussionTopicPage({ params }: { params: Promise<Params
   };
 
   const topic = useQuery({
-    queryKey: ['discussion-topic', tenantId ?? '', courseId, topicId],
+    queryKey: tenantId
+      ? queryKeys.discussionTopic(tenantId, courseId, topicId)
+      : ['discussion-topic', 'inactive'],
     queryFn: () =>
       apiFetch<DiscussionTopic>(
         `/tenants/${tenantId}/courses/${courseId}/discussion-topics/${topicId}`,
