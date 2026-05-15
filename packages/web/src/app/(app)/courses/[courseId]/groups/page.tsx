@@ -35,10 +35,13 @@ import {
   useCourseGroupsQuery,
   useCreateCourseGroupMutation,
   useCreateCourseGroupSetMutation,
+  useDeleteCourseGroupMutation,
+  useDeleteCourseGroupSetMutation,
+  useLeaveCourseGroupMutation,
 } from '@/lib/api/queries/groups.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import type { CourseGroup, CourseGroupMemberRole } from '@openlms/contracts';
-import { ChevronDown, ChevronRight, Plus, UserPlus, Users } from 'lucide-react';
+import { ChevronDown, ChevronRight, LogOut, Plus, Trash2, UserPlus, Users } from 'lucide-react';
 import { use, useMemo, useState } from 'react';
 
 type Params = { courseId: string };
@@ -54,6 +57,34 @@ export default function CourseGroupsPage({ params }: { params: Promise<Params> }
   const groups = useCourseGroupsQuery(tenantId, courseId);
   const createSet = useCreateCourseGroupSetMutation(tenantId, courseId);
   const createGroup = useCreateCourseGroupMutation(tenantId, courseId);
+  const deleteSet = useDeleteCourseGroupSetMutation(tenantId, courseId);
+  const deleteGroup = useDeleteCourseGroupMutation(tenantId, courseId);
+
+  const handleDeleteSet = (id: string, name: string) => {
+    if (!window.confirm(`Delete group set "${name}"? Groups inside will be removed too.`)) return;
+    deleteSet.mutate(id, {
+      onSuccess: () => publish({ tone: 'success', title: `Deleted ${name}` }),
+      onError: (error) =>
+        publish({
+          tone: 'danger',
+          title: 'Delete failed',
+          description: error instanceof Error ? error.message : undefined,
+        }),
+    });
+  };
+
+  const handleDeleteGroup = (id: string, name: string) => {
+    if (!window.confirm(`Delete group "${name}"? Members will be removed.`)) return;
+    deleteGroup.mutate(id, {
+      onSuccess: () => publish({ tone: 'success', title: `Deleted ${name}` }),
+      onError: (error) =>
+        publish({
+          tone: 'danger',
+          title: 'Delete failed',
+          description: error instanceof Error ? error.message : undefined,
+        }),
+    });
+  };
 
   const [newSetOpen, setNewSetOpen] = useState(false);
   const [newGroupOpen, setNewGroupOpen] = useState(false);
@@ -170,6 +201,15 @@ export default function CourseGroupsPage({ params }: { params: Promise<Params> }
                       <Badge tone={set.status === 'active' ? 'success' : 'neutral'}>
                         {set.status}
                       </Badge>
+                      <Button
+                        intent="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteSet(set.id, set.name)}
+                        disabled={deleteSet.isPending}
+                        aria-label={`Delete group set ${set.name}`}
+                      >
+                        <Trash2 className="size-3.5" aria-hidden />
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -182,25 +222,36 @@ export default function CourseGroupsPage({ params }: { params: Promise<Params> }
                         const isOpen = openGroupId === group.id;
                         return (
                           <li key={group.id}>
-                            <button
-                              type="button"
-                              onClick={() => setOpenGroupId(isOpen ? null : group.id)}
-                              className="flex w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-left text-sm hover:bg-(--color-surface-muted)"
-                            >
-                              <span className="flex items-center gap-2">
-                                {isOpen ? (
-                                  <ChevronDown className="size-4" aria-hidden />
-                                ) : (
-                                  <ChevronRight className="size-4" aria-hidden />
-                                )}
-                                <span className="font-medium text-(--color-text-default)">
-                                  {group.name}
+                            <div className="flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-sm hover:bg-(--color-surface-muted)">
+                              <button
+                                type="button"
+                                onClick={() => setOpenGroupId(isOpen ? null : group.id)}
+                                className="flex flex-1 items-center justify-between gap-2 text-left"
+                              >
+                                <span className="flex items-center gap-2">
+                                  {isOpen ? (
+                                    <ChevronDown className="size-4" aria-hidden />
+                                  ) : (
+                                    <ChevronRight className="size-4" aria-hidden />
+                                  )}
+                                  <span className="font-medium text-(--color-text-default)">
+                                    {group.name}
+                                  </span>
                                 </span>
-                              </span>
-                              <Badge tone={group.status === 'active' ? 'success' : 'neutral'}>
-                                {group.status}
-                              </Badge>
-                            </button>
+                                <Badge tone={group.status === 'active' ? 'success' : 'neutral'}>
+                                  {group.status}
+                                </Badge>
+                              </button>
+                              <Button
+                                intent="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteGroup(group.id, group.name)}
+                                disabled={deleteGroup.isPending}
+                                aria-label={`Delete group ${group.name}`}
+                              >
+                                <Trash2 className="size-3.5" aria-hidden />
+                              </Button>
+                            </div>
                             {isOpen ? (
                               <GroupMembersPanel
                                 tenantId={tenantId}
@@ -325,9 +376,23 @@ function GroupMembersPanel({
   const { publish } = useToast();
   const members = useCourseGroupMembersQuery(tenantId, courseId, groupId);
   const add = useAddCourseGroupMemberMutation(tenantId, courseId, groupId);
+  const leave = useLeaveCourseGroupMutation(tenantId, courseId);
   const [userId, setUserId] = useState('');
   const [role, setRole] = useState<CourseGroupMemberRole>('member');
   const [userIdError, setUserIdError] = useState<string | null>(null);
+
+  const handleLeave = () => {
+    if (!window.confirm('Leave this group?')) return;
+    leave.mutate(groupId, {
+      onSuccess: () => publish({ tone: 'success', title: 'Left group' }),
+      onError: (error) =>
+        publish({
+          tone: 'danger',
+          title: 'Could not leave',
+          description: error instanceof Error ? error.message : undefined,
+        }),
+    });
+  };
 
   const handleAdd = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -391,6 +456,17 @@ function GroupMembersPanel({
           ))}
         </ul>
       )}
+      <div className="flex justify-end pt-1">
+        <Button
+          intent="ghost"
+          size="sm"
+          onClick={handleLeave}
+          disabled={leave.isPending}
+          loading={leave.isPending}
+        >
+          <LogOut className="size-3.5" aria-hidden /> Leave group
+        </Button>
+      </div>
     </div>
   );
 }
