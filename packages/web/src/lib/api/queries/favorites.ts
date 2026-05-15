@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useCourseFavoritesQuery(tenantId: string | null) {
   return useQuery({
-    queryKey: tenantId ? queryKeys.courseFavorites(tenantId) : ['favorites', 'inactive'],
+    queryKey: tenantId ? queryKeys.courseFavorites(tenantId) : ['courseFavorites', 'inactive'],
     queryFn: () => apiFetch<CourseFavorite[]>(`/tenants/${tenantId}/favorites`),
     enabled: Boolean(tenantId),
   });

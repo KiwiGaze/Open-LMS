@@ -48,16 +48,18 @@ export default function CoursesPage() {
     [favorites.data],
   );
 
+  const favoritesReady = !favorites.isLoading && !favorites.error;
+
   const filtered = useMemo(() => {
     const all = courses.data ?? [];
     return all.filter((c) => {
-      if (favoritesOnly && !favoriteIds.has(c.id)) return false;
+      if (favoritesOnly && favoritesReady && !favoriteIds.has(c.id)) return false;
       if (status !== 'all' && c.status !== status) return false;
       if (search.trim() === '') return true;
       const hay = `${c.title} ${c.code} ${c.academicTerm ?? ''}`.toLowerCase();
       return hay.includes(search.toLowerCase());
     });
-  }, [courses.data, favoriteIds, favoritesOnly, search, status]);
+  }, [courses.data, favoriteIds, favoritesOnly, favoritesReady, search, status]);
 
   const toggleFavorite = (courseId: string) => {
     if (favoriteIds.has(courseId)) {
@@ -192,12 +194,14 @@ export default function CoursesPage() {
                     </CardContent>
                   </Card>
                 </Link>
-                <button
-                  type="button"
+                <Button
+                  intent="ghost"
+                  size="sm"
                   onClick={() => toggleFavorite(course.id)}
                   aria-label={isFavorite ? 'Unfavorite course' : 'Favorite course'}
                   aria-pressed={isFavorite}
-                  className="absolute right-3 top-3 grid size-8 place-items-center rounded-full bg-(--color-surface-base)/90 text-(--color-text-default) shadow-(--shadow-sm) hover:bg-(--color-surface-base)"
+                  disabled={!favoritesReady}
+                  className="absolute right-2 top-2 size-8 rounded-full bg-(--color-surface-base)/90 p-0 shadow-(--shadow-sm) hover:bg-(--color-surface-base)"
                 >
                   <Star
                     className={cn(
@@ -206,7 +210,7 @@ export default function CoursesPage() {
                     )}
                     aria-hidden
                   />
-                </button>
+                </Button>
               </div>
             );
           })}
