@@ -1,6 +1,7 @@
 'use client';
 
 import { apiFetch } from '@/lib/api/client.ts';
+import { ApiHttpError } from '@/lib/api/errors.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
 import type {
   CatalogCourse,
@@ -12,6 +13,8 @@ import type {
   CourseBackup,
   CourseCatalogSettings,
   CourseMembership,
+  CourseSyllabus,
+  CourseSyllabusVisibility,
 } from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -204,6 +207,49 @@ export type CatalogSettingsInput = {
   waitlistEnabled: boolean;
   enrollmentApprovalRequired: boolean;
 };
+
+export function useCourseSyllabusQuery(tenantId: string | null, courseId: string | null) {
+  return useQuery<CourseSyllabus | null>({
+    queryKey:
+      tenantId && courseId
+        ? queryKeys.courseSyllabus(tenantId, courseId)
+        : ['course-syllabus', 'inactive'],
+    queryFn: async () => {
+      try {
+        return await apiFetch<CourseSyllabus>(`/tenants/${tenantId}/courses/${courseId}/syllabus`);
+      } catch (e) {
+        if (e instanceof ApiHttpError && e.status === 404) return null;
+        throw e;
+      }
+    },
+    enabled: Boolean(tenantId && courseId),
+  });
+}
+
+export type UpsertCourseSyllabusInput = {
+  body: string;
+  visibility: CourseSyllabusVisibility;
+};
+
+export function useUpsertCourseSyllabusMutation(tenantId: string | null, courseId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpsertCourseSyllabusInput) => {
+      if (!tenantId || !courseId) {
+        return Promise.reject(new Error('No active tenant or course — cannot save syllabus.'));
+      }
+      return apiFetch<CourseSyllabus>(`/tenants/${tenantId}/courses/${courseId}/syllabus`, {
+        method: 'PUT',
+        body: input,
+      });
+    },
+    onSuccess: () => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.courseSyllabus(tenantId, courseId) });
+      }
+    },
+  });
+}
 
 export function useUpdateCourseCatalogSettingsMutation(
   tenantId: string | null,
