@@ -25,6 +25,7 @@ import { ClipboardList, Download, EyeOff, Lock, Search, ShieldAlert } from 'luci
 import { useMemo, useState } from 'react';
 import { AppealsPanel } from './appeals-panel.tsx';
 import { CsvImportDialog } from './csv-import-dialog.tsx';
+import { FinalGradesPanel } from './final-grades-panel.tsx';
 
 export type InstructorGradebookGridProps = {
   tenantId: string | null;
@@ -172,6 +173,8 @@ export function InstructorGradebookGrid({
           <CsvImportDialog tenantId={tenantId} courseId={courseId} assignments={items} />
         </div>
       </div>
+
+      <FinalGradesPanel tenantId={tenantId} courseId={courseId} />
 
       <AppealsPanel tenantId={tenantId} courseId={courseId} />
 
