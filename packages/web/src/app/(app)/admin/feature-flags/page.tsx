@@ -228,6 +228,8 @@ function CreateFlagDialogContent({
           <Input
             id="flag-key"
             value={key}
+            aria-invalid={Boolean(errors.key)}
+            aria-describedby={errors.key ? 'flag-key-error' : undefined}
             onChange={(e) => {
               setKey(e.target.value);
               setErrors((prev) => ({ ...prev, key: undefined }));
@@ -235,7 +237,9 @@ function CreateFlagDialogContent({
             placeholder="ai.precheck.beta"
           />
           {errors.key ? (
-            <p className="mt-1 text-xs text-(--color-danger-700)">{errors.key}</p>
+            <p id="flag-key-error" className="mt-1 text-xs text-(--color-danger-700)">
+              {errors.key}
+            </p>
           ) : null}
         </div>
         <div>
