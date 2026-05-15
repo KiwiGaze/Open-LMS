@@ -25,10 +25,13 @@ export function useUpsertFeatureFlagMutation(tenantId: string | null) {
       if (!tenantId) {
         return Promise.reject(new Error('No active tenant — cannot save feature flag.'));
       }
-      return apiFetch<TenantFeatureFlag>(`/tenants/${tenantId}/feature-flags/${key}`, {
-        method: 'PUT',
-        body: input,
-      });
+      return apiFetch<TenantFeatureFlag>(
+        `/tenants/${tenantId}/feature-flags/${encodeURIComponent(key)}`,
+        {
+          method: 'PUT',
+          body: input,
+        },
+      );
     },
     onSuccess: () => {
       if (tenantId) {
@@ -45,7 +48,7 @@ export function useDeleteFeatureFlagMutation(tenantId: string | null) {
       if (!tenantId) {
         return Promise.reject(new Error('No active tenant — cannot delete feature flag.'));
       }
-      return apiFetch<void>(`/tenants/${tenantId}/feature-flags/${key}`, {
+      return apiFetch<void>(`/tenants/${tenantId}/feature-flags/${encodeURIComponent(key)}`, {
         method: 'DELETE',
         responseType: 'void',
       });

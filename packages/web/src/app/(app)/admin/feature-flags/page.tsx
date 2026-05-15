@@ -162,6 +162,7 @@ export default function AdminFeatureFlagsPage() {
                         size="sm"
                         onClick={() => handleDelete(flag.key)}
                         disabled={remove.isPending}
+                        aria-label={`Delete ${flag.key}`}
                       >
                         <Trash2 className="size-3.5" aria-hidden />
                       </Button>
