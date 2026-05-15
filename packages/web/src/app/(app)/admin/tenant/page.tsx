@@ -2,6 +2,7 @@
 
 import { EmptyState } from '@/components/patterns/empty-state.tsx';
 import { ErrorState } from '@/components/patterns/error-state.tsx';
+import { FormField } from '@/components/patterns/form-field.tsx';
 import { PageHeader } from '@/components/patterns/page-header.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button.tsx';
@@ -12,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card.tsx';
+import { Input } from '@/components/ui/input.tsx';
 import {
   Select,
   SelectContent,
@@ -25,6 +27,7 @@ import { apiFetch } from '@/lib/api/client.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
 import {
   useTenantMembersQuery,
+  useUpdateTenantFileStorageQuotasMutation,
   useUpdateTenantMembershipMutation,
 } from '@/lib/api/queries/tenant-members.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
@@ -33,7 +36,7 @@ import type { Tenant, TenantRole } from '@openlms/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, Settings, Users } from 'lucide-react';
 import Link from 'next/link';
-import { use } from 'react';
+import { use, useEffect, useState } from 'react';
 
 const TENANT_ROLES: TenantRole[] = [
   'student',
@@ -187,10 +190,110 @@ export default function TenantAdminPage() {
               )}
             </CardContent>
           </Card>
+
+          <FileStorageQuotasCard tenantId={tenantId} tenant={active} />
         </div>
       )}
     </div>
   );
+}
+
+function FileStorageQuotasCard({
+  tenantId,
+  tenant,
+}: {
+  tenantId: string | null;
+  tenant: Tenant;
+}) {
+  const { publish } = useToast();
+  const update = useUpdateTenantFileStorageQuotasMutation(tenantId);
+  const [tenantLimit, setTenantLimit] = useState(bytesToMb(tenant.storageByteLimit));
+  const [userLimit, setUserLimit] = useState(bytesToMb(tenant.defaultUserStorageByteLimit));
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTenantLimit(bytesToMb(tenant.storageByteLimit));
+    setUserLimit(bytesToMb(tenant.defaultUserStorageByteLimit));
+  }, [tenant.storageByteLimit, tenant.defaultUserStorageByteLimit]);
+
+  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    const tenantBytes = mbToBytes(tenantLimit);
+    const userBytes = mbToBytes(userLimit);
+    if (tenantBytes === 'invalid' || userBytes === 'invalid') {
+      setError('Enter a non-negative number of megabytes, or leave blank for unlimited.');
+      return;
+    }
+    update.mutate(
+      { storageByteLimit: tenantBytes, defaultUserStorageByteLimit: userBytes },
+      {
+        onSuccess: () => publish({ tone: 'success', title: 'Quotas updated' }),
+        onError: (e) =>
+          publish({
+            tone: 'danger',
+            title: 'Update failed',
+            description: e instanceof Error ? e.message : undefined,
+          }),
+      },
+    );
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>File storage quotas</CardTitle>
+        <CardDescription>
+          Caps the total bytes the tenant and each user can store. Leave blank for unlimited.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+          <FormField label="Tenant total (MB)" id="quota-tenant" error={error}>
+            <Input
+              id="quota-tenant"
+              type="number"
+              min={0}
+              step={1}
+              value={tenantLimit}
+              onChange={(e) => setTenantLimit(e.target.value)}
+              placeholder="Unlimited"
+            />
+          </FormField>
+          <FormField label="Default per-user (MB)" id="quota-user">
+            <Input
+              id="quota-user"
+              type="number"
+              min={0}
+              step={1}
+              value={userLimit}
+              onChange={(e) => setUserLimit(e.target.value)}
+              placeholder="Unlimited"
+            />
+          </FormField>
+          <div className="flex justify-end">
+            <Button type="submit" disabled={update.isPending} loading={update.isPending}>
+              Save quotas
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function bytesToMb(bytes: number | null): string {
+  if (bytes == null) return '';
+  const mb = bytes / 1024 / 1024;
+  return Number.isInteger(mb) ? String(mb) : mb.toFixed(2);
+}
+
+function mbToBytes(value: string): number | null | 'invalid' {
+  const trimmed = value.trim();
+  if (trimmed === '') return null;
+  const mb = Number(trimmed);
+  if (!Number.isFinite(mb) || mb < 0) return 'invalid';
+  return Math.round(mb * 1024 * 1024);
 }
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
