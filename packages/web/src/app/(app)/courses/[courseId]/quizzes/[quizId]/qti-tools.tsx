@@ -37,9 +37,29 @@ export function QtiTools({ tenantId, courseId, quizId }: Props) {
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     try {
-      const items = await Promise.all(
-        Array.from(files).map(async (file) => ({ xml: await file.text() })),
-      );
+      const items: { xml: string }[] = [];
+      for (const file of Array.from(files)) {
+        const text = await file.text();
+        if (file.name.toLowerCase().endsWith('.json')) {
+          // Re-importing an exported bundle: pull each item's xml field out.
+          const bundle = JSON.parse(text) as { items?: { xml?: unknown }[] };
+          if (!bundle || !Array.isArray(bundle.items)) {
+            throw new Error(`${file.name} is not a QTI export bundle.`);
+          }
+          for (const entry of bundle.items) {
+            if (typeof entry.xml !== 'string' || entry.xml.length === 0) {
+              throw new Error(`${file.name} contains an item without xml content.`);
+            }
+            items.push({ xml: entry.xml });
+          }
+        } else {
+          items.push({ xml: text });
+        }
+      }
+      if (items.length === 0) {
+        publish({ tone: 'danger', title: 'Nothing to import' });
+        return;
+      }
       const result = await importMutation.mutateAsync({ format: 'qti_2_1', items });
       publish({
         tone: 'success',
@@ -47,7 +67,11 @@ export function QtiTools({ tenantId, courseId, quizId }: Props) {
       });
     } catch (error) {
       const message =
-        error instanceof ApiHttpError ? error.message : 'Could not import. Try again.';
+        error instanceof ApiHttpError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : 'Could not import. Try again.';
       publish({ tone: 'danger', title: 'Import failed', description: message });
     } finally {
       if (inputRef.current) inputRef.current.value = '';
@@ -77,7 +101,7 @@ export function QtiTools({ tenantId, courseId, quizId }: Props) {
       <input
         ref={inputRef}
         type="file"
-        accept=".xml,application/xml,text/xml"
+        accept=".xml,.json,application/xml,text/xml,application/json"
         multiple
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
