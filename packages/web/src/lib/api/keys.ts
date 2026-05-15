@@ -37,6 +37,7 @@ export const queryKeys = {
 
   courseAnnouncements: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'announcements'] as const,
+  tenantAnnouncements: (tenantId: string) => ['tenants', tenantId, 'announcements'] as const,
   courseModules: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'modules'] as const,
   moduleReleaseRules: (tenantId: string, courseId: string, moduleId: string) =>

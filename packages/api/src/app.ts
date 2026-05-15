@@ -24,6 +24,7 @@ import {
 import {
   createCourseAnnouncementsRoute,
   deleteCourseAnnouncementRoute,
+  listAnnouncementsForActorRoute,
   listCourseAnnouncementsRoute,
   updateCourseAnnouncementRoute,
 } from './routes/announcements.ts';
@@ -1441,6 +1442,20 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
       actorUserId,
       tenantId,
       courseId,
+    );
+
+    return context.json(announcements, 200);
+  });
+
+  app.openapi(listAnnouncementsForActorRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId } = context.req.valid('param');
+    const announcements = await options.dependencies.listAnnouncementsForActor(
+      actorUserId,
+      tenantId,
     );
 
     return context.json(announcements, 200);

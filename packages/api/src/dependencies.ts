@@ -445,6 +445,7 @@ import {
   isQuizAttemptExpired,
   isUserLegalHoldActiveDuplicate,
   listActiveLti1p3PlatformKeys,
+  listAnnouncementsForCourses,
   listAssignmentOverridesForAssignment,
   listAssignmentPeerReviewsForAssignment,
   listAssignmentsForCourse,
@@ -911,6 +912,10 @@ export type ApiDependencies = {
     actorUserId: string,
     tenantId: string,
     courseId: string,
+  ) => Promise<CourseAnnouncement[]>;
+  listAnnouncementsForActor: (
+    actorUserId: string,
+    tenantId: string,
   ) => Promise<CourseAnnouncement[]>;
   createCourseAnnouncement: (
     actorUserId: string,
@@ -7228,6 +7233,18 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         tenantId,
         courseId,
         statuses: canViewAllContent ? allCourseAnnouncementStatuses : ['published'],
+      });
+    },
+    listAnnouncementsForActor: async (actorUserId, tenantId) => {
+      await assertTenantMembership(actorUserId, tenantId);
+      const memberships = await listUserCourseMemberships(dbHandle.db, actorUserId);
+      const courseIds = memberships
+        .filter((m) => m.tenantId === tenantId && m.status === 'active')
+        .map((m) => m.courseId);
+      return listAnnouncementsForCourses(dbHandle.db, {
+        tenantId,
+        courseIds,
+        statuses: ['published'],
       });
     },
     createCourseAnnouncement: async (actorUserId, tenantId, courseId, input) => {
