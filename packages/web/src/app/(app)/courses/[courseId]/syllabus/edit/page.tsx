@@ -42,6 +42,12 @@ export default function EditSyllabusPage({ params }: { params: Promise<Params> }
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    setHydrated(false);
+    setBody('');
+    setVisibility('draft');
+  }, [tenantId, courseId]);
+
+  useEffect(() => {
     if (!hydrated && syllabus.data) {
       setBody(syllabus.data.body ?? '');
       setVisibility(syllabus.data.visibility);
