@@ -41,6 +41,7 @@ export default function EditSyllabusPage({ params }: { params: Promise<Params> }
   const [visibility, setVisibility] = useState<CourseSyllabusVisibility>('draft');
   const [hydrated, setHydrated] = useState(false);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset hydration when the tenant/course scope changes so stale form state isn't saved into a different scope
   useEffect(() => {
     setHydrated(false);
     setBody('');
