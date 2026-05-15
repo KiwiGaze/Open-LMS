@@ -6,6 +6,7 @@ import { AddMultipleChoiceQuestionDialog } from '@/app/(app)/courses/[courseId]/
 import { AddNumericQuestionDialog } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/add-numeric-question-dialog.tsx';
 import { AddShortAnswerQuestionDialog } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/add-short-answer-question-dialog.tsx';
 import { AddTrueFalseQuestionDialog } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/add-true-false-question-dialog.tsx';
+import { QtiTools } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/qti-tools.tsx';
 import { ErrorState } from '@/components/patterns/error-state.tsx';
 import { PageHeader } from '@/components/patterns/page-header.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
@@ -140,6 +141,7 @@ export default function QuizDetailPage({ params }: { params: Promise<Params> }) 
           </div>
           {questions.data ? (
             <div className="flex flex-wrap items-center gap-2">
+              <QtiTools tenantId={tenantId} courseId={courseId} quizId={quizId} />
               <AddMultipleChoiceQuestionDialog
                 tenantId={tenantId}
                 courseId={courseId}
