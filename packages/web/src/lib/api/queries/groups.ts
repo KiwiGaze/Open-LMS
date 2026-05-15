@@ -123,3 +123,69 @@ export function useAddCourseGroupMemberMutation(
     },
   });
 }
+
+export function useDeleteCourseGroupSetMutation(tenantId: string | null, courseId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (groupSetId: string) => {
+      if (!tenantId || !courseId) {
+        return Promise.reject(new Error('No active course — cannot delete group set.'));
+      }
+      return apiFetch<void>(
+        `/tenants/${tenantId}/courses/${courseId}/group-sets/${encodeURIComponent(groupSetId)}`,
+        { method: 'DELETE', responseType: 'void' },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.courseGroupSets(tenantId, courseId),
+        });
+        queryClient.invalidateQueries({ queryKey: queryKeys.courseGroups(tenantId, courseId) });
+      }
+    },
+  });
+}
+
+export function useDeleteCourseGroupMutation(tenantId: string | null, courseId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (groupId: string) => {
+      if (!tenantId || !courseId) {
+        return Promise.reject(new Error('No active course — cannot delete group.'));
+      }
+      return apiFetch<void>(
+        `/tenants/${tenantId}/courses/${courseId}/groups/${encodeURIComponent(groupId)}`,
+        { method: 'DELETE', responseType: 'void' },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.courseGroups(tenantId, courseId) });
+      }
+    },
+  });
+}
+
+export function useLeaveCourseGroupMutation(tenantId: string | null, courseId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (groupId: string) => {
+      if (!tenantId || !courseId) {
+        return Promise.reject(new Error('No active course — cannot leave group.'));
+      }
+      return apiFetch<void>(
+        `/tenants/${tenantId}/courses/${courseId}/groups/${encodeURIComponent(groupId)}/membership`,
+        { method: 'DELETE', responseType: 'void' },
+      );
+    },
+    onSuccess: (_data, groupId) => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.courseGroupMembers(tenantId, courseId, groupId),
+        });
+        queryClient.invalidateQueries({ queryKey: queryKeys.courseGroups(tenantId, courseId) });
+      }
+    },
+  });
+}
