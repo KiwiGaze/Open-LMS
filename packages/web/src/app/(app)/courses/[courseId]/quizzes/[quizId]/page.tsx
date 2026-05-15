@@ -134,12 +134,14 @@ export default function QuizDetailPage({ params }: { params: Promise<Params> }) 
               in this quiz.
             </CardDescription>
           </div>
-          <AddMultipleChoiceQuestionDialog
-            tenantId={tenantId}
-            courseId={courseId}
-            quizId={quizId}
-            nextPosition={questions.data?.length ?? 0}
-          />
+          {questions.data ? (
+            <AddMultipleChoiceQuestionDialog
+              tenantId={tenantId}
+              courseId={courseId}
+              quizId={quizId}
+              nextPosition={questions.data.length}
+            />
+          ) : null}
         </CardHeader>
         <CardContent>
           {questions.isLoading ? (

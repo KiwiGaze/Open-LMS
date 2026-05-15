@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog.tsx';
 import { Input } from '@/components/ui/input.tsx';
 import { Label } from '@/components/ui/label.tsx';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.tsx';
 import { Textarea } from '@/components/ui/textarea.tsx';
 import { useToast } from '@/components/ui/toast.tsx';
 import { ApiHttpError } from '@/lib/api/errors.ts';
@@ -90,7 +91,10 @@ function FormContents({
 
   const addChoice = () => {
     if (choices.length >= 6) return;
-    const nextLetter = String.fromCharCode('a'.charCodeAt(0) + choices.length);
+    const nextLetter = ['a', 'b', 'c', 'd', 'e', 'f'].find(
+      (id) => !choices.some((choice) => choice.id === id),
+    );
+    if (!nextLetter) return;
     setChoices((prev) => [...prev, { id: nextLetter, text: '' }]);
   };
 
@@ -200,36 +204,39 @@ function FormContents({
           {errors.answer ? (
             <p className="mt-1 text-xs text-(--color-danger-700)">{errors.answer}</p>
           ) : null}
-          <ul className="mt-2 flex flex-col gap-2">
-            {choices.map((choice) => (
-              <li key={choice.id} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="mc-correct"
-                  checked={correctChoiceId === choice.id}
-                  onChange={() => {
-                    setCorrectChoiceId(choice.id);
-                    setErrors((prev) => ({ ...prev, answer: undefined }));
-                  }}
-                  aria-label={`Mark choice ${choice.id} as correct`}
-                />
-                <Input
-                  value={choice.text}
-                  placeholder={`Choice ${choice.id.toUpperCase()}`}
-                  onChange={(e) => updateChoice(choice.id, e.target.value)}
-                />
-                <Button
-                  intent="secondary"
-                  size="sm"
-                  onClick={() => removeChoice(choice.id)}
-                  disabled={choices.length <= 2}
-                  aria-label={`Remove choice ${choice.id}`}
-                >
-                  <Trash2 className="size-3.5" aria-hidden />
-                </Button>
-              </li>
-            ))}
-          </ul>
+          <RadioGroup
+            value={correctChoiceId ?? ''}
+            onValueChange={(value) => {
+              setCorrectChoiceId(value);
+              setErrors((prev) => ({ ...prev, answer: undefined }));
+            }}
+            className="mt-2"
+          >
+            <ul className="flex flex-col gap-2">
+              {choices.map((choice) => (
+                <li key={choice.id} className="flex items-center gap-2">
+                  <RadioGroupItem
+                    value={choice.id}
+                    aria-label={`Mark choice ${choice.id} as correct`}
+                  />
+                  <Input
+                    value={choice.text}
+                    placeholder={`Choice ${choice.id.toUpperCase()}`}
+                    onChange={(e) => updateChoice(choice.id, e.target.value)}
+                  />
+                  <Button
+                    intent="secondary"
+                    size="sm"
+                    onClick={() => removeChoice(choice.id)}
+                    disabled={choices.length <= 2}
+                    aria-label={`Remove choice ${choice.id}`}
+                  >
+                    <Trash2 className="size-3.5" aria-hidden />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </RadioGroup>
           <Button
             intent="secondary"
             size="sm"
