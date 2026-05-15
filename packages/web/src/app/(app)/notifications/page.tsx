@@ -29,9 +29,7 @@ export default function NotificationsPage() {
   const unread = (notifications.data ?? []).filter((n) => !n.readAt);
 
   const markAll = () => {
-    for (const n of unread) {
-      markRead.mutate(n.id);
-    }
+    void Promise.allSettled(unread.map((n) => markRead.mutateAsync(n.id)));
   };
 
   return (
