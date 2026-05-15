@@ -1,6 +1,7 @@
 'use client';
 
 import { AddMultipleChoiceQuestionDialog } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/add-multiple-choice-question-dialog.tsx';
+import { AddTrueFalseQuestionDialog } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/add-true-false-question-dialog.tsx';
 import { ErrorState } from '@/components/patterns/error-state.tsx';
 import { PageHeader } from '@/components/patterns/page-header.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
@@ -135,12 +136,20 @@ export default function QuizDetailPage({ params }: { params: Promise<Params> }) 
             </CardDescription>
           </div>
           {questions.data ? (
-            <AddMultipleChoiceQuestionDialog
-              tenantId={tenantId}
-              courseId={courseId}
-              quizId={quizId}
-              nextPosition={questions.data.length}
-            />
+            <div className="flex items-center gap-2">
+              <AddMultipleChoiceQuestionDialog
+                tenantId={tenantId}
+                courseId={courseId}
+                quizId={quizId}
+                nextPosition={questions.data.length}
+              />
+              <AddTrueFalseQuestionDialog
+                tenantId={tenantId}
+                courseId={courseId}
+                quizId={quizId}
+                nextPosition={questions.data.length}
+              />
+            </div>
           ) : null}
         </CardHeader>
         <CardContent>
