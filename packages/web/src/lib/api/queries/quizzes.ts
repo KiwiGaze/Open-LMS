@@ -9,6 +9,9 @@ import type {
   QuizAttemptResponseAnswer,
   QuizEffectiveSettings,
   QuizQuestion,
+  QuizQuestionAnswerKey,
+  QuizQuestionChoice,
+  QuizQuestionType,
 } from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -70,6 +73,44 @@ export function useQuizQuestionsQuery(
         `/tenants/${tenantId}/courses/${courseId}/quizzes/${quizId}/questions`,
       ),
     enabled: Boolean(tenantId && courseId && quizId),
+  });
+}
+
+export type CreateQuizQuestionInput = {
+  position: number;
+  questionType: QuizQuestionType;
+  prompt: string;
+  points: number;
+  choices: QuizQuestionChoice[];
+  answerKey?: QuizQuestionAnswerKey | null;
+};
+
+export function useCreateQuizQuestionMutation(
+  tenantId: string | null,
+  courseId: string | null,
+  quizId: string | null,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateQuizQuestionInput) => {
+      if (!tenantId || !courseId || !quizId) {
+        return Promise.reject(new Error('No active tenant or quiz — cannot create question.'));
+      }
+      return apiFetch<QuizQuestion>(
+        `/tenants/${tenantId}/courses/${courseId}/quizzes/${quizId}/questions`,
+        {
+          method: 'POST',
+          body: input,
+        },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId && quizId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.quizQuestions(tenantId, courseId, quizId),
+        });
+      }
+    },
   });
 }
 
