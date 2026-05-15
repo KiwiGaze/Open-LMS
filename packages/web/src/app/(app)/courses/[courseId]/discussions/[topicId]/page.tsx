@@ -18,12 +18,16 @@ import { useToast } from '@/components/ui/toast.tsx';
 import { apiFetch } from '@/lib/api/client.ts';
 import { ApiHttpError } from '@/lib/api/errors.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
+import {
+  useSubscribeDiscussionTopic,
+  useUnsubscribeDiscussionTopic,
+} from '@/lib/api/queries/discussions.ts';
 import { useCourseMembershipsQuery } from '@/lib/api/queries/gradebook.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatRelative, initialsOf } from '@/lib/format.ts';
 import type { DiscussionPost, DiscussionTopic } from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { MessagesSquare, Send } from 'lucide-react';
+import { Bell, BellOff, MessagesSquare, Send } from 'lucide-react';
 import { useState } from 'react';
 import { use } from 'react';
 import { InstructorGradingPanel } from './instructor-grading-panel.tsx';
@@ -43,6 +47,37 @@ export default function DiscussionTopicPage({ params }: { params: Promise<Params
   const memberships = useCourseMembershipsQuery(tenantId, courseId);
   const myMembership = memberships.data?.find((m) => m.userId === user?.id);
   const isStaff = myMembership ? STAFF_ROLES.has(myMembership.role) : false;
+  const subscribe = useSubscribeDiscussionTopic(tenantId, courseId, topicId);
+  const unsubscribe = useUnsubscribeDiscussionTopic(tenantId, courseId, topicId);
+  const [subscribed, setSubscribed] = useState<boolean | null>(null);
+
+  const onSubscribe = () => {
+    subscribe.mutate(undefined, {
+      onSuccess: () => {
+        setSubscribed(true);
+        publish({ tone: 'success', title: "You'll be notified of replies" });
+      },
+      onError: (error: unknown) => {
+        const message =
+          error instanceof ApiHttpError ? error.message : 'Could not update subscription.';
+        publish({ tone: 'danger', title: 'Subscription failed', description: message });
+      },
+    });
+  };
+
+  const onUnsubscribe = () => {
+    unsubscribe.mutate(undefined, {
+      onSuccess: () => {
+        setSubscribed(false);
+        publish({ tone: 'success', title: 'Notifications turned off' });
+      },
+      onError: (error: unknown) => {
+        const message =
+          error instanceof ApiHttpError ? error.message : 'Could not update subscription.';
+        publish({ tone: 'danger', title: 'Subscription failed', description: message });
+      },
+    });
+  };
 
   const topic = useQuery({
     queryKey: ['discussion-topic', tenantId ?? '', courseId, topicId],
@@ -110,6 +145,27 @@ export default function DiscussionTopicPage({ params }: { params: Promise<Params
               {t.requirePostBeforeSeeingOthers ? (
                 <Badge tone="warning">Post before viewing replies</Badge>
               ) : null}
+              {subscribed === true ? (
+                <Button
+                  intent="secondary"
+                  size="sm"
+                  onClick={onUnsubscribe}
+                  disabled={unsubscribe.isPending}
+                  loading={unsubscribe.isPending}
+                >
+                  <BellOff className="size-3.5" aria-hidden /> Stop notifications
+                </Button>
+              ) : (
+                <Button
+                  intent="secondary"
+                  size="sm"
+                  onClick={onSubscribe}
+                  disabled={subscribe.isPending}
+                  loading={subscribe.isPending}
+                >
+                  <Bell className="size-3.5" aria-hidden /> Notify me of replies
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
