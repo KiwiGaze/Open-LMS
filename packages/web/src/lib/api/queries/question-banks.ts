@@ -2,7 +2,13 @@
 
 import { apiFetch } from '@/lib/api/client.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
-import type { QuestionBank, QuestionBankStatus } from '@openlms/contracts';
+import type {
+  QuestionBank,
+  QuestionBankQuestion,
+  QuestionBankStatus,
+  QuizQuestionChoice,
+  QuizQuestionType,
+} from '@openlms/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export type CreateQuestionBankInput = {
@@ -80,6 +86,76 @@ export function useDeleteQuestionBankMutation(tenantId: string | null, courseId:
     onSuccess: () => {
       if (tenantId && courseId) {
         queryClient.invalidateQueries({ queryKey: queryKeys.questionBanks(tenantId, courseId) });
+      }
+    },
+  });
+}
+
+export function useQuestionBankQuery(
+  tenantId: string | null,
+  courseId: string | null,
+  bankId: string | null,
+) {
+  return useQuery({
+    queryKey:
+      tenantId && courseId && bankId
+        ? ([...queryKeys.questionBanks(tenantId, courseId), bankId] as const)
+        : ['question-bank', 'inactive'],
+    queryFn: () =>
+      apiFetch<QuestionBank>(
+        `/tenants/${tenantId}/courses/${courseId}/question-banks/${encodeURIComponent(bankId ?? '')}`,
+      ),
+    enabled: Boolean(tenantId && courseId && bankId),
+  });
+}
+
+export function useQuestionBankQuestionsQuery(
+  tenantId: string | null,
+  courseId: string | null,
+  bankId: string | null,
+) {
+  return useQuery({
+    queryKey:
+      tenantId && courseId && bankId
+        ? queryKeys.questionBankQuestions(tenantId, courseId, bankId)
+        : ['question-bank-questions', 'inactive'],
+    queryFn: () =>
+      apiFetch<QuestionBankQuestion[]>(
+        `/tenants/${tenantId}/courses/${courseId}/question-banks/${encodeURIComponent(bankId ?? '')}/questions`,
+      ),
+    enabled: Boolean(tenantId && courseId && bankId),
+  });
+}
+
+export type CreateQuestionBankQuestionInput = {
+  position: number;
+  questionType: QuizQuestionType;
+  prompt: string;
+  points: number;
+  choices: QuizQuestionChoice[];
+};
+
+export function useCreateQuestionBankQuestionMutation(
+  tenantId: string | null,
+  courseId: string | null,
+  bankId: string | null,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateQuestionBankQuestionInput) => {
+      if (!tenantId || !courseId || !bankId) {
+        return Promise.reject(new Error('No active bank — cannot add question.'));
+      }
+      return apiFetch<QuestionBankQuestion>(
+        `/tenants/${tenantId}/courses/${courseId}/question-banks/${encodeURIComponent(bankId)}/questions`,
+        { method: 'POST', body: input },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId && bankId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.questionBankQuestions(tenantId, courseId, bankId),
+        });
       }
     },
   });

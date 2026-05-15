@@ -112,6 +112,8 @@ export const queryKeys = {
     ['courses', tenantId, courseId, 'quizzes'] as const,
   questionBanks: (tenantId: string, courseId: string) =>
     ['courses', tenantId, courseId, 'question-banks'] as const,
+  questionBankQuestions: (tenantId: string, courseId: string, bankId: string) =>
+    ['courses', tenantId, courseId, 'question-banks', bankId, 'questions'] as const,
   quiz: (tenantId: string, courseId: string, quizId: string) =>
     ['courses', tenantId, courseId, 'quizzes', quizId] as const,
   quizQuestions: (tenantId: string, courseId: string, quizId: string) =>
