@@ -301,7 +301,8 @@ function DiscussionRubricPicker({
   const tenantId = useSessionStore((s) => s.activeTenantId);
   const rubrics = useRubricsQuery(tenantId);
   const noneSentinel = '__none__';
-  const selected = value.trim() === '' ? noneSentinel : value;
+  const ready = !rubrics.isLoading && !rubrics.error;
+  const selected = value.trim() === '' ? (ready ? noneSentinel : undefined) : value;
 
   return (
     <Select
