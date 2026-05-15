@@ -32,6 +32,8 @@ import { ApiHttpError } from '@/lib/api/errors.ts';
 import {
   useCopyCourseMutation,
   useCoursesQuery,
+  useExportCommonCartridgeMutation,
+  useExportCourseBackupMutation,
   useImportCommonCartridgeMutation,
   useRestoreCourseBackupMutation,
 } from '@/lib/api/queries/courses.ts';
@@ -45,14 +47,25 @@ export function CourseToolsCard({
   tenantId: string | null;
   courseId: string;
 }) {
+  const { publish } = useToast();
   const [copyOpen, setCopyOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
 
-  const backupHref = tenantId ? `/api/v1/tenants/${tenantId}/courses/${courseId}/backup` : '#';
-  const cartridgeHref = tenantId
-    ? `/api/v1/tenants/${tenantId}/courses/${courseId}/common-cartridge`
-    : '#';
+  const exportBackup = useExportCourseBackupMutation(tenantId, courseId);
+  const exportCartridge = useExportCommonCartridgeMutation(tenantId, courseId);
+
+  const onExport = (label: string, runner: typeof exportBackup | typeof exportCartridge) => {
+    runner.mutate(undefined, {
+      onError: (error) => {
+        publish({
+          tone: 'danger',
+          title: `Could not download ${label}`,
+          description: error instanceof Error ? error.message : undefined,
+        });
+      },
+    });
+  };
 
   return (
     <Card>
@@ -67,18 +80,24 @@ export function CourseToolsCard({
         <Button intent="secondary" onClick={() => setCopyOpen(true)} disabled={!tenantId}>
           <Copy className="size-4" aria-hidden /> Copy from another course
         </Button>
-        <Button asChild intent="secondary" disabled={!tenantId}>
-          <a href={backupHref} download>
-            <Download className="size-4" aria-hidden /> Export backup (JSON)
-          </a>
+        <Button
+          intent="secondary"
+          onClick={() => onExport('backup', exportBackup)}
+          disabled={!tenantId || exportBackup.isPending}
+          loading={exportBackup.isPending}
+        >
+          <Download className="size-4" aria-hidden /> Export backup (JSON)
         </Button>
         <Button intent="secondary" onClick={() => setRestoreOpen(true)} disabled={!tenantId}>
           <ArchiveRestore className="size-4" aria-hidden /> Restore from backup
         </Button>
-        <Button asChild intent="secondary" disabled={!tenantId}>
-          <a href={cartridgeHref} download>
-            <Package className="size-4" aria-hidden /> Export Common Cartridge
-          </a>
+        <Button
+          intent="secondary"
+          onClick={() => onExport('cartridge', exportCartridge)}
+          disabled={!tenantId || exportCartridge.isPending}
+          loading={exportCartridge.isPending}
+        >
+          <Package className="size-4" aria-hidden /> Export Common Cartridge
         </Button>
         <Button intent="secondary" onClick={() => setImportOpen(true)} disabled={!tenantId}>
           <Upload className="size-4" aria-hidden /> Import Common Cartridge
