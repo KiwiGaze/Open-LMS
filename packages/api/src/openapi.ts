@@ -92,6 +92,9 @@ const emptyDependencies: ApiDependencies = {
   },
   unfavoriteCourse: async () => {},
   listCourses: async () => [],
+  getCourse: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
   listCatalogCourses: async () => [],
   getCourseNextPosition: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
@@ -512,6 +515,9 @@ const emptyDependencies: ApiDependencies = {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
   listDiscussionTopics: async () => [],
+  getDiscussionTopic: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
   createDiscussionTopic: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
@@ -548,6 +554,9 @@ const emptyDependencies: ApiDependencies = {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },
   listWikiPages: async () => [],
+  getWikiPage: async () => {
+    throw new Error('OpenAPI generation does not execute dependencies.');
+  },
   createWikiPage: async () => {
     throw new Error('OpenAPI generation does not execute dependencies.');
   },

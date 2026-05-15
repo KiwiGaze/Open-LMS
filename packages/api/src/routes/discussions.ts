@@ -194,6 +194,30 @@ export const createDiscussionTopicRoute = createRoute({
   },
 });
 
+export const getDiscussionTopicRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/courses/{courseId}/discussion-topics/{topicId}',
+  tags: ['Discussions'],
+  operationId: 'getDiscussionTopic',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: DiscussionTopicPathParams,
+  },
+  responses: {
+    200: {
+      description: 'Discussion topic visible to the authenticated user.',
+      content: {
+        'application/json': {
+          schema: DiscussionTopicResponse,
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
+});
+
 export const UpdateDiscussionTopicBody = CreateDiscussionTopicBody;
 
 export const updateDiscussionTopicRoute = createRoute({

@@ -405,6 +405,9 @@ const dependencies = {
   deleteCurrentUser: async (_actorUserId: string) => {},
   listCourses: async (_actorUserId: string, _tenantId: string) => [],
   listDeletedCourses: async (_actorUserId: string, _tenantId: string) => [],
+  getCourse: async (_actorUserId: string, _tenantId: string, _courseId: string) => {
+    throw new Error('not implemented in stub');
+  },
   listCatalogCourses: async (_tenantId: string) => [],
   listCourseFavorites: async (_actorUserId: string, _tenantId: string) => [],
   favoriteCourse: async (_actorUserId: string, _tenantId: string, _courseId: string) =>
@@ -2505,6 +2508,14 @@ const dependencies = {
     _moduleId: string | undefined,
     _unitId: string | undefined,
   ) => [],
+  getDiscussionTopic: async (
+    _actorUserId: string,
+    _tenantId: string,
+    _courseId: string,
+    _topicId: string,
+  ) => {
+    throw new Error('not implemented in stub');
+  },
   createDiscussionTopic: async (
     _actorUserId: string,
     _tenantId: string,
@@ -2735,6 +2746,14 @@ const dependencies = {
     _glossaryEntryId: string,
   ) => undefined,
   listWikiPages: async (_actorUserId: string, _tenantId: string, _courseId: string) => [],
+  getWikiPage: async (
+    _actorUserId: string,
+    _tenantId: string,
+    _courseId: string,
+    _wikiPageId: string,
+  ) => {
+    throw new Error('not implemented in stub');
+  },
   createWikiPage: async (
     _actorUserId: string,
     _tenantId: string,

@@ -785,6 +785,7 @@ export type ApiDependencies = {
   ) => Promise<TenantMembership>;
   listCourses: (actorUserId: string, tenantId: string) => Promise<Course[]>;
   listDeletedCourses: (actorUserId: string, tenantId: string) => Promise<Course[]>;
+  getCourse: (actorUserId: string, tenantId: string, courseId: string) => Promise<Course>;
   listCatalogCourses: (
     tenantId: string,
     options?: { isBlueprint?: boolean; catalogCategory?: string; academicTerm?: string },
@@ -2071,6 +2072,12 @@ export type ApiDependencies = {
     moduleId: string | undefined,
     unitId: string | undefined,
   ) => Promise<DiscussionTopic[]>;
+  getDiscussionTopic: (
+    actorUserId: string,
+    tenantId: string,
+    courseId: string,
+    topicId: string,
+  ) => Promise<DiscussionTopic>;
   createDiscussionTopic: (
     actorUserId: string,
     tenantId: string,
@@ -2170,6 +2177,12 @@ export type ApiDependencies = {
     glossaryEntryId: string,
   ) => Promise<void>;
   listWikiPages: (actorUserId: string, tenantId: string, courseId: string) => Promise<WikiPage[]>;
+  getWikiPage: (
+    actorUserId: string,
+    tenantId: string,
+    courseId: string,
+    wikiPageId: string,
+  ) => Promise<WikiPage>;
   createWikiPage: (
     actorUserId: string,
     tenantId: string,
@@ -6663,6 +6676,14 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
       await assertTenantMembership(actorUserId, tenantId);
 
       return listCourses(dbHandle.db, tenantId);
+    },
+    getCourse: async (actorUserId, tenantId, courseId) => {
+      await readCourseAccessContext(actorUserId, tenantId, courseId);
+      const course = await getCourseById(dbHandle.db, tenantId, courseId);
+      if (!course) {
+        throw new ApiError('not_found', courseNotFoundForTenantMessage);
+      }
+      return course;
     },
     listDeletedCourses: async (actorUserId, tenantId) => {
       const tenantMemberships = await listUserTenantMemberships(dbHandle.db, actorUserId);
@@ -12684,6 +12705,19 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         unitId,
       });
     },
+    getDiscussionTopic: async (actorUserId, tenantId, courseId, topicId) => {
+      const { hasTenantStaffAccess, hasCourseStaffAccess } = await readCourseAccessContext(
+        actorUserId,
+        tenantId,
+        courseId,
+      );
+      const canViewAllContent = hasTenantStaffAccess || hasCourseStaffAccess;
+      const topic = await getDiscussionTopicForCourse(dbHandle.db, tenantId, courseId, topicId);
+      if (!topic || !canViewDiscussionTopic(topic, canViewAllContent)) {
+        throw new ApiError('not_found', discussionTopicNotFoundMessage);
+      }
+      return topic;
+    },
     createDiscussionTopic: async (actorUserId, tenantId, courseId, input) => {
       const access = await readCourseAccessContext(actorUserId, tenantId, courseId);
 
@@ -13181,6 +13215,19 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
         : ['published'];
 
       return listWikiPagesForCourse(dbHandle.db, { tenantId, courseId, statuses });
+    },
+    getWikiPage: async (actorUserId, tenantId, courseId, wikiPageId) => {
+      const { hasTenantStaffAccess, hasCourseStaffAccess } = await readCourseAccessContext(
+        actorUserId,
+        tenantId,
+        courseId,
+      );
+      const canViewAllContent = hasTenantStaffAccess || hasCourseStaffAccess;
+      const page = await getWikiPageForCourse(dbHandle.db, tenantId, courseId, wikiPageId);
+      if (!page || (!canViewAllContent && page.status !== 'published')) {
+        throw new ApiError('not_found', wikiPageNotFoundMessage);
+      }
+      return page;
     },
     createWikiPage: async (actorUserId, tenantId, courseId, input) => {
       await readCourseAccessContext(actorUserId, tenantId, courseId);

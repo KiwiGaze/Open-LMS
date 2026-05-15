@@ -171,6 +171,30 @@ export const UpdateWikiPageBody = z
   })
   .strict();
 
+export const getWikiPageRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/courses/{courseId}/wiki-pages/{wikiPageId}',
+  tags: ['Wiki'],
+  operationId: 'getWikiPage',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: CourseWikiPagePathParams,
+  },
+  responses: {
+    200: {
+      description: 'Wiki page visible to the authenticated user.',
+      content: {
+        'application/json': {
+          schema: WikiPageResponse,
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
+});
+
 export const updateWikiPageRoute = createRoute({
   method: 'put',
   path: '/api/v1/tenants/{tenantId}/courses/{courseId}/wiki-pages/{wikiPageId}',
