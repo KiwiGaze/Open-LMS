@@ -12,20 +12,30 @@ import {
   CardTitle,
 } from '@/components/ui/card.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
+import { useToast } from '@/components/ui/toast.tsx';
 import { apiFetch } from '@/lib/api/client.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
+import { useDeleteDiscussionTopic } from '@/lib/api/queries/discussions.ts';
+import { useMyCourseMembershipsQuery } from '@/lib/api/queries/me.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import type { DiscussionTopic } from '@openlms/contracts';
 import { useQuery } from '@tanstack/react-query';
-import { MessagesSquare, Plus } from 'lucide-react';
+import { MessagesSquare, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { use } from 'react';
+
+const STAFF_ROLES = new Set(['instructor', 'teaching_assistant', 'course_admin']);
 
 type Params = { courseId: string };
 
 export default function DiscussionsPage({ params }: { params: Promise<Params> }) {
   const { courseId } = use(params);
   const tenantId = useSessionStore((s) => s.activeTenantId);
+  const { publish } = useToast();
+  const myCourseMemberships = useMyCourseMembershipsQuery();
+  const isStaff =
+    myCourseMemberships.data?.some((m) => m.courseId === courseId && STAFF_ROLES.has(m.role)) ??
+    false;
 
   const topics = useQuery({
     queryKey: tenantId
@@ -35,6 +45,23 @@ export default function DiscussionsPage({ params }: { params: Promise<Params> })
       apiFetch<DiscussionTopic[]>(`/tenants/${tenantId}/courses/${courseId}/discussion-topics`),
     enabled: Boolean(tenantId),
   });
+
+  const deleteTopic = useDeleteDiscussionTopic(tenantId, courseId);
+
+  const handleDelete = (event: React.MouseEvent, topicId: string, title: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!window.confirm(`Delete topic "${title}"? Posts will be removed too.`)) return;
+    deleteTopic.mutate(topicId, {
+      onSuccess: () => publish({ tone: 'success', title: 'Topic deleted' }),
+      onError: (error) =>
+        publish({
+          tone: 'danger',
+          title: 'Delete failed',
+          description: error instanceof Error ? error.message : undefined,
+        }),
+    });
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -71,38 +98,48 @@ export default function DiscussionsPage({ params }: { params: Promise<Params> })
       ) : (
         <div className="grid gap-3">
           {topics.data?.map((topic) => (
-            <Link
-              key={topic.id}
-              href={`/courses/${courseId}/discussions/${topic.id}`}
-              className="group"
-            >
-              <Card className="transition-shadow group-hover:shadow-(--shadow-sm)">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-base group-hover:text-(--color-text-link)">
-                      {topic.title}
-                    </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge tone={topic.visibility === 'published' ? 'success' : 'neutral'}>
-                        {topic.visibility}
-                      </Badge>
-                      {topic.gradingEnabled ? (
-                        <Badge tone="brand">{topic.pointsPossible ?? '—'} pts</Badge>
-                      ) : null}
-                      {topic.requirePostBeforeSeeingOthers ? (
-                        <Badge tone="warning">Post first</Badge>
-                      ) : null}
+            <div key={topic.id} className="relative">
+              <Link href={`/courses/${courseId}/discussions/${topic.id}`} className="group">
+                <Card className="transition-shadow group-hover:shadow-(--shadow-sm)">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="text-base group-hover:text-(--color-text-link)">
+                        {topic.title}
+                      </CardTitle>
+                      <div className="flex items-center gap-2 pr-10">
+                        <Badge tone={topic.visibility === 'published' ? 'success' : 'neutral'}>
+                          {topic.visibility}
+                        </Badge>
+                        {topic.gradingEnabled ? (
+                          <Badge tone="brand">{topic.pointsPossible ?? '—'} pts</Badge>
+                        ) : null}
+                        {topic.requirePostBeforeSeeingOthers ? (
+                          <Badge tone="warning">Post first</Badge>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                  {topic.prompt ? (
-                    <CardDescription className="line-clamp-2">{topic.prompt}</CardDescription>
-                  ) : null}
-                </CardHeader>
-                <CardContent className="pt-0 text-xs text-(--color-text-subtle)">
-                  Position {topic.position + 1}
-                </CardContent>
-              </Card>
-            </Link>
+                    {topic.prompt ? (
+                      <CardDescription className="line-clamp-2">{topic.prompt}</CardDescription>
+                    ) : null}
+                  </CardHeader>
+                  <CardContent className="pt-0 text-xs text-(--color-text-subtle)">
+                    Position {topic.position + 1}
+                  </CardContent>
+                </Card>
+              </Link>
+              {isStaff ? (
+                <Button
+                  intent="ghost"
+                  size="icon-sm"
+                  aria-label={`Delete topic ${topic.title}`}
+                  onClick={(e) => handleDelete(e, topic.id, topic.title)}
+                  disabled={deleteTopic.isPending}
+                  className="absolute right-3 top-3"
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </Button>
+              ) : null}
+            </div>
           ))}
         </div>
       )}
