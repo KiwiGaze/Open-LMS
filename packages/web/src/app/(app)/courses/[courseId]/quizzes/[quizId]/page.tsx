@@ -1,6 +1,7 @@
 'use client';
 
 import { AddMultipleChoiceQuestionDialog } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/add-multiple-choice-question-dialog.tsx';
+import { AddNumericQuestionDialog } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/add-numeric-question-dialog.tsx';
 import { AddTrueFalseQuestionDialog } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/add-true-false-question-dialog.tsx';
 import { ErrorState } from '@/components/patterns/error-state.tsx';
 import { PageHeader } from '@/components/patterns/page-header.tsx';
@@ -144,6 +145,12 @@ export default function QuizDetailPage({ params }: { params: Promise<Params> }) 
                 nextPosition={questions.data.length}
               />
               <AddTrueFalseQuestionDialog
+                tenantId={tenantId}
+                courseId={courseId}
+                quizId={quizId}
+                nextPosition={questions.data.length}
+              />
+              <AddNumericQuestionDialog
                 tenantId={tenantId}
                 courseId={courseId}
                 quizId={quizId}
