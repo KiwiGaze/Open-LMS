@@ -23,6 +23,10 @@ export const queryKeys = {
     ['courses', tenantId, courseId, 'wiki-pages'] as const,
   wikiPage: (tenantId: string, courseId: string, wikiPageId: string) =>
     ['courses', tenantId, courseId, 'wiki-pages', wikiPageId] as const,
+  surveys: (tenantId: string, courseId: string) =>
+    ['courses', tenantId, courseId, 'surveys'] as const,
+  surveyQuestions: (tenantId: string, courseId: string, surveyId: string) =>
+    ['courses', tenantId, courseId, 'surveys', surveyId, 'questions'] as const,
 
   courses: (tenantId: string) => ['courses', tenantId, 'list'] as const,
   course: (tenantId: string, courseId: string) => ['courses', tenantId, courseId] as const,

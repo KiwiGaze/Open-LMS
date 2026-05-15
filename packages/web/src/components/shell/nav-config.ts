@@ -65,6 +65,7 @@ export const COURSE_NAV: CourseNavItem[] = [
   { segment: 'assignments', label: 'Assignments', icon: ClipboardList },
   { segment: 'discussions', label: 'Discussions', icon: MessagesSquare },
   { segment: 'quizzes', label: 'Quizzes', icon: ClipboardList },
+  { segment: 'surveys', label: 'Surveys', icon: ClipboardList },
   { segment: 'gradebook', label: 'Gradebook', icon: ClipboardList },
   { segment: 'people', label: 'People', icon: Users },
   { segment: 'attendance', label: 'Attendance', icon: CalendarCheck, staffOnly: true },
