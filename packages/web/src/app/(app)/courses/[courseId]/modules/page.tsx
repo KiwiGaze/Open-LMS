@@ -20,6 +20,7 @@ import {
   useCourseUnitsQuery,
 } from '@/lib/api/queries/modules.ts';
 import { useQuizzesQuery } from '@/lib/api/queries/quizzes.ts';
+import { useRecordResourceViewMutation } from '@/lib/api/queries/resource-views.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatDate, formatDateTime } from '@/lib/format.ts';
 import type {
@@ -351,7 +352,7 @@ function UnitItemView({ courseId, item }: { courseId: string; item: UnitItem }) 
     case 'topic':
       return <TopicItem courseId={courseId} topic={item.data} />;
     case 'resource':
-      return <ResourceItem resource={item.data} />;
+      return <ResourceItem resource={item.data} courseId={courseId} />;
   }
 }
 
@@ -461,7 +462,9 @@ function TopicItem({ courseId, topic }: { courseId: string; topic: DiscussionTop
   );
 }
 
-function ResourceItem({ resource }: { resource: CourseResource }) {
+function ResourceItem({ resource, courseId }: { resource: CourseResource; courseId: string }) {
+  const tenantId = useSessionStore((s) => s.activeTenantId);
+  const recordView = useRecordResourceViewMutation(tenantId, courseId);
   const icon =
     resource.resourceType === 'file'
       ? Paperclip
@@ -481,6 +484,7 @@ function ResourceItem({ resource }: { resource: CourseResource }) {
               href={resource.sourceUri}
               target={resource.resourceType === 'external_link' ? '_blank' : undefined}
               rel={resource.resourceType === 'external_link' ? 'noreferrer noopener' : undefined}
+              onClick={() => recordView.mutate(resource.id)}
               className="inline-flex items-center gap-1 text-xs font-medium text-(--color-text-link) hover:text-(--color-text-link-hover)"
             >
               {resource.resourceType === 'external_link' ? 'Open external link' : 'Open source'}{' '}
