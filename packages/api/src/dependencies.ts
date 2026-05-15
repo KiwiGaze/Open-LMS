@@ -7241,6 +7241,7 @@ export const createApiDependencies = (environment: ApiEnvironment): ApiDependenc
       const courseIds = memberships
         .filter((m) => m.tenantId === tenantId && m.status === 'active')
         .map((m) => m.courseId);
+      if (courseIds.length === 0) return [];
       return listAnnouncementsForCourses(dbHandle.db, {
         tenantId,
         courseIds,

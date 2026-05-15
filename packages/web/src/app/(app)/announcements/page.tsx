@@ -32,13 +32,7 @@ export default function TenantAnnouncementsPage() {
     return map;
   }, [courses.data]);
 
-  const sorted = useMemo(() => {
-    return (announcements.data ?? []).slice().sort((a, b) => {
-      const ad = a.postedAt ? new Date(a.postedAt).getTime() : 0;
-      const bd = b.postedAt ? new Date(b.postedAt).getTime() : 0;
-      return bd - ad;
-    });
-  }, [announcements.data]);
+  const items = announcements.data ?? [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,7 +46,7 @@ export default function TenantAnnouncementsPage() {
         </div>
       ) : announcements.error ? (
         <ErrorState error={announcements.error} onRetry={() => announcements.refetch()} />
-      ) : sorted.length === 0 ? (
+      ) : items.length === 0 ? (
         <EmptyState
           icon={Bell}
           title="No announcements"
@@ -60,7 +54,7 @@ export default function TenantAnnouncementsPage() {
         />
       ) : (
         <ul className="flex flex-col gap-3">
-          {sorted.map((a) => {
+          {items.map((a) => {
             const course = coursesById.get(a.courseId);
             return (
               <li key={a.id}>
