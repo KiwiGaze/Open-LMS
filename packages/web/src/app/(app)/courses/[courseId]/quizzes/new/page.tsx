@@ -61,7 +61,7 @@ const FormSchema = z
     if (values.opensAtLocal && values.closesAtLocal) {
       const opens = new Date(values.opensAtLocal).getTime();
       const closes = new Date(values.closesAtLocal).getTime();
-      if (closes < opens) {
+      if (closes <= opens) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['closesAtLocal'],
