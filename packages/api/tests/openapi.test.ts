@@ -60,6 +60,7 @@ describe('OpenAPI generation', () => {
       '/api/v1/me/tenant-memberships',
       '/api/v1/me/course-memberships',
       '/api/v1/tenants/{tenantId}/courses',
+      '/api/v1/tenants/{tenantId}/courses/deleted',
       '/api/v1/tenants/{tenantId}/catalog/courses',
       '/api/v1/tenants/{tenantId}/favorites',
       '/api/v1/tenants/{tenantId}/courses/{courseId}/favorite',

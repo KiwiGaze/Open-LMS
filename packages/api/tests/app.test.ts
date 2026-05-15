@@ -404,6 +404,7 @@ const dependencies = {
     }),
   deleteCurrentUser: async (_actorUserId: string) => {},
   listCourses: async (_actorUserId: string, _tenantId: string) => [],
+  listDeletedCourses: async (_actorUserId: string, _tenantId: string) => [],
   listCatalogCourses: async (_tenantId: string) => [],
   listCourseFavorites: async (_actorUserId: string, _tenantId: string) => [],
   favoriteCourse: async (_actorUserId: string, _tenantId: string, _courseId: string) =>

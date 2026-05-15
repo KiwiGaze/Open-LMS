@@ -267,6 +267,19 @@ export const listCourses = async (db: Database, tenantId: string): Promise<Cours
   return rows.map((row) => Course.parse(row));
 };
 
+export const listDeletedCoursesForTenant = async (
+  db: Database,
+  tenantId: string,
+): Promise<CourseContract[]> => {
+  const rows = await db
+    .select()
+    .from(course)
+    .where(and(eq(course.tenantId, tenantId), sql`${course.deletedAt} IS NOT NULL`))
+    .orderBy(asc(course.code));
+
+  return rows.map((row) => Course.parse(row));
+};
+
 export type CourseLifecycleInput = {
   tenantId: string;
   courseId: string;
