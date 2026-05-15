@@ -154,37 +154,39 @@ export default function AdminWebhooksPage() {
                 <Plus className="size-3.5" aria-hidden /> Add webhook
               </Button>
             </DialogTrigger>
-            <WebhookFormDialog
-              title="New webhook subscription"
-              description="Configure the endpoint, topics, and shared secret. Endpoints must use HTTPS."
-              initialState={emptyForm()}
-              isCreating
-              busy={create.isPending}
-              onSubmit={async (state, topicList) => {
-                const payload: CreateWebhookSubscriptionInput = {
-                  name: state.name.trim(),
-                  endpointUrl: state.endpointUrl.trim(),
-                  topics: topicList,
-                  status: state.enabled ? 'enabled' : 'disabled',
-                  signingSecret: state.signingSecret.trim(),
-                };
-                try {
-                  await create.mutateAsync(payload);
-                  publish({ tone: 'success', title: 'Webhook created' });
-                  setCreateOpen(false);
-                  return true;
-                } catch (error) {
-                  publish({
-                    tone: 'danger',
-                    title: 'Create failed',
-                    description:
-                      error instanceof ApiHttpError ? error.message : 'Could not create webhook.',
-                  });
-                  return false;
-                }
-              }}
-              onCancel={() => setCreateOpen(false)}
-            />
+            {createOpen ? (
+              <WebhookFormDialog
+                title="New webhook subscription"
+                description="Configure the endpoint, topics, and shared secret. Endpoints must use HTTPS."
+                initialState={emptyForm()}
+                isCreating
+                busy={create.isPending}
+                onSubmit={async (state, topicList) => {
+                  const payload: CreateWebhookSubscriptionInput = {
+                    name: state.name.trim(),
+                    endpointUrl: state.endpointUrl.trim(),
+                    topics: topicList,
+                    status: state.enabled ? 'enabled' : 'disabled',
+                    signingSecret: state.signingSecret.trim(),
+                  };
+                  try {
+                    await create.mutateAsync(payload);
+                    publish({ tone: 'success', title: 'Webhook created' });
+                    setCreateOpen(false);
+                    return true;
+                  } catch (error) {
+                    publish({
+                      tone: 'danger',
+                      title: 'Create failed',
+                      description:
+                        error instanceof ApiHttpError ? error.message : 'Could not create webhook.',
+                    });
+                    return false;
+                  }
+                }}
+                onCancel={() => setCreateOpen(false)}
+              />
+            ) : null}
           </Dialog>
         }
       />
