@@ -136,7 +136,7 @@ export default function QuizDetailPage({ params }: { params: Promise<Params> }) 
             </CardDescription>
           </div>
           {questions.data ? (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <AddMultipleChoiceQuestionDialog
                 tenantId={tenantId}
                 courseId={courseId}
