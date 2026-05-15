@@ -18,6 +18,7 @@ export const queryKeys = {
   retentionPolicies: (tenantId: string) => ['tenants', tenantId, 'retention-policies'] as const,
   userLegalHolds: (tenantId: string, status: string) =>
     ['tenants', tenantId, 'legal-holds', status] as const,
+  myPushTokens: (tenantId: string) => ['tenants', tenantId, 'me', 'push-tokens'] as const,
 
   courses: (tenantId: string) => ['courses', tenantId, 'list'] as const,
   course: (tenantId: string, courseId: string) => ['courses', tenantId, courseId] as const,
