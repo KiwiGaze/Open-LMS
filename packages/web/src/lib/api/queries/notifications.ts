@@ -36,6 +36,26 @@ export type UpsertNotificationPreferenceInput = {
   frequency: NotificationFrequency;
 };
 
+export function useMarkNotificationReadMutation(tenantId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (notificationId: string) => {
+      if (!tenantId) {
+        return Promise.reject(new Error('No active tenant — cannot mark notification read.'));
+      }
+      return apiFetch<NotificationRecord>(
+        `/tenants/${tenantId}/notifications/${encodeURIComponent(notificationId)}/read`,
+        { method: 'POST' },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.notifications(tenantId) });
+      }
+    },
+  });
+}
+
 export function useUpsertNotificationPreferenceMutation(tenantId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
