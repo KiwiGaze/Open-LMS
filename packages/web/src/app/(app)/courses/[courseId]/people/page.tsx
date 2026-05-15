@@ -17,12 +17,13 @@ import { ApiHttpError } from '@/lib/api/errors.ts';
 import { useCourseMembershipsQuery } from '@/lib/api/queries/gradebook.ts';
 import {
   useDeleteCourseMembershipMutation,
+  useExportCourseRosterCsvMutation,
   useUpdateCourseMembershipMutation,
 } from '@/lib/api/queries/memberships.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { initialsOf } from '@/lib/format.ts';
 import type { CourseMembership, CourseRole } from '@openlms/contracts';
-import { Search, Trash2, Upload, UserPlus, Users } from 'lucide-react';
+import { Download, Search, Trash2, Upload, UserPlus, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { use } from 'react';
 import { BulkCsvDialog } from './bulk-csv-dialog.tsx';
@@ -52,6 +53,20 @@ export default function CoursePeoplePage({ params }: { params: Promise<Params> }
   const memberships = useCourseMembershipsQuery(tenantId, courseId);
   const updateRole = useUpdateCourseMembershipMutation(tenantId, courseId);
   const remove = useDeleteCourseMembershipMutation(tenantId, courseId);
+  const exportRoster = useExportCourseRosterCsvMutation(tenantId, courseId);
+
+  const handleExport = () => {
+    const date = new Date().toISOString().slice(0, 10);
+    exportRoster.mutate(`course-${courseId}-roster-${date}.csv`, {
+      onError: (error) => {
+        publish({
+          tone: 'danger',
+          title: 'Export failed',
+          description: error instanceof Error ? error.message : undefined,
+        });
+      },
+    });
+  };
 
   const myMembership = memberships.data?.find((m) => m.userId === user?.id);
   const isStaff = myMembership ? STAFF_ROLES.has(myMembership.role) : false;
@@ -193,6 +208,14 @@ export default function CoursePeoplePage({ params }: { params: Promise<Params> }
         </Select>
         {isStaff ? (
           <div className="flex items-center gap-2">
+            <Button
+              intent="secondary"
+              onClick={handleExport}
+              disabled={exportRoster.isPending}
+              loading={exportRoster.isPending}
+            >
+              <Download className="size-4" aria-hidden /> Export CSV
+            </Button>
             <Button intent="secondary" onClick={() => setCsvOpen(true)}>
               <Upload className="size-4" aria-hidden /> Import CSV
             </Button>

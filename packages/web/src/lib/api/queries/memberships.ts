@@ -74,6 +74,28 @@ export function useDeleteCourseMembershipMutation(
   });
 }
 
+export function useExportCourseRosterCsvMutation(tenantId: string | null, courseId: string | null) {
+  return useMutation({
+    mutationFn: async (filename: string) => {
+      if (!tenantId || !courseId) {
+        throw new Error('No active course — cannot export roster.');
+      }
+      const blob = await apiFetch<Blob>(
+        `/tenants/${tenantId}/courses/${courseId}/memberships/export.csv`,
+        { responseType: 'blob' },
+      );
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    },
+  });
+}
+
 export function useImportCourseRosterCsvMutation(tenantId: string | null, courseId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
