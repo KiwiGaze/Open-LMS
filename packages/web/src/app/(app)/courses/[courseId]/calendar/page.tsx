@@ -12,27 +12,47 @@ import {
   CardTitle,
 } from '@/components/ui/card.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
-import { apiFetch } from '@/lib/api/client.ts';
-import { queryKeys } from '@/lib/api/keys.ts';
+import { useToast } from '@/components/ui/toast.tsx';
+import {
+  useCourseCalendarEventsQuery,
+  useDeleteCourseCalendarEventMutation,
+} from '@/lib/api/queries/course-calendar.ts';
+import { useMyCourseMembershipsQuery } from '@/lib/api/queries/me.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatDateTime } from '@/lib/format.ts';
-import type { CourseCalendarEvent } from '@openlms/contracts';
-import { useQuery } from '@tanstack/react-query';
-import { CalendarClock, Plus } from 'lucide-react';
-import { use } from 'react';
+import { CalendarClock, Plus, Trash2 } from 'lucide-react';
+import { use, useState } from 'react';
+import { CalendarEventDialog } from './event-dialog.tsx';
+
+const STAFF_ROLES = new Set(['instructor', 'teaching_assistant', 'course_admin']);
 
 type Params = { courseId: string };
 
 export default function CourseCalendarPage({ params }: { params: Promise<Params> }) {
   const { courseId } = use(params);
   const tenantId = useSessionStore((s) => s.activeTenantId);
+  const { publish } = useToast();
+  const myCourseMemberships = useMyCourseMembershipsQuery();
+  const isStaff =
+    myCourseMemberships.data?.some((m) => m.courseId === courseId && STAFF_ROLES.has(m.role)) ??
+    false;
 
-  const events = useQuery({
-    queryKey: tenantId ? queryKeys.courseCalendar(tenantId, courseId) : ['cal', 'inactive'],
-    queryFn: () =>
-      apiFetch<CourseCalendarEvent[]>(`/tenants/${tenantId}/courses/${courseId}/calendar-events`),
-    enabled: Boolean(tenantId),
-  });
+  const events = useCourseCalendarEventsQuery(tenantId, courseId);
+  const deleteEvent = useDeleteCourseCalendarEventMutation(tenantId, courseId);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleDelete = (eventId: string, title: string) => {
+    if (!window.confirm(`Delete event "${title}"?`)) return;
+    deleteEvent.mutate(eventId, {
+      onSuccess: () => publish({ tone: 'success', title: 'Event deleted' }),
+      onError: (error) =>
+        publish({
+          tone: 'danger',
+          title: 'Delete failed',
+          description: error instanceof Error ? error.message : undefined,
+        }),
+    });
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -40,9 +60,11 @@ export default function CourseCalendarPage({ params }: { params: Promise<Params>
         <p className="text-sm text-(--color-text-muted)">
           Lectures, office hours, and ad-hoc events for this course.
         </p>
-        <Button>
-          <Plus className="size-4" aria-hidden /> New event
-        </Button>
+        {isStaff ? (
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="size-4" aria-hidden /> New event
+          </Button>
+        ) : null}
       </div>
 
       {events.isLoading ? (
@@ -77,9 +99,22 @@ export default function CourseCalendarPage({ params }: { params: Promise<Params>
                       {event.recurrenceRule ? ' · recurring' : ''}
                     </CardDescription>
                   </div>
-                  <Badge tone={event.visibility === 'published' ? 'success' : 'neutral'}>
-                    {event.visibility}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge tone={event.visibility === 'published' ? 'success' : 'neutral'}>
+                      {event.visibility}
+                    </Badge>
+                    {isStaff ? (
+                      <Button
+                        intent="ghost"
+                        size="icon-sm"
+                        aria-label={`Delete event ${event.title}`}
+                        onClick={() => handleDelete(event.id, event.title)}
+                        disabled={deleteEvent.isPending}
+                      >
+                        <Trash2 className="size-4" aria-hidden />
+                      </Button>
+                    ) : null}
+                  </div>
                 </CardHeader>
                 {event.description ? (
                   <CardContent className="text-sm text-(--color-text-default)">
@@ -90,6 +125,13 @@ export default function CourseCalendarPage({ params }: { params: Promise<Params>
             ))}
         </div>
       )}
+
+      <CalendarEventDialog
+        tenantId={tenantId}
+        courseId={courseId}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
     </div>
   );
 }
