@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea.tsx';
 import { useToast } from '@/components/ui/toast.tsx';
 import { ApiHttpError } from '@/lib/api/errors.ts';
 import { useCreateDiscussionTopic } from '@/lib/api/queries/discussions.ts';
+import { useRubricsQuery } from '@/lib/api/queries/rubrics.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -260,17 +261,16 @@ export default function NewDiscussionTopicPage({ params }: { params: Promise<Par
                 </FormField>
                 <FormField
                   id="rubricId"
-                  label="Rubric ULID"
-                  description="Optional rubric for feedback alignment. Paste the rubric ULID."
+                  label="Rubric"
+                  description="Optional rubric for feedback alignment. Create rubrics in Admin → Rubrics."
                   error={form.formState.errors.rubricId?.message}
                 >
-                  <Input
-                    id="rubricId"
-                    placeholder="01J9QW7B6N5W2YH3D3A1V0KE3C"
-                    autoComplete="off"
-                    spellCheck={false}
-                    invalid={Boolean(form.formState.errors.rubricId)}
-                    {...form.register('rubricId')}
+                  <Controller
+                    control={form.control}
+                    name="rubricId"
+                    render={({ field }) => (
+                      <DiscussionRubricPicker value={field.value} onChange={field.onChange} />
+                    )}
                   />
                 </FormField>
               </>
@@ -288,5 +288,46 @@ export default function NewDiscussionTopicPage({ params }: { params: Promise<Par
         </div>
       </form>
     </div>
+  );
+}
+
+function DiscussionRubricPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const tenantId = useSessionStore((s) => s.activeTenantId);
+  const rubrics = useRubricsQuery(tenantId);
+  const noneSentinel = '__none__';
+  const selected = value.trim() === '' ? noneSentinel : value;
+
+  return (
+    <Select
+      value={selected}
+      onValueChange={(next) => onChange(next === noneSentinel ? '' : next)}
+      disabled={rubrics.isLoading}
+    >
+      <SelectTrigger id="rubricId">
+        <SelectValue
+          placeholder={
+            rubrics.isLoading
+              ? 'Loading rubrics…'
+              : rubrics.error
+                ? 'Could not load rubrics'
+                : 'No rubric'
+          }
+        />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={noneSentinel}>No rubric</SelectItem>
+        {(rubrics.data ?? []).map((rubric) => (
+          <SelectItem key={rubric.id} value={rubric.id}>
+            {rubric.title} ({rubric.criteria.length} criteria)
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
