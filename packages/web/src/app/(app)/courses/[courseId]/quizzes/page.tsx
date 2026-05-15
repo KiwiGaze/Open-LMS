@@ -94,7 +94,11 @@ export default function QuizzesPage({ params }: { params: Promise<Params> }) {
               <Link href={`/courses/${courseId}/quizzes/${quiz.id}`} className="group">
                 <Card className="h-full transition-shadow group-hover:shadow-(--shadow-sm)">
                   <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between gap-2 pr-10">
+                    <div
+                      className={`flex items-center justify-between gap-2 ${
+                        isStaff ? 'pr-10' : ''
+                      }`}
+                    >
                       <CardTitle className="text-base group-hover:text-(--color-text-link)">
                         {quiz.title}
                       </CardTitle>

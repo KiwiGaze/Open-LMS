@@ -157,6 +157,7 @@ export default function EditQuizPage({ params }: { params: Promise<Params> }) {
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
+      const trimmedPassword = values.accessPassword.trim();
       await mutation.mutateAsync({
         moduleId: quiz.data?.moduleId ?? null,
         unitId: quiz.data?.unitId ?? null,
@@ -169,7 +170,9 @@ export default function EditQuizPage({ params }: { params: Promise<Params> }) {
         timeLimitMinutes: values.timeLimitMinutes ? Number(values.timeLimitMinutes) : null,
         shuffleQuestions: values.shuffleQuestions,
         maxAttempts: Number(values.maxAttempts),
-        accessPassword: values.accessPassword.trim() || null,
+        // Omit accessPassword entirely when blank so the existing password is preserved.
+        // Explicit null would clear it.
+        ...(trimmedPassword === '' ? {} : { accessPassword: trimmedPassword }),
       });
       publish({ tone: 'success', title: 'Quiz updated' });
       router.push(`/courses/${courseId}/quizzes/${quizId}`);

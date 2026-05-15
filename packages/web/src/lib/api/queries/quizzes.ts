@@ -89,9 +89,10 @@ export function useDeleteQuiz(tenantId: string | null, courseId: string | null) 
         { method: 'DELETE', responseType: 'void' },
       );
     },
-    onSuccess: () => {
+    onSuccess: (_data, quizId) => {
       if (tenantId && courseId) {
         queryClient.invalidateQueries({ queryKey: queryKeys.courseQuizzes(tenantId, courseId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.quiz(tenantId, courseId, quizId) });
       }
     },
   });
