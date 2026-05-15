@@ -53,6 +53,27 @@ export function useUpdateCourseMembershipMutation(
   });
 }
 
+export function useApproveCourseMembershipMutation(
+  tenantId: string | null,
+  courseId: string | null,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (membershipId: string) =>
+      apiFetch<CourseMembership>(
+        `/tenants/${tenantId}/courses/${courseId}/memberships/${encodeURIComponent(membershipId)}`,
+        { method: 'PUT', body: { status: 'active' } },
+      ),
+    onSuccess: () => {
+      if (tenantId && courseId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.coursePeople(tenantId, courseId),
+        });
+      }
+    },
+  });
+}
+
 export function useDeleteCourseMembershipMutation(
   tenantId: string | null,
   courseId: string | null,
