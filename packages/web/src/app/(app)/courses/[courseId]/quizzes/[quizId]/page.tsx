@@ -1,5 +1,6 @@
 'use client';
 
+import { AddMultipleChoiceQuestionDialog } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/add-multiple-choice-question-dialog.tsx';
 import { ErrorState } from '@/components/patterns/error-state.tsx';
 import { PageHeader } from '@/components/patterns/page-header.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/card.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { apiFetch } from '@/lib/api/client.ts';
+import { useQuizQuestionsQuery } from '@/lib/api/queries/quizzes.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
 import { formatDateTime } from '@/lib/format.ts';
 import type { Quiz, QuizEffectiveSettings } from '@openlms/contracts';
@@ -32,6 +34,7 @@ export default function QuizDetailPage({ params }: { params: Promise<Params> }) 
     queryFn: () => apiFetch<Quiz>(`/tenants/${tenantId}/courses/${courseId}/quizzes/${quizId}`),
     enabled: Boolean(tenantId),
   });
+  const questions = useQuizQuestionsQuery(tenantId, courseId, quizId);
   const settings = useQuery({
     queryKey: ['quiz-settings', tenantId ?? '', courseId, quizId],
     queryFn: () =>
@@ -119,6 +122,61 @@ export default function QuizDetailPage({ params }: { params: Promise<Params> }) 
           </CardContent>
         </Card>
       </section>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between gap-3">
+          <div>
+            <CardTitle>Questions</CardTitle>
+            <CardDescription>
+              {questions.data?.length === 1
+                ? '1 question'
+                : `${questions.data?.length ?? 0} questions`}{' '}
+              in this quiz.
+            </CardDescription>
+          </div>
+          <AddMultipleChoiceQuestionDialog
+            tenantId={tenantId}
+            courseId={courseId}
+            quizId={quizId}
+            nextPosition={questions.data?.length ?? 0}
+          />
+        </CardHeader>
+        <CardContent>
+          {questions.isLoading ? (
+            <Skeleton className="h-32 w-full" />
+          ) : questions.error ? (
+            <ErrorState error={questions.error} onRetry={() => questions.refetch()} />
+          ) : (questions.data?.length ?? 0) === 0 ? (
+            <p className="text-sm text-(--color-text-muted)">
+              No questions yet. Add one to get started.
+            </p>
+          ) : (
+            <ol className="flex flex-col divide-y divide-(--color-border-subtle)">
+              {questions.data?.map((question, index) => (
+                <li key={question.id} className="flex items-start gap-3 py-3">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-(--color-surface-muted) text-xs font-medium text-(--color-text-default)">
+                    {index + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Badge tone="outline">{question.questionType.replace(/_/g, ' ')}</Badge>
+                      <Badge tone="brand">{question.points} pts</Badge>
+                    </div>
+                    <p className="mt-1 text-sm text-(--color-text-default)">{question.prompt}</p>
+                    {question.choices.length > 0 ? (
+                      <ul className="mt-2 flex flex-col gap-1 pl-2 text-xs text-(--color-text-muted)">
+                        {question.choices.map((choice) => (
+                          <li key={choice.id}>• {choice.text}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
