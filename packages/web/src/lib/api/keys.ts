@@ -113,6 +113,8 @@ export const queryKeys = {
     ['courses', tenantId, courseId, 'quizzes', quizId, 'effective-settings'] as const,
   quizAttempts: (tenantId: string, courseId: string, quizId: string) =>
     ['courses', tenantId, courseId, 'quizzes', quizId, 'attempts'] as const,
+  quizOverrides: (tenantId: string, courseId: string, quizId: string) =>
+    ['courses', tenantId, courseId, 'quizzes', quizId, 'overrides'] as const,
   quizAttemptResponses: (tenantId: string, courseId: string, quizId: string, attemptId: string) =>
     ['courses', tenantId, courseId, 'quizzes', quizId, 'attempts', attemptId, 'responses'] as const,
   gradebook: (tenantId: string, courseId: string) =>
