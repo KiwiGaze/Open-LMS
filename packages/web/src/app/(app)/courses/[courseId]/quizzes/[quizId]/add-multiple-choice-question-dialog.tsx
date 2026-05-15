@@ -21,6 +21,8 @@ import { useState } from 'react';
 
 type Choice = { id: string; text: string };
 
+const CHOICE_IDS = ['a', 'b', 'c', 'd', 'e', 'f'] as const;
+
 const initialChoices = (): Choice[] => [
   { id: 'a', text: '' },
   { id: 'b', text: '' },
@@ -90,20 +92,20 @@ function FormContents({
   };
 
   const addChoice = () => {
-    if (choices.length >= 6) return;
-    const nextLetter = ['a', 'b', 'c', 'd', 'e', 'f'].find(
-      (id) => !choices.some((choice) => choice.id === id),
-    );
-    if (!nextLetter) return;
-    setChoices((prev) => [...prev, { id: nextLetter, text: '' }]);
+    setChoices((prev) => {
+      if (prev.length >= 6) return prev;
+      const nextLetter = CHOICE_IDS.find((id) => !prev.some((choice) => choice.id === id));
+      if (!nextLetter) return prev;
+      return [...prev, { id: nextLetter, text: '' }];
+    });
   };
 
   const removeChoice = (id: string) => {
-    if (choices.length <= 2) return;
-    setChoices((prev) => prev.filter((choice) => choice.id !== id));
-    if (correctChoiceId === id) {
-      setCorrectChoiceId(null);
-    }
+    setChoices((prev) => {
+      if (prev.length <= 2) return prev;
+      return prev.filter((choice) => choice.id !== id);
+    });
+    setCorrectChoiceId((prev) => (prev === id ? null : prev));
   };
 
   const submit = async () => {
