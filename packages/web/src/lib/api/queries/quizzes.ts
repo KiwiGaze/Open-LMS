@@ -3,6 +3,9 @@
 import { apiFetch } from '@/lib/api/client.ts';
 import { queryKeys } from '@/lib/api/keys.ts';
 import type {
+  QtiQuizItemExport,
+  QtiQuizItemImportRequest,
+  QtiQuizItemImportResult,
   Quiz,
   QuizAttempt,
   QuizAttemptResponse,
@@ -102,6 +105,59 @@ export type CreateQuizQuestionInput = {
   choices: QuizQuestionChoice[];
   answerKey?: QuizQuestionAnswerKey | null;
 };
+
+export function useExportQuizQtiMutation(
+  tenantId: string | null,
+  courseId: string | null,
+  quizId: string | null,
+) {
+  return useMutation({
+    mutationFn: async () => {
+      if (!tenantId || !courseId || !quizId) {
+        throw new Error('No active quiz — cannot export QTI.');
+      }
+      const bundle = await apiFetch<QtiQuizItemExport>(
+        `/tenants/${tenantId}/courses/${courseId}/quizzes/${encodeURIComponent(quizId)}/qti-items`,
+      );
+      const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `quiz-${quizId}-qti.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      return bundle;
+    },
+  });
+}
+
+export function useImportQuizQtiMutation(
+  tenantId: string | null,
+  courseId: string | null,
+  quizId: string | null,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: QtiQuizItemImportRequest) => {
+      if (!tenantId || !courseId || !quizId) {
+        return Promise.reject(new Error('No active quiz — cannot import QTI.'));
+      }
+      return apiFetch<QtiQuizItemImportResult>(
+        `/tenants/${tenantId}/courses/${courseId}/quizzes/${encodeURIComponent(quizId)}/qti-items/import`,
+        { method: 'POST', body: input },
+      );
+    },
+    onSuccess: () => {
+      if (tenantId && courseId && quizId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.quizQuestions(tenantId, courseId, quizId),
+        });
+      }
+    },
+  });
+}
 
 export function useCreateQuizQuestionMutation(
   tenantId: string | null,
