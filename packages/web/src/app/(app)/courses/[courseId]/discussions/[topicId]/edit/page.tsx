@@ -147,7 +147,7 @@ export default function EditDiscussionTopicPage({ params }: { params: Promise<Pa
         position: Number(values.position || '0'),
         gradingEnabled: values.gradingEnabled,
         pointsPossible: values.gradingEnabled ? Number(values.pointsPossible) : null,
-        rubricId: values.rubricId.trim() || null,
+        rubricId: values.gradingEnabled ? values.rubricId.trim() || null : null,
         moduleId: topic.data.moduleId,
         unitId: topic.data.unitId,
       });
