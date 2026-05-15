@@ -1,5 +1,6 @@
 'use client';
 
+import { AddEssayQuestionDialog } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/add-essay-question-dialog.tsx';
 import { AddMultipleChoiceQuestionDialog } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/add-multiple-choice-question-dialog.tsx';
 import { AddNumericQuestionDialog } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/add-numeric-question-dialog.tsx';
 import { AddShortAnswerQuestionDialog } from '@/app/(app)/courses/[courseId]/quizzes/[quizId]/add-short-answer-question-dialog.tsx';
@@ -158,6 +159,12 @@ export default function QuizDetailPage({ params }: { params: Promise<Params> }) 
                 nextPosition={questions.data.length}
               />
               <AddShortAnswerQuestionDialog
+                tenantId={tenantId}
+                courseId={courseId}
+                quizId={quizId}
+                nextPosition={questions.data.length}
+              />
+              <AddEssayQuestionDialog
                 tenantId={tenantId}
                 courseId={courseId}
                 quizId={quizId}
