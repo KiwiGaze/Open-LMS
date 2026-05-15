@@ -100,6 +100,48 @@ export type RestoreCourseBackupResult = {
   resourcesRestored: number;
 };
 
+function downloadJsonBlob(filename: string, payload: unknown) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+export function useExportCourseBackupMutation(tenantId: string | null, courseId: string | null) {
+  return useMutation({
+    mutationFn: async () => {
+      if (!tenantId || !courseId) {
+        throw new Error('No active course — cannot export backup.');
+      }
+      const backup = await apiFetch<CourseBackup>(
+        `/tenants/${tenantId}/courses/${courseId}/backup`,
+      );
+      downloadJsonBlob(`course-backup-${courseId}.json`, backup);
+      return backup;
+    },
+  });
+}
+
+export function useExportCommonCartridgeMutation(tenantId: string | null, courseId: string | null) {
+  return useMutation({
+    mutationFn: async () => {
+      if (!tenantId || !courseId) {
+        throw new Error('No active course — cannot export cartridge.');
+      }
+      const cartridge = await apiFetch<unknown>(
+        `/tenants/${tenantId}/courses/${courseId}/common-cartridge`,
+      );
+      downloadJsonBlob(`course-cartridge-${courseId}.json`, cartridge);
+      return cartridge;
+    },
+  });
+}
+
 export function useRestoreCourseBackupMutation(tenantId: string | null, courseId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
