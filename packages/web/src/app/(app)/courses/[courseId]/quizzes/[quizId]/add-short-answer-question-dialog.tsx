@@ -92,8 +92,9 @@ function FormContents({
   const submit = async () => {
     const next: typeof errors = {};
     if (prompt.trim() === '') next.prompt = 'Prompt is required.';
-    const parsedPoints = Number(points);
-    if (!Number.isInteger(parsedPoints) || parsedPoints < 0) {
+    const normalizedPoints = points.trim();
+    const parsedPoints = Number(normalizedPoints);
+    if (normalizedPoints === '' || !Number.isInteger(parsedPoints) || parsedPoints < 0) {
       next.points = 'Points must be a non-negative integer.';
     }
     const trimmedAnswers = acceptedAnswers
