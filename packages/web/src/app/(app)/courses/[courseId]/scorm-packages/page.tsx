@@ -15,9 +15,10 @@ import {
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useScormPackagesQuery } from '@/lib/api/queries/scorm.ts';
 import { useSessionStore } from '@/lib/auth/store.ts';
-import { Box, Play } from 'lucide-react';
+import { Box, Play, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { use } from 'react';
+import { use, useState } from 'react';
+import { RegisterScormPackageDialog } from './register-dialog.tsx';
 
 type Params = { courseId: string };
 
@@ -25,12 +26,18 @@ export default function ScormPackagesPage({ params }: { params: Promise<Params> 
   const { courseId } = use(params);
   const tenantId = useSessionStore((s) => s.activeTenantId);
   const packages = useScormPackagesQuery(tenantId, courseId);
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="SCORM packages"
         description="Self-contained learning modules. Launch one to track completion and score."
+        actions={
+          <Button onClick={() => setRegisterOpen(true)}>
+            <Plus className="size-4" aria-hidden /> Register package
+          </Button>
+        }
       />
 
       {packages.isLoading ? (
@@ -76,6 +83,13 @@ export default function ScormPackagesPage({ params }: { params: Promise<Params> 
             ))}
         </ul>
       )}
+
+      <RegisterScormPackageDialog
+        tenantId={tenantId}
+        courseId={courseId}
+        open={registerOpen}
+        onOpenChange={setRegisterOpen}
+      />
     </div>
   );
 }
