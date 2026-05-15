@@ -51,6 +51,7 @@ export function CalendarEventDialog({ tenantId, courseId, open, onOpenChange }: 
   const [visibility, setVisibility] = useState<CourseCalendarEventVisibility>('published');
   const [recurrenceRule, setRecurrenceRule] = useState('');
   const [startsAtError, setStartsAtError] = useState<string | null>(null);
+  const [endsAtError, setEndsAtError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -62,15 +63,22 @@ export function CalendarEventDialog({ tenantId, courseId, open, onOpenChange }: 
       setVisibility('published');
       setRecurrenceRule('');
       setStartsAtError(null);
+      setEndsAtError(null);
     }
   }, [open]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStartsAtError(null);
+    setEndsAtError(null);
     const startsIso = toIso(startsAt);
     if (!startsIso) {
       setStartsAtError('Start time is required.');
+      return;
+    }
+    const endsIso = toIso(endsAt);
+    if (endsIso && new Date(endsIso).getTime() <= new Date(startsIso).getTime()) {
+      setEndsAtError('End time must be after the start time.');
       return;
     }
     try {
@@ -79,7 +87,7 @@ export function CalendarEventDialog({ tenantId, courseId, open, onOpenChange }: 
         description: description.trim() === '' ? null : description.trim(),
         location: location.trim() === '' ? null : location.trim(),
         startsAt: startsIso,
-        endsAt: toIso(endsAt),
+        endsAt: endsIso,
         visibility,
         recurrenceRule: recurrenceRule.trim() === '' ? null : recurrenceRule.trim(),
       });
@@ -140,7 +148,7 @@ export function CalendarEventDialog({ tenantId, courseId, open, onOpenChange }: 
                 onChange={(e) => setStartsAt(e.target.value)}
               />
             </FormField>
-            <FormField label="Ends at" id="ce-endsAt">
+            <FormField label="Ends at" id="ce-endsAt" error={endsAtError}>
               <Input
                 id="ce-endsAt"
                 type="datetime-local"
