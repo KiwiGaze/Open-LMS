@@ -68,8 +68,17 @@ export default function QuestionBankDetailPage({ params }: { params: Promise<Par
     myCourseMemberships.data?.some((m) => m.courseId === courseId && STAFF_ROLES.has(m.role)) ??
     false;
 
-  const bank = useQuestionBankQuery(tenantId, courseId, bankId);
-  const questions = useQuestionBankQuestionsQuery(tenantId, courseId, bankId);
+  const canRead = !myCourseMemberships.isLoading && isStaff;
+  const bank = useQuestionBankQuery(
+    canRead ? tenantId : null,
+    canRead ? courseId : null,
+    canRead ? bankId : null,
+  );
+  const questions = useQuestionBankQuestionsQuery(
+    canRead ? tenantId : null,
+    canRead ? courseId : null,
+    canRead ? bankId : null,
+  );
 
   const [addOpen, setAddOpen] = useState(false);
 
@@ -312,8 +321,7 @@ function AddQuestionDialog({
                   intent="secondary"
                   size="sm"
                   onClick={() => {
-                    const nextId = String.fromCharCode('a'.charCodeAt(0) + choices.length);
-                    setChoices([...choices, { id: nextId, text: '' }]);
+                    setChoices([...choices, { id: crypto.randomUUID(), text: '' }]);
                   }}
                   disabled={choices.length >= 8}
                 >
