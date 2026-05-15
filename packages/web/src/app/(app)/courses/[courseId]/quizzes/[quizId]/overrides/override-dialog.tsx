@@ -53,6 +53,17 @@ export function QuizOverrideDialog({ tenantId, courseId, quizId, open, onOpenCha
   const [maxAttempts, setMaxAttempts] = useState('');
   const [status, setStatus] = useState<QuizOverrideStatus>('active');
   const [targetIdError, setTargetIdError] = useState<string | null>(null);
+  const [timeLimitError, setTimeLimitError] = useState<string | null>(null);
+  const [maxAttemptsError, setMaxAttemptsError] = useState<string | null>(null);
+
+  const parsePositiveInt = (raw: string): { value: number | null; error: string | null } => {
+    if (raw.trim() === '') return { value: null, error: null };
+    const n = Number(raw);
+    if (!Number.isFinite(n) || !Number.isInteger(n) || n < 1) {
+      return { value: null, error: 'Must be a positive whole number.' };
+    }
+    return { value: n, error: null };
+  };
 
   useEffect(() => {
     if (!open) {
@@ -64,27 +75,39 @@ export function QuizOverrideDialog({ tenantId, courseId, quizId, open, onOpenCha
       setMaxAttempts('');
       setStatus('active');
       setTargetIdError(null);
+      setTimeLimitError(null);
+      setMaxAttemptsError(null);
     }
   }, [open]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setTargetIdError(null);
+    setTimeLimitError(null);
+    setMaxAttemptsError(null);
     const trimmed = targetId.trim();
     if (!ULID_RE.test(trimmed)) {
       setTargetIdError('Target ID must be a 26-character ULID.');
       return;
     }
-    const parsedTime = timeLimit.trim() === '' ? null : Number(timeLimit);
-    const parsedAttempts = maxAttempts.trim() === '' ? null : Number(maxAttempts);
+    const parsedTime = parsePositiveInt(timeLimit);
+    if (parsedTime.error) {
+      setTimeLimitError(parsedTime.error);
+      return;
+    }
+    const parsedAttempts = parsePositiveInt(maxAttempts);
+    if (parsedAttempts.error) {
+      setMaxAttemptsError(parsedAttempts.error);
+      return;
+    }
     try {
       await create.mutateAsync({
         targetType,
         targetId: trimmed,
         opensAt: toIso(opensAt),
         closesAt: toIso(closesAt),
-        timeLimitMinutes: parsedTime,
-        maxAttempts: parsedAttempts,
+        timeLimitMinutes: parsedTime.value,
+        maxAttempts: parsedAttempts.value,
         status,
       });
       publish({ tone: 'success', title: 'Override created' });
@@ -148,20 +171,22 @@ export function QuizOverrideDialog({ tenantId, courseId, quizId, open, onOpenCha
             </FormField>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Time limit (minutes)" id="qo-timeLimit">
+            <FormField label="Time limit (minutes)" id="qo-timeLimit" error={timeLimitError}>
               <Input
                 id="qo-timeLimit"
                 type="number"
                 min={1}
+                step={1}
                 value={timeLimit}
                 onChange={(e) => setTimeLimit(e.target.value)}
               />
             </FormField>
-            <FormField label="Max attempts" id="qo-maxAttempts">
+            <FormField label="Max attempts" id="qo-maxAttempts" error={maxAttemptsError}>
               <Input
                 id="qo-maxAttempts"
                 type="number"
                 min={1}
+                step={1}
                 value={maxAttempts}
                 onChange={(e) => setMaxAttempts(e.target.value)}
               />
