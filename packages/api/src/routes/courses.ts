@@ -165,6 +165,30 @@ export const CoursePathParams = TenantPathParams.extend({
   }),
 });
 
+export const getCourseRoute = createRoute({
+  method: 'get',
+  path: '/api/v1/tenants/{tenantId}/courses/{courseId}',
+  tags: ['Courses'],
+  operationId: 'getCourse',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: CoursePathParams,
+  },
+  responses: {
+    200: {
+      description: 'Course visible to the authenticated user.',
+      content: {
+        'application/json': {
+          schema: CourseResponse,
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+  },
+});
+
 export const UpdateCourseBody = CreateCourseBody;
 
 export const updateCourseRoute = createRoute({

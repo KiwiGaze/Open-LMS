@@ -153,6 +153,7 @@ import {
 import {
   createCourseRoute,
   deleteCourseRoute,
+  getCourseRoute,
   listCoursesRoute,
   listDeletedCoursesRoute,
   restoreDeletedCourseRoute,
@@ -173,6 +174,7 @@ import {
   createDiscussionTopicRoute,
   deleteDiscussionPostRoute,
   deleteDiscussionTopicRoute,
+  getDiscussionTopicRoute,
   listDiscussionPostGradesRoute,
   listDiscussionPostsRoute,
   listDiscussionTopicsRoute,
@@ -412,6 +414,7 @@ import {
   createWikiPageRoute,
   deleteWikiPageRoute,
   diffWikiPageRevisionsRoute,
+  getWikiPageRoute,
   listWikiPageRevisionsRoute,
   listWikiPagesRoute,
   restoreWikiPageRevisionRoute,
@@ -1086,6 +1089,16 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     const { tenantId } = context.req.valid('param');
     const courses = await options.dependencies.listDeletedCourses(actorUserId, tenantId);
     return context.json(courses, 200);
+  });
+
+  app.openapi(getCourseRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, courseId } = context.req.valid('param');
+    const course = await options.dependencies.getCourse(actorUserId, tenantId, courseId);
+    return context.json(course, 200);
   });
 
   app.openapi(listCatalogCoursesRoute, async (context) => {
@@ -4098,6 +4111,21 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     return context.json(topics, 200);
   });
 
+  app.openapi(getDiscussionTopicRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, courseId, topicId } = context.req.valid('param');
+    const topic = await options.dependencies.getDiscussionTopic(
+      actorUserId,
+      tenantId,
+      courseId,
+      topicId,
+    );
+    return context.json(topic, 200);
+  });
+
   app.openapi(createDiscussionTopicRoute, async (context) => {
     const actorUserId = await requireAuthenticatedUser(
       options.dependencies,
@@ -4372,6 +4400,21 @@ export const createApiApp = (options: ApiAppOptions): OpenAPIHono => {
     const pages = await options.dependencies.listWikiPages(actorUserId, tenantId, courseId);
 
     return context.json(pages, 200);
+  });
+
+  app.openapi(getWikiPageRoute, async (context) => {
+    const actorUserId = await requireAuthenticatedUser(
+      options.dependencies,
+      context.req.header('authorization'),
+    );
+    const { tenantId, courseId, wikiPageId } = context.req.valid('param');
+    const page = await options.dependencies.getWikiPage(
+      actorUserId,
+      tenantId,
+      courseId,
+      wikiPageId,
+    );
+    return context.json(page, 200);
   });
 
   app.openapi(createWikiPageRoute, async (context) => {
