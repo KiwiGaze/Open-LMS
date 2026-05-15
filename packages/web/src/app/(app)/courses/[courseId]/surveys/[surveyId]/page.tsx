@@ -108,7 +108,7 @@ export default function SurveyDetail({ params }: { params: Promise<Params> }) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-xs text-(--color-text-muted)">
-                  Type: {question.questionType.replace('_', ' ')}
+                  Type: {question.questionType.replaceAll('_', ' ')}
                   {question.choices.length > 0 ? (
                     <ul className="mt-2 flex flex-col gap-1">
                       {question.choices.map((choice) => (
