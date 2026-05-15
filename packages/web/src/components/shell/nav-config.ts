@@ -5,6 +5,7 @@ import {
   CalendarCheck,
   CalendarClock,
   ClipboardList,
+  Flag,
   GraduationCap,
   Inbox,
   LayoutDashboard,
@@ -40,6 +41,7 @@ export const ADMIN_NAV: AppNavItem[] = [
   { href: '/admin/tenant', label: 'Tenant settings', icon: Settings, staffOnly: true },
   { href: '/admin/providers', label: 'AI providers', icon: Sparkles, staffOnly: true },
   { href: '/admin/ai-usage', label: 'AI usage', icon: Sparkles, staffOnly: true },
+  { href: '/admin/feature-flags', label: 'Feature flags', icon: Flag, staffOnly: true },
   { href: '/admin/audit-logs', label: 'Audit logs', icon: Shield, staffOnly: true },
 ];
 
